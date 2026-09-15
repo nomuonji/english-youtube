@@ -1,4 +1,4 @@
-import {readFileSync,writeFileSync} from "node:fs";
+import {existsSync,readFileSync,writeFileSync} from "node:fs";
 import {resolve} from "node:path";
 import type {EpisodeManifest} from "../contracts/types";
 import {validateEpisode} from "../contracts/validate";
@@ -14,5 +14,7 @@ if(!checked.ok){console.error(JSON.stringify({ok:false,issues:checked.issues},nu
 const manifest=checked.value as EpisodeManifest;
 const timing=JSON.parse(readFileSync(timingPath,"utf8")) as MeasuredTimingBundle;
 const resolved=compileMeasuredResolved(manifest,timing,process.env.GITHUB_SHA??"local-measured-tts");
-writeFileSync(outputPath,JSON.stringify({manifest,resolved},null,2)+"\n","utf8");
-console.log(JSON.stringify({ok:true,provider:timing.provider,output:outputArg,durationFrames:resolved.durationFrames,durationSeconds:resolved.durationFrames/resolved.fps,clips:resolved.clips.length,manifestHash:resolved.manifestHash}));
+const imagesManifestPath=resolve(process.cwd(),"public/generated/images/manifest.json");
+const imageAssets=existsSync(imagesManifestPath)?(JSON.parse(readFileSync(imagesManifestPath,"utf8")).generated??[]).map((item:{sceneId:string;purpose:"hook"|"analogy"|"context";file:string})=>({sceneId:item.sceneId,purpose:item.purpose,path:`generated/images/${item.file}`})):[];
+writeFileSync(outputPath,JSON.stringify({manifest,resolved,imageAssets},null,2)+"\n","utf8");
+console.log(JSON.stringify({ok:true,provider:timing.provider,output:outputArg,durationFrames:resolved.durationFrames,durationSeconds:resolved.durationFrames/resolved.fps,clips:resolved.clips.length,imageAssets:imageAssets.length,manifestHash:resolved.manifestHash}));
