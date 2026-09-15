@@ -1,162 +1,99 @@
-# Implementation Plan
+# 実装計画と受け入れ条件 v2
 
-## Phase 1 — Foundation
+## 0. 完了の定義
 
-Goal: one fixture episode can be viewed in browser and rendered in GitHub Actions.
+このコミットは設計変更。renderアプリは未実装。添付のschemaとPython契約検査が通ることと、動画制作ができることを分ける。以下は実装担当への発注単位。順序はM0→M1→M2→M3→M4→M5→M6。各段階の成果物・合否をREADMEに追記する。
 
-Build:
+## M0 — 外部接続・制約確認
 
-- TypeScript + React + Remotion project
-- `EpisodeManifest` runtime validator (Zod generated/kept in sync with JSON schema)
-- one `NewsEnglishVideo` composition
-- base typography/design tokens
-- persistent English caption renderer
-- scene dispatcher
-- fixture episode
+成果：config/deployment.example.json、provider-probe report、採用版一覧、費用snapshot。秘密値は含めない。
 
-Initial Scene Library:
+- Remotion利用条件を利用組織に照らして確認し記録。
+- Google TTS 10文を同voice・rateで生成し、各chunk mark、自然さ、数字の読み、6〜10秒のretrieval候補を確認。
+- GCS private bucket、OIDC、create-if-absentとgeneration CASを実際に試す。
+- GitHub Actions/Pages利用条件、保存上限、課金設定を記録。
+- YouTube adapterは公開しない接続試験でchannel ID、必要scope、API監査状態を確認。
+- ブロック要因は設定不足として明示。別serviceやvoiceへ無断fallbackしない。
 
-- `cold_open`
-- `narrative`
-- `number_reveal`
-- `cause_effect`
-- `comparison`
-- `english_lens`
-- `chunk_breakdown`
-- `listening_challenge`
-- `recap`
+合格：TTS clipの境界が3frames以内、WPM125〜155、全秘密値が成果物にない。公開関連の資格情報が未提供でもM1〜M4のoffline/render作業は進められるがM5公開試験は未完了とする。
 
-Do not build every planned scene type before the first full episode works.
+## M1 — 契約とcompiler
 
-## Phase 2 — Remote development preview
+成果：package-lock、strict tsconfig、schema生成型、Ajv validator、semanticValidate、resolvedと運用成果物のruntime schema、固定voice/design/policy config、CLI validate/prepareのoffline版。
 
-Build a Vite static app using `@remotion/player`.
+単体テストは最低限以下を実装：
 
-Features:
+| ID | 入力 | 期待 |
+|---|---|---|
+| C01 | 8種類の正しいvisual | 全てaccept |
+| C02 | metricにvalueなし、未知variant追加 | reject |
+| C03 | 同一ID、未知claim、別sceneのreveal参照 | E_DUPLICATE_ID/E_REFERENCE/E_REVEAL |
+| C04 | chunks連結とtextが不一致 | E_TEXT |
+| C05 | phraseが未出、recapに別lp、retrievalが未来文 | E_LEARNING/E_RETRIEVAL |
+| C06 | 期限切れ事実、一次資料0、独立主体1 | productionでreject |
+| C07 | sample数48001、fps30 | ceilで31frames、最後まで音声保持 |
+| C08 | mark逆順/欠落、cue0frames | E_ALIGNMENT |
+| C09 | source音声8秒のretrieval | 26秒、2回同じasset、初回cue0 |
+| C10 | 長い語で幅overflow、1cueが20chars/sec超 | E_CAPTION_DENSITY |
+| C11 | 同bundleを2回compile | canonical resolved hash一致 |
+| C12 | ../secret、外部asset URL | decode/render前にreject |
 
-- fixture/episode selector
-- play/pause/seek
-- current scene display
-- jump-to-scene navigation
-- show manifest id + git SHA
-- optional 50%/75%/100% scale controls
+合格：すべて実測または独立した期待値で検査。fixtureの再保存値とだけ比較するテストにしない。kind=productionへ変更した短いfixtureはproduction検査に失敗すること。
 
-Deploy through GitHub Pages.
+## M2 — 8プリミティブと音声
 
-Acceptance criterion:
+成果：1つのEpisodeVideo composition、全scene、caption、音声adapter。固定TTS済みoffline bundleを用意。fixture manifestに音声を同梱したと誤解させない。
 
-> A repository commit can be visually reviewed from a browser without cloning the repo.
+visual boundary fixture：最大文字数、英語の長い単語、日本語24文字、4node、3row、4event、単位つきmetric、retrieval全phase、recap3表現。指定座標とfontでDOM overflow検査。
 
-## Phase 3 — GitHub Actions render
+合格：全scene/frameでoverflow0、フォント未読込時render停止、同じframeで同じ画像。聞き取り課題の正解が初回字幕から漏れない。最後の音声・字幕が切れない。
 
-Add two workflows.
+## M3 — リモート確認
 
-### `preview-render.yml`
+成果：Vite Player、ci.yml、preview-pages.yml、prepare-preview.yml。fixture allowlist、Pages URL、run summary、全編preview MP4/contact sheet。
 
-Triggers:
+合格：別端末のブラウザからPagesを開き再生・seek・scene移動・リロード。/english-youtube/のbase pathで音声とfontを取得。Pagesにepisodes/runs/秘密値が含まれないことをdist検査。fork PRでsecret不要。PRでPagesが上書きされない。
 
-- manual `workflow_dispatch`
-- optionally pull requests touching `src/`, `fixtures/`, `episodes/`
+## M4 — 本番書き出し
 
-Behavior:
+成果：production-render.yml、QA CLI、archive。1本の360〜480秒のproduction条件を満たすパイロットbundle。
 
-- npm ci
-- validate manifest
-- render selected range at lower resolution/scale
-- generate representative screenshots/contact sheet
-- upload preview artifacts
+合格：540pと1080pが同一bundleHash、全音声event・字幕文字・scene長一致。production画面、音量、誤字、事実を全編レビュー。最終MP4の実測durationとresolvedの差≤1frame。artifactを消してもGCSから同bundleを復元できる。再renderのbit完全一致は要求せず、frame/音声内容/時刻の一致を要求する。
 
-### `production-render.yml`
+## M5 — 定期・再開・公開
 
-Triggers:
+成果：pipeline CLI、state machine、GCS CAS/lease、台帳、費用予約、YouTube resumable adapter、publish.yml（初期disabled）。
 
-- manual approval initially
-- scheduled/agent automation later
+障害注入試験：
 
-Behavior:
+| ケース | 期待 |
+|---|---|
+| 二つのworkerが同時開始 | 片方だけstage所有権を持つ |
+| TTS途中で中断 | 完成clipを再課金生成しない |
+| render直後state保存前に中断 | 保存済みchecksumを照合して再開 |
+| artifact期限切れ | archiveから復元 |
+| hashを1文字改変 | 本番/公開停止 |
+| API429 | 上限内backoff、3attempt後停止 |
+| 予算不明/超過 | 次の有料呼び出しなし |
+| upload完了直後通信断 | 新規insertしない、session照合 |
+| captionだけ失敗 | videoIdを再利用しcaptionから再開 |
+| 事実が公開前に変更 | revision更新、旧予約をそのまま進めない |
+| API project private制限 | 公開完了と報告しない |
 
-- validate immutable manifest
-- resolve TTS/assets
-- render full 1920x1080
-- generate captions/metadata
-- upload artifacts
-- publish only when explicitly enabled
+実YouTubeへのuploadは所有者の指示と資格情報がある段階で非公開のfixture以外の承認済み動画で試験。fixture公開禁止は試験でも維持する。公開許可がなくてもmock serverによる障害試験は完了できる。実upload未検証を明示する。
 
-## Phase 4 — Information UI Scene Library
+## M6 — 12本の検証
 
-Add based on real episode needs:
+成果：12本のtopic ledger、7日/28日指標、3本ごとの編集レビュー、最終判断。測定詳細は[パイロット](PILOT_AND_MEASUREMENT.md)。
 
-- `timeline`
-- `map`
-- `entity_profile`
-- `quote`
-- `before_after`
-- `process`
-- `prediction`
-- `counterpoint`
-- `what_next`
+合格：12本公開したことだけで成功としない。学習部分の離脱、視聴理解、制作費用の判定を記録。次に変える変数を一つ選び仕様版を更新。数字が不足すれば「判定保留」とする。
 
-Each new scene must have edge-case fixtures.
+## 実装担当が選べないこと
 
-## Phase 5 — Agent generation pipeline
+尺、8種類のscene、role、字のサイズ、色、音声providerの初期値、字幕の時刻方式、週3枠、YouTube初期無効、失敗時の再試行数、data contract、公開とrenderの責務分離。
 
-Split generation into explicit stages rather than one giant prompt:
+実装担当が選べること：純粋関数の分割、テストhelper名、性能を改善する内部処理。ただし出力・契約・費用・外部serviceを変えない。依存patchの確定はM1の互換性検証で行い、未確認の最新版を設計書だけで固定しない。
 
-```text
-candidate discovery
- -> candidate scoring
- -> research
- -> claim/source map
- -> story beats
- -> narration
- -> learning-point selection
- -> scene planning
- -> manifest assembly
- -> QA/repair
-```
+## 将来変更の条件
 
-Why: failures can be repaired locally without regenerating the whole episode, and research can be audited independently from writing.
-
-## Phase 6 — TTS and timing
-
-Reuse lessons from `legal-english` / `error-english`, but timing should be manifest-derived.
-
-Preferred model:
-
-- narration is split by scene
-- TTS generated per scene or semantic clip
-- actual audio duration determines scene minimum duration
-- scene component can add visual hold time but not truncate speech
-- captions are timestamped from TTS/alignment output
-
-Do not let the content agent hardcode Remotion frame numbers.
-
-## Phase 7 — Scheduled production
-
-Only after several manually reviewed episodes.
-
-Scheduled run:
-
-1. agent generates candidate/research/manifest
-2. validators run
-3. preview render runs
-4. automated QA runs
-5. production render runs
-6. upload may remain approval-gated until quality is stable
-
-## Phase 8 — Feedback loop
-
-Archive YouTube performance by episode and by editorial features where available:
-
-- topic category
-- editorial mode
-- opening type
-- scene mix
-- duration
-- learning intervention count
-- CTR
-- first-30-sec retention
-- average percentage viewed
-- returning viewers
-
-Use performance to adjust editorial selection and opening strategy, not to let the agent rewrite design code every day.
+地図：12本中3本以上が位置関係の不足で不採択になり、scene requestに根拠がある場合だけ検討。Shorts：長尺12本の検証後。BGM：聞き取り理解を損なわない試験ができた後。自動公開：運用仕様の条件と所有者の指示を満たした後。

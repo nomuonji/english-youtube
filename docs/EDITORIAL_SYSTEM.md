@@ -1,229 +1,95 @@
-# Editorial System
+# 編集・学習仕様 v2
 
-## Positioning
+本書の数値は初期運用の固定値。日次生成で緩めない。構造は[データ契約](DATA_CONTRACT.md)を使う。
 
-The channel is not "English news class".
+## 1. 対象と題材
 
-It is a **current-affairs explainer channel that happens to be optimized for English learners**.
+視聴者は日本語話者の成人、英文なら理解できるB1中級者。移動中の聞き流しより、スマートフォンを横にして画面を見る利用を主とする。前提知識は一般生活のみ。企業名・技術用語・制度名は初出で一文説明する。
 
-Viewer promise:
+対象カテゴリはtechnology（技術と生活）、work_money（仕事とお金の仕組み）、science_society（科学と社会）の3つ。株の売買推奨、治療、法的対応、選挙予測、進行中の戦闘、未確認の不祥事、災害速報は初期12本から除外。危険分野を薄く自動解説するより、理解可能な範囲で説明を完結させるための範囲設定。
 
-> Understand one important story in the world, in clear English, and leave with several reusable expressions.
+## 2. 候補探索の手順
 
-## Topic selection
+毎日07:17 JSTに起動。直近7日の発表・報道から最大12候補。各カテゴリ最大4件。古い背景資料は利用可。検索結果スニペットだけで採択しない。公開前24時間以内に新しい展開の有無を再確認する。
 
-The scheduled agent should generate candidates from current news and score each candidate 0–5 on:
+候補レコードはcandidateId、category、eventDate（不明ならnull）、questionEn、questionJa、whyNow、sourceUrls、score、rejectionReason。URLが一つも確認できない候補は破棄。直近30本と「中心の問い＋主要な答え」が同じなら重複。続報でも答えが変わらなければ作らない。
 
-- `importance`: matters beyond a one-day headline
-- `curiosity`: can be expressed as a compelling question
-- `background_depth`: supports 8–12 minutes of explanation
-- `english_value`: naturally contains reusable English
-- `visualizability`: can be explained with text/data/maps/timelines
-- `shelf_life`: retains value after the day of publication
-- `source_quality`: enough reliable primary/major sources exist
-- `audience_relevance`: understandable/relevant to a Japanese learner
+各項目を整数0〜4で採点し、score = Σ(weight × rating / 4)（最大100）。採点根拠を一文ずつ保存。
 
-Reject topics that are mainly:
+| 項目 | 重み | 0 / 2 / 4の基準 |
+|---|---:|---|
+| relevance | 25 | 視聴者との接点なし / 間接的 / 仕事・生活への具体的接点 |
+| explanation | 25 | 発表の言い換え / 一つの理由 / 因果と限界を説明可能 |
+| evidence | 20 | 根拠不明 / 二次報道のみ / 一次資料＋独立資料 |
+| visual | 15 | 映像必須 / 図が補助 / 図で仕組みの理解が改善 |
+| language | 10 | 専門語だらけ / 表現が2つ / 汎用表現3つが自然に登場 |
+| durability | 5 | 明日無価値 / 1週間 / 1か月後も背景が役立つ |
 
-- a single quote or minor announcement
-- celebrity gossip without explanatory depth
-- rumors
-- information requiring unavailable footage to be interesting
-- extremely technical stories that cannot be simplified responsibly
-- political stories where the agent cannot fairly represent material competing interpretations
+1と3は隣接する基準の中間。75点以上、evidence・explanation各3以上のみ採択候補。同点はevidence、relevance、candidateId辞書順。上位最大3候補を深掘りし、最初の合格1件を制作。全部不合格ならskipped。1日1本まで凍結、未公開の完成在庫が3本あれば探索記録だけ残す。
 
-Prefer a topic that can be reframed as a durable question, e.g.:
+## 3. 裏取り
 
-- Event: a tech company announces a huge data-center investment
-- Episode question: `Why Does AI Need So Much Electricity?`
+制作には3出典以上、2つ以上の独立した発行主体、1つ以上の一次資料が必要。転載は同一independenceGroup。企業発表は発表した事実を支えるが、宣伝上の効果の証明とはしない。
 
-## Research standard
+各claimに、意味を限定した英語文、certainty、asOf、evidence（sourceId / locator / supportNote）を持たせる。locatorは章見出し、表番号またはページ。supportNoteは自分の言葉で資料が何を支持するかを書く。取得日時、URL、発行日（不明はnull）、出版社をsourceに残す。記事全文や長文転載は保存しない。
 
-For ordinary stories:
+- confirmed：資料で確認できる事実。因果の推測には付けない。
+- reported：発行主体がそう報じた。音声で発行主体を明示。
+- estimate：推定と対象期間を音声・画面で示す。
+- forecast：将来予測。willと断定せずcould / is expected to等を使う。
+- disputed：初期版では制作不採択。
+- inference：複数事実からの本動画の解釈。This suggests等で分ける。反例・限界も原稿に入れる。
 
-- use at least 3 sources where possible
-- prefer primary documents + high-quality independent reporting
-- record publication time/date
-- distinguish event date from article publication date
-- mark uncertain claims explicitly
-- do not convert predictions into facts
+固有名詞・日時・金額・割合・比較・因果を含む全utteranceと画面payloadにclaimを結びつける。純粋な問い、学習指示、一般的な接続文は空配列可。独立した編集レビューは、結びつけられていない事実文がないかも読む。LLMの自己申告だけでは裏取り済みと扱わない。
 
-For politics, conflict, markets, science, health, law or other high-consequence topics:
+## 4. 一本の構造
 
-- use more than one independent source
-- include primary sources when available
-- represent material disagreement fairly
-- avoid loaded language unless quoting/attributing it
+productionは360〜480秒、実際に再生する全英語音声（replayを含む）760〜980 words。目安は420秒・880 words。映像の尺は音声実測で決める。語数から秒数を固定しない。無音による水増しは禁止。
 
-The final manifest stores sources and claim/source links.
+story beatは4つ：setup（何が起きたか）、mechanism（仕組み）、complication（単純ではない理由）、answer（問いへの答えと限界）。各beatは2〜5シーン。別にhook 1、phrase 2、retrieval 1、recap 1を置く。全体13〜25シーン。hook→setup→mechanism→complication→answer→recapという意味の順序は固定。学習挿入の位置と各beat内の図解順は内容で選ぶ。
 
-## Story construction
+| 区間 | 完了条件 |
+|---|---|
+| 最初の0〜25秒 | 生活につながる具体的な疑問、centralQuestionを音声で言う。挨拶なし |
+| 75秒以内 | 主体、出来事、知る理由が分かる |
+| 全体の25〜45% | 既出表現のphrase #1 |
+| 全体の45〜65% | 既出表現のphrase #2。前の学習挿入から45秒以上 |
+| 全体の65〜85% | retrieval 1回。2つ目のphraseから30秒以上 |
+| 残り60秒以内 | centralQuestionに直接答える。確実な事実と未確定部分を区別 |
+| 最後20〜30秒 | recapで3表現を一つずつ回収。新事実を足さない |
 
-Every episode needs one central question.
+実測時間で窓から外れれば編集へ戻す。尺を変えるためにTTS速度を勝手に変えない。1つの図解シーンは12〜40秒、hookは15〜25秒、phraseは12〜20秒。retrievalは音声長から算出し22〜36秒、recapは20〜30秒。図解は内容が増える瞬間のみ段階表示し、5秒ごとの無意味な切替を強制しない。
 
-A good question has:
+## 5. 英語と日本語
 
-- an obvious surface answer
-- a deeper answer revealed later
-- a reason the viewer should care
+平均文長12〜18 words、1文最大26 words。1utteranceは1文、最大26 words。wordsは英数字語を空白・句読点で区切り、内部apostrophe/hyphenを一語扱い。数字の読み上げは原稿で展開する（2.5%→two point five percent）。画面の数値だけ2.5%にしてよい。
 
-The agent should build 3–6 narrative beats, not a list of facts.
+一文の従属節は最大1つ。指示語の先行詞が曖昧なら名詞を繰り返す。専門語は1本5語まで、初出説明を必須とし、単なる短文率をCEFR判定と呼ばない。B1として理解できるかは編集レビュー対象。
 
-Example:
+学習表現は正確に3つ。各2〜5語を原則としschema上は48文字以下。汎用的な連語・構文を選ぶ。各表現はstoryの中で2回以上使用し、最初の使用をsourceUtteranceIdで指す。復習のために事実関係を変えない。phraseの2表現は出現順。3つ目は初出でglossを表示する。
 
-```text
-Question: Why does AI need so much electricity?
+各文に日本語訳translationJaを付けるが、通常画面に焼き込まない。日本語glossはlearningPoint.meaningJaから取得し、一度に一つ、24文字以内。phraseでは同じ意味を48pxで表示。retrieval答えの日本語は48文字以内。日本語音声は使わない。
 
-Beat 1: Demand is growing very quickly.
-Beat 2: The model itself is only part of the story.
-Beat 3: Data centers create a power + cooling problem.
-Beat 4: Local grids become a bottleneck.
-Beat 5: Companies are changing where/how they build infrastructure.
-Beat 6: Efficiency may change the equation again.
-```
+## 6. 聞き取りの仕様
 
-## Opening rule
+既出storyの1utteranceを選び、同じ音声ファイルを2回再生する。対象音声は6〜10秒。問いは内容理解を測る二択。語彙の綴り当ては禁止。
 
-The first 30 seconds should contain:
+1. 問いと2択を3秒表示（無音）。指示は「Listen for the reason.」固定表示。
+2. 対象音声を再生。英語焼き込み字幕とglossは隠す。選択肢は残す。
+3. 3秒の無音で考える。カウントダウン数字は3→2→1、点滅なし。
+4. 同じ音声を再生し、英語チャンク字幕と正解を表示。
+5. 4秒の無音で短い日本語の答えを表示。終わったらstoryへ戻る。
 
-- a concrete surprising fact or tension
-- the central question
-- a promise of a non-obvious answer
+総秒数=10+2×対象音声秒。YouTubeが別途生成する自動字幕や視聴者側の補助機能までは制御できないため、課題中はCCをオフにする案内を説明欄に付ける。新規TTSを作らない。誤答は本文で誤りと判断できる内容にし、原稿にない知識を要求しない。内容の答えをナレーションが初回前に言ってしまう問いは却下。
 
-Avoid:
+## 7. タイトル・サムネ・説明欄
 
-- channel introduction
-- "Today we are going to learn..."
-- vocabulary list at the start
-- long context before the question
+候補は3組のtitleJa / thumbnailJa。titleJaは48文字以下、「具体的な問い｜やさしい英語」。thumbnailJaは12文字以下、最大2行、タイトルの丸写し禁止。3組をrelevance・clarity・truthfulness各0〜4で採点、合計最大をselectedIndexへ。同点は配列先頭。選定理由を編集レポートに保存。
 
-## Pacing
+サムネは1280×720、背景#102A43、主文96px・Noto Sans JP Bold、左右80pxの余白。右側にmain metricかchainの要約を一つ、左側に問い。下64pxは小ラベル「英語でわかる世界」。根拠のない危機煽り、ロゴ、実在人物の生成画像は使わない。
 
-Target duration: 8–12 minutes.
+説明欄は日本語120〜220文字の要約→対象「英語B1目安／英語字幕・日本語CC」→実測chapter→3表現→出典URLと発行主体→「音声は合成音声です。」→訂正履歴。全体4000文字以内。chapterは00:00から、3個以上、各10秒以上。生成AI利用の開示要否は公開担当が公式基準を確認し、合成音声の注記だけで手続き完了としない。
 
-Guidelines, not hard templates:
+## 8. 編集レビューの合否
 
-- 0:00–0:30: cold open / question
-- first 90 sec: viewer can explain what happened
-- every 30–90 sec: introduce a new question, consequence, contrast or reveal
-- learning inserts: short and earned by the story
-- final 60–90 sec: answer the central question + what next + recap
-
-## English level
-
-Default narration target: **B1–B2 comprehension with selective exposure to B2/C1 news vocabulary**.
-
-Rules:
-
-- prefer short clauses
-- explain specialist terms before using them repeatedly
-- avoid replacing a common word with a difficult synonym solely to sound formal
-- keep authentic news collocations when they are useful
-- repeat important expressions naturally across the episode
-
-## Learning system
-
-### 1. Persistent English captions
-
-Always display spoken English in readable chunks.
-
-Do not mirror a full paragraph. Segment by meaning and speech rhythm.
-
-### 2. Japanese micro-gloss
-
-Japanese is support, not a second full subtitle track.
-
-Use it for:
-
-- key unfamiliar phrase
-- technical concept
-- misleading false friend
-- difficult causal sentence
-- listening answer reveal
-
-### 3. English Lens
-
-A short intervention for one useful expression already encountered in context.
-
-Example:
-
-```text
-The project is expected to cost $40 billion.
-
-be expected to + verb
-= 〜すると予想されている
-```
-
-Then return immediately to the story.
-
-### 4. Chunk Breakdown
-
-Use when sentence structure itself is valuable.
-
-```text
-The company / is under pressure / to reduce costs.
-```
-
-Animate chunks in meaning order. Explain only what helps comprehension.
-
-### 5. Listening Challenge
-
-Use a meaningful 1–2 sentence excerpt from the episode.
-
-Sequence:
-
-1. replay without subtitles
-2. short pause / question
-3. replay with English chunks
-4. optional Japanese explanation
-5. final replay without Japanese
-
-### 6. Recap
-
-3–7 expressions maximum.
-
-Every expression must:
-
-- have appeared in the episode
-- be reusable outside this exact story
-- have a concise Japanese meaning
-- optionally include the original episode sentence
-
-## Text UI principles
-
-The visual product should help the viewer parse information.
-
-Prefer:
-
-- chunked captions
-- kinetic emphasis on verbs/numbers
-- timelines
-- relationship arrows
-- causal chains
-- side-by-side comparisons
-- entity cards
-- maps with only relevant labels
-- progressive disclosure
-
-Avoid:
-
-- decorative text motion without information value
-- giant blocks of prose
-- constant bouncing/zooming
-- showing English and full Japanese translations simultaneously for the entire episode
-- too many visual elements competing with captions
-
-## Episode diversity rules
-
-To avoid the fatigue seen in earlier fixed-format projects:
-
-- do not require a fixed scene order
-- do not require all learning scene types every episode
-- do not repeat the same opening pattern more than twice in a row
-- vary explainer/timeline/two-sides modes
-- choose visual primitives based on the information, not rotation quotas
-- preserve a consistent brand while changing the editorial rhythm
-
-The sameness should be: typography, clarity, voice, learning philosophy.
-
-The variation should be: question, story arc, scene mix, pacing, information structures.
+各0〜2点：問いに答える、因果が飛ばない、生活との接点、B1で追える、学習が自然、原資料の要約以上の説明がある。合計10/12以上かつ0項目なし。事実の裏付け、権利、予測の断定は採点で相殺できないhard fail。修復2回で不合格なら次の候補へ戻らず、そのrunをskippedとして終了する（費用上限を守る）。

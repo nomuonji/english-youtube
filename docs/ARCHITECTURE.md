@@ -1,378 +1,80 @@
-# Architecture: Template vs Agent
+# アーキテクチャ v2
 
-## 1. Design goal
+## 1. 採用構成と責任
 
-The system must be automated without becoming visibly repetitive.
-
-The key separation is:
-
-- **Template owns visual grammar**
-- **Agent owns editorial judgment**
-
-A daily scheduled agent should behave like an editor/director using an existing motion-design system, not like a frontend engineer rewriting the video engine every day.
-
----
-
-## 2. Layers
-
-### Layer 0 — Render engine (code, stable)
-
-Owned by repository code.
-
-Responsibilities:
-
-- Remotion composition registration
-- fps / resolution / audio mixing
-- scene timing engine
-- transitions
-- typography
-- safe areas
-- subtitle renderer
-- accessibility / line-length rules
-- asset loading
-- fallback behavior
-- schema validation
-- deterministic rendering
-- output encoding
-
-The daily agent **must not edit this layer**.
-
-### Layer 1 — Scene Library (code, slowly evolving)
-
-Reusable visual primitives.
-
-Initial scene types:
-
-- `cold_open`
-- `headline`
-- `narrative`
-- `number_reveal`
-- `timeline`
-- `map`
-- `entity_profile`
-- `quote`
-- `cause_effect`
-- `comparison`
-- `before_after`
-- `process`
-- `question`
-- `english_lens`
-- `chunk_breakdown`
-- `listening_challenge`
-- `prediction`
-- `counterpoint`
-- `what_next`
-- `recap`
-
-Each component has several variants. Example:
+Node.js 22 LTS系、TypeScript strict、React、Remotion 4系、Vite、Ajv2020＋ajv-formats。実装M1で互換性を確認した正確なpatchをpackage-lockと.tool-versionsへ固定。すべての@remotion/*とremotionは同一版。既存error-english-videoの依存版を無条件に移植しない。Pythonは設計検査だけで制作runtimeには不要。
 
 ```text
-cause_effect:
-  chain
-  branches
-  funnel
-  loop
-
-comparison:
-  split
-  table
-  scale
-
-number_reveal:
-  hero-number
-  counter
-  before-after
+editor agent -> manifest + research + review
+  -> validate -> freeze
+  -> prepare (TTS / captions / resolved / hashes)
+  -> preview render -> QA
+  -> production render -> final QA
+  -> durable archive -> publish adapter (disabled by default)
 ```
 
-The agent chooses a type + variant. It does not control arbitrary CSS.
+| モジュール | 入力→出力 | 禁止事項 |
+|---|---|---|
+| contracts | JSON→型付きデータ＋errors | 暗黙の型変換 |
+| editorial | 出典＋候補→manifest/review | frame/CSS/音声決定 |
+| speech | utterance＋voice profile→WAV＋marks | 原稿の改稿、別voiceへの自動fallback |
+| compiler | manifest＋clips→resolved | API呼び出し、語数で音声時刻推測 |
+| composition | resolved＋local assets→React scene | research/TTS、外部取得 |
+| preview app | bundle→Player＋QA表示 | manifestを独自タイミングで再計算 |
+| render CLI | bundle＋profile→MP4 | 音声再生成 |
+| operations | state＋成果物→次stage | uploadの盲目的再試行 |
 
-### Layer 2 — Editorial grammar (rules, stable)
+ディレクトリ：src/contracts、src/compiler、src/scenes、src/composition、src/preview、src/cli、src/adapters/speech、src/adapters/youtube。config/voice.json、config/policy.json、config/design-tokens.jsonを固定する。
 
-Rules enforced by validators rather than hard-coded scene order.
+## 2. 音声providerの選定
 
-Examples:
+初期providerはGoogle Cloud Text-to-Speech、voice=en-US-Neural2-F、languageCode=en-US、speakingRate=0.90、pitch=0、LINEAR16。SSML markによる意味チャンク境界取得を採用。以前のプロジェクトにGoogle TTS依存はあるが、認証が使えるとは仮定しない。
 
-- duration target: 8–12 minutes
-- English narration is primary
-- no more than two identical scene types consecutively
-- visual information should change regularly
-- at least one strong question/open loop in the first 30 seconds
-- at least two learning interventions, but no long classroom-style interruption
-- use Japanese only when it reduces comprehension cost
-- every learning point must first appear naturally in the story
-- recap only contains expressions actually used in the episode
-- no unsupported factual claim
+M0でv1beta1のtimepoint返却とvoiceの組み合わせを実APIで検証する。サンプル10文で自然さ、固有名詞、数値、chunk位置を確認。不対応・品質不合格ならM0不合格。markを返さない音声へ黙って切り替えず、profileを改訂する。[Google SSML](https://docs.cloud.google.com/text-to-speech/docs/ssml)
 
-This gives consistency without producing the same episode structure every day.
+1utterance=1リクエスト。SSMLはコンパイラだけが組み立て、原稿のXML文字をescape。各chunkの直前に一意なmarkを挿入。末尾はファイルの実測終端を使用し、無音末尾の長さも保存する。モデルの返すmark欠落、重複、逆順はE_ALIGNMENT。文字数比で補完しない。
 
-### Layer 3 — Episode Manifest (agent-generated every run)
+WAVは48kHz mono PCM16にresample、全episodeの音声を解析して一つの共通gainを求める。目標-16 LUFS、最終peak -1dBTP以下。各文別の強いnormalizationで音量が揺れないようにする。必要なら全体limiterを使い、最終音声で再測定。BGM/SFXは入れない。
 
-This is the core agent output.
+## 3. 話速とタイミング
 
-The agent decides:
+1分あたり130〜150wordsが目安、episodeの実測平均125〜155なら合格。speakingRateの設定値だけでWPMを保証しない。読み間違いはutteranceを修正しrevisionを上げる。単語の音声だけを切り貼りしない。
 
-- story/topic
-- central question
-- angle
-- title candidates
-- thumbnail copy candidates
-- narrative structure
-- scene order
-- scene type/variant
-- narration
-- on-screen text
-- emphasis/chunks
-- vocabulary/glosses
-- data points
-- citations/source URLs
-- learning interventions
-- pacing hints
-- asset requirements
+WAV長samplesと48kHzからaudioFrames=ceil(samples×30/48000)。文間は6frames（200ms）。通常scene冒頭は6frames、末尾は12frames。scene.durationFrames = 6 + ΣaudioFrames + 6×(文数-1) + 12。recap末尾は12でなく90frames。scene切替で文頭を削らない。
 
-The output must validate against `schemas/episode.schema.json`.
+retrievalは固定phase：prompt 90frames、listen Fframes、think 90frames、reveal Fframes、answer 120frames。Fはsource音声のaudioFrames。utterance開始時刻はlisten開始とreveal開始。通常scene用の冒頭・末尾paddingはretrievalへ足さない。
 
-### Layer 4 — Asset planning (agent-generated, bounded)
+音声samples境界→frameは各境界をround(samples×30/48000)し、最後だけceil(samples×30/48000)。字幕cueは半開区間[start,end)。整数化で0frameになる場合は不合格。字幕表示は音声開始に対して最大2frames先行可、遅延は3frames以内。実測markがずれているときはプロバイダ試験へ戻す。
 
-The agent can request assets using a structured contract, for example:
+## 4. 字幕compiler
 
-```json
-{
-  "kind": "image",
-  "query": "AI data center aerial exterior",
-  "purpose": "establishing visual",
-  "fallback": "abstract-server-grid"
-}
-```
+chunkを文頭から順に詰め、最大72文字・2行・1行40文字・幅1632pxをすべて満たす最長の連続chunk集合を1cueにする。Inter64pxで実測。単一chunkが収まらなければ編集へ戻す。改行は単語間のみ。2行の最大幅が最小になる位置を採用し、同点は前半が短い方。
 
-or
+1cueの表示0.8〜6.0秒。長すぎるcueはchunk境界で分割、短すぎるcueは次へ結合し、制約内にできなければE_CAPTION_DENSITY。文字/秒は最大20（空白含む）。音声を遅くして無理に通さない。
 
-```json
-{
-  "kind": "map",
-  "locations": ["Virginia, USA", "Texas, USA"],
-  "purpose": "show data-center concentration"
-}
-```
+英語SRTは焼き込みcueと同じ時刻と文字。日本語SRTはtranslationJaChunksを対応する英語chunkの時刻へ割り当て、2行以内（1行24文字）にする。連続した和訳chunkを最大48文字まで結合するが、表示は0.8〜6秒、最大12文字/秒とする。範囲内にできなければ翻訳を修復する。runtimeが新しい訳や意味区切りを生成してはいけない。retrieval初回の音声区間は両言語ともcueなし。答え再生時だけ生成。ミリ秒変換round(frame×1000/30)、終了は次cue開始を超えない。
 
-For this project, external images/videos are supporting material. The product should remain understandable even if only text UI, diagrams, icons, maps and simple illustrations are available.
+## 5. 正規化bundle
 
-### Layer 5 — QA (automated)
+prepareはTTS、font解決、captions、timelineを完了してからbundleを凍結する。Playerとrendererは同じbundleHashとengineCommitで描画。描画中のfetchはbundleに含まれる同一originの音声・fontのみ。MP4レンダリングは外部ネットワークなしで成立すること。
 
-Before rendering:
+bundleにmanifest全文を同梱。compositionはsceneIdでmanifestのvisualを取得し、resolvedの時刻で表示。別バージョンのmanifestとの組み合わせはhash検査で拒否。
 
-- JSON schema validation
-- source count and source timestamps
-- unsupported-claim detection
-- duplicate/repetitive scene detection
-- text overflow estimation
-- subtitle line-length validation
-- English level check
-- Japanese overuse check
-- learning-point provenance check
-- total estimated duration
-- title/thumbnail sanity check
-
-After preview render:
-
-- render success
-- audio present
-- duration expected
-- no missing assets
-- representative screenshots generated
-
-### Layer 6 — Publish (workflow)
-
-Only after QA.
-
-- final 1080p render
-- thumbnail
-- metadata
-- captions
-- upload
-- archive manifest + sources + render metadata
-
----
-
-## 3. What is templated
-
-Template/code should own anything where consistency is beneficial:
-
-- brand identity
-- type scale
-- color system
-- subtitle system
-- English/Japanese hierarchy
-- motion curves
-- spacing
-- transition vocabulary
-- information-card patterns
-- layout algorithms
-- charts/timelines/maps
-- timing calculations
-- audio ducking
-- intro/outro treatment
-- text overflow handling
-- fallbacks
-- quality checks
-
-This is the product's design system.
-
----
-
-## 4. What the daily agent decides
-
-The agent should own anything where variation and editorial intelligence are beneficial:
-
-- which story deserves a video today
-- the central question
-- what context the learner actually needs
-- which facts should be visualized
-- where to slow down
-- where to create suspense
-- which Scene Library component best explains each idea
-- whether a timeline, map, number, quote, comparison or causal diagram is appropriate
-- which English phrase deserves attention
-- where a listening challenge naturally fits
-- how difficult the narration should be
-- which Japanese glosses are necessary
-- what should be omitted
-- final title/thumbnail candidates
-
----
-
-## 5. What the daily agent must NOT do
-
-- change React components
-- change CSS/design tokens
-- invent a new scene type inside an episode
-- hardcode frame numbers
-- insert arbitrary HTML
-- add arbitrary animation code
-- publish an unsupported factual claim
-- copy long passages from news sources
-- turn the episode into a vocabulary lecture
-- use every available scene type just because it exists
-
-If a new visual grammar is genuinely needed, the agent should output a `scene_library_request` in its report, not modify production code during the daily run.
-
----
-
-## 6. Controlled creativity
-
-To avoid template fatigue, every scene exposes **bounded creative parameters**.
-
-Example:
-
-```json
-{
-  "type": "cause_effect",
-  "variant": "chain",
-  "density": "medium",
-  "emphasis": "consequence",
-  "tempo": "fast",
-  "items": [
-    {"label": "AI demand"},
-    {"label": "More data centers"},
-    {"label": "More electricity"},
-    {"label": "Grid pressure"}
-  ]
-}
-```
-
-The agent has meaningful editorial freedom, while the renderer remains robust.
-
----
-
-## 7. Video-level structure is NOT a fixed template
-
-There are three broad editorial modes:
-
-### Explainer
-
-Best for: `Why is X happening?`
-
-Typical but non-mandatory elements:
+## 6. CLIの必須インターフェース（実装対象）
 
 ```text
-Cold Open -> What happened -> Cause -> Context -> English Lens -> Deeper Cause -> What Next -> Recap
+npm run validate -- --episode episodes/<id>/manifest.json
+npm run prepare -- --episode episodes/<id>/manifest.json --out work/<id>
+npm run preview:build -- --bundle work/<id>/bundle --out dist
+npm run render -- --bundle work/<id>/bundle --profile preview --out out
+npm run render -- --bundle work/<id>/bundle --profile production --out out
+npm run qa -- --bundle work/<id>/bundle --render out --stage final
+npm run publish -- --receipt <path> --bundle-hash <hash> --mode private
+npm run pipeline -- --run-id <id> --resume
 ```
 
-### Timeline
+exit 0=成功または記録済みskipped、2=入力/編集不合格、3=provider一時障害、4=設定不足、5=費用上限、6=公開状態不明。結果をstdout一行JSONで返し、診断はstderr。秘密値は出力しない。パスはCLIで許可root内へresolveし、URLやshell断片として評価しない。
 
-Best for: `How did X get here?`
+## 7. 再利用と移行
 
-```text
-Cold Open -> Present event -> Timeline -> Turning point -> Listening Challenge -> Present consequence -> What Next
-```
-
-### Two Sides
-
-Best for contested questions.
-
-```text
-Cold Open -> Claim -> Case A -> Case B -> Key vocabulary -> Evidence comparison -> What remains uncertain -> Recap
-```
-
-The agent chooses the mode and can vary the sequence.
-
----
-
-## 8. Text UI is the competitive advantage
-
-The system should optimize for comprehension rather than photorealism.
-
-### Persistent layer
-
-- spoken English captions
-- current section/question
-- subtle progress indication
-
-### Contextual layer
-
-Only when useful:
-
-- Japanese micro-gloss
-- chunk boundaries
-- key verb highlighting
-- pronoun/reference arrows
-- number/unit explanation
-- cause-effect arrows
-- entity labels
-
-### Learning intervention
-
-Short, story-connected inserts:
-
-- `english_lens`: 10–25 sec
-- `chunk_breakdown`: 10–25 sec
-- `listening_challenge`: 20–45 sec
-- `recap`: 30–60 sec
-
-The story must remain the main product.
-
----
-
-## 9. Source of truth
-
-Each episode is represented by one immutable manifest after approval:
-
-```text
-episodes/YYYY-MM-DD-slug/
-  manifest.json
-  research.json
-  script.txt
-  captions.json
-  assets.json
-  render.json
-```
-
-The same manifest feeds:
-
-- Remotion Player preview
-- preview MP4
-- production MP4
-- subtitles
-- article/reading material in the future
-- Shorts extraction in the future
-
-This prevents preview/production drift.
+旧schemaは廃止、旧scene名へのfallbackなし。旧revisionの文書はGit履歴で参照する。現repoにはepisode実データがないためデータ移行は不要。以前のプロジェクトから再利用するのはAPI呼び出しの知見だけ。過去の高権限workflow、SNS投稿、token cache、固定scene sequenceはコピーしない。

@@ -1,229 +1,77 @@
-# Preview and Render Strategy
+# クラウド確認・レンダリング v2
 
-## Goal
+## 1. 現状と決定
 
-Development should not require a local machine for every visual check, while production rendering remains on GitHub Actions as in the previous Remotion projects.
+2026-09-15時点でrepoはpublic、Pages APIは404。Pagesが動いているとは扱わない。M3でPagesのbuild source=GitHub Actionsを設定し、実際のdeploy結果URLを記録する。予定URLを稼働URLとして案内しない。
 
-Recommended setup:
+ブラウザ確認はVite＋Remotion Player。PlayerがReact compositionを埋め込めることは[公式仕様](https://www.remotion.dev/docs/player)。エンコード結果を保証するものではないので、全編のpreview MP4と最終MP4の検査を別に行う。
 
-1. **Browser preview:** GitHub Pages + `@remotion/player`
-2. **Render-parity preview:** GitHub Actions low-resolution MP4 artifact
-3. **Production:** GitHub Actions full 1080p render
+## 2. ワークフローの確定契約（これから実装）
 
-This gives fast UI review plus a real rendered-file check.
+全workflowはubuntu-24.04、Node22の固定patch、npm ci。RemotionのChromiumはM1で採用した版を明示取得しprovenanceへ記録する。FFmpegは採用版を固定した配布バイナリ＋checksumを利用。ubuntu-latestや毎回無固定aptで再現性を主張しない。Actionは実装時の公式releaseを確認して完全commit SHAへ固定する。
 
----
+| workflow | trigger | 入力 | 権限 | timeout |
+|---|---|---|---|---|
+| ci.yml | push / pull_request | checkout SHA | contents:read | 15分 |
+| preview-pages.yml | main push（コード/fixtures/config変更）、dispatch | approved fixture list | buildはcontents:read、asset取得にid-token:write、deployはpages:write/id-token:write | 15分 |
+| prepare-preview.yml | workflow_dispatch | episodeId、revision、commit SHA | contents:read、必要なOIDCのみ | 30分 |
+| production-render.yml | workflow_dispatch | prepare runId、artifactId、bundleHash、engineCommit | renderはcontents:read、archive jobだけid-token:writeを追加 | 45分 |
+| publish.yml | workflow_dispatch | bundleHash、final artifactId、mode | contents:read、公開environment secrets | 15分 |
 
-## 1. Browser preview: GitHub Pages + Remotion Player
+contents:writeはrender jobへ与えない。botがGITHUB_TOKENでcommitしてもpush連鎖を前提にせず、定期担当が明示的にworkflow_dispatchする。fork PRにsecretを渡さず、pull_request_targetでforkのコードを実行しない。
 
-Remotion Player can render a Remotion composition interactively in the browser. Build a small static Vite app that:
+CI：schema/semantic検査→typecheck→unit tests→offline fixture prepare→全シーンの静止画→Vite build。live TTSはPRで呼ばない。fork/PR用のoffline音声は固定周波数のPCMと既知markをCIで生成する。これは時間軸・ファイル読込用で、人声の品質確認には使わない。mainのPagesと公開前previewは承認した実TTS音声を使用する。長尺production renderはCIで自動実行しない。
 
-- imports the same `NewsEnglishVideo` component as production
-- loads an `EpisodeManifest`
-- displays the composition inside `@remotion/player`
-- allows play/pause/seek
-- optionally exposes a scene list and jump buttons
-- optionally allows switching between fixture manifests
+prepare-preview：入力を許可episodeId regexで検査→指定SHA checkout→manifest hash検査→TTS/compile→freeze→全文540p render→qa→bundleとレビュー用成果物をupload。concurrencyはepisodeId/revisionで固定、cancel-in-progress=false。同revisionの二重prepareは台帳のhashを再利用。
 
-### Why this is the primary development preview
+production-render：指定runのartifactを取得し、repo、workflow名、成功状態、head SHAを確認→checksums照合→同じengineCommit checkout→1080p全編render→final QA→archive。latest artifactや同名の別runを拾わない。新しいTTSは一切作らない。
 
-- no local setup is required after deployment
-- no MP4 render is required for every CSS/layout iteration
-- seek is instant compared with repeated cloud renders
-- the exact same scene React components are exercised
-- GitHub Pages is enough; no application backend is required
+publishは独立workflow。通常renderにYouTube tokenを渡さない。初期はmode=disabledなのでdispatchしても入力検査後に設定エラーで停止する。モードは[運用仕様](OPERATIONS.md)に従う。
 
-### Important limitation
+## 3. Playerレビュー画面
 
-Player preview is not a substitute for final rendering. Browser/player behavior and encoded MP4 behavior can differ around fonts, media loading, timing, codecs and Chromium details. Therefore the Actions preview render remains the final gate.
+1440px以上では左320pxにscene一覧、右に最大1120px幅のPlayer。狭い幅はPlayer→一覧の縦並び。URL queryはfixture IDとscene IDのみ。ブラウザに任意URL/pathを入力させない。
 
-### Suggested URL structure
+必須機能：play/pause、seek、sceneジャンプ、current time/duration、volume、0.75/1/1.25倍、episodeId/revision/engineCommit/bundleHash表示。既定は停止・速度1。自動再生しない。scene選択はstartFrameにseekし停止状態を保つ。速度変更は確認用で、書き出し音声速度へ反映しない。
 
-```text
-https://<owner>.github.io/english-youtube/
-```
+QA overlay toggle、manifestのread-only表示、失敗一覧。選択fixtureに失敗があれば赤いバナーで「公開不可」。bundleまたは音声未取得は再生ボタンdisabledと理由。フォントや音声のロード中はPlayerをbuffer状態にする。
 
-The page should show:
+Vite base=/english-youtube/、asset URLはBASE_URL経由。HashRouterかqueryを使い、Pagesの深いpath直アクセス404を避ける。検査では/english-youtube/への直アクセスとリロード、別sceneリンクを実際に試す。
 
-```text
-[ Episode selector ] [ Scene selector ] [ Current manifest SHA ]
+## 4. Pagesに置くもの
 
-+--------------------------------------------------+
-|                 Remotion Player                  |
-+--------------------------------------------------+
+config/preview-allowlist.jsonのfixtureId / bundleHashだけをビルドへ入れる。source.kind=fixtureでもallowlistにないものは除外。episodes/とruns/をglobでコピーしない。TTS済みfixture assetsはprivate GCSからビルド時取得して公開可能なものだけdistへコピー。公開用fixtureには記事全文・秘密値・内部レビューを含めない。
 
-Scene 01  Cold Open          00:00
-Scene 02  Number Reveal      00:24
-Scene 03  Cause / Effect     00:52
-...
-```
+Pagesはmainの最新許可bundle1セットのみ。PRごとの永続URLは作らない。PR確認はCI artifactのpreview-site.zipを取得し、付属READMEの静的server起動で再生、またはpreview.mp4を確認。ローカル不要の共通レビューはmainのfixture Pages、編集episodeの全編レビューはActions MP4 downloadで行う。
 
-For the first implementation, the preview site can use a committed fixture such as:
+Pages不可時はartifactを使い、M3のクラウドブラウザ確認は未完了として記録する。勝手に別hostingサービスへ課金して切り替えない。
 
-```text
-fixtures/demo-episode.json
-```
+## 5. render profile
 
-Later, the workflow can copy the newest generated episode manifest into the preview build.
+| 項目 | preview | production |
+|---|---|---|
+| 論理解像度 | 1920×1080 | 1920×1080 |
+| 出力 | 960×540（scale=.5） | 1920×1080 |
+| fps | 30 | 30 |
+| codec | H.264 / yuv420p | H.264 / yuv420p |
+| CRF | 23 | 18 |
+| 音声 | AAC 192kbps / 48kHz | AAC 192kbps / 48kHz |
+| 範囲 | 全編 | 全編 |
+| render concurrency | 2 | 2 |
+| artifacts保持 | 14日 | 30日 |
 
----
+UI調整用のpartial renderは追加CLI --scene <id>で許可するが、reportにpartial=trueを付け、公開合否には使わない。公開前のpreviewは全編必須。出力はfaststart対応MP4。FFmpegでformat/duration/audio stream/解像度を再確認。
 
-## 2. GitHub Actions preview render
+artifact名はpreview-<episodeId>-r<revision>-<bundleHash先頭12文字>、finalも同規則。manifest/bundle、MP4、thumbnail、contact sheet、qa、render-reportを同梱。期限は永続保存を意味しない。archiveはGCSへ行う。
 
-Use a manually-triggered (`workflow_dispatch`) and/or pull-request workflow.
+## 6. 合格条件
 
-Inputs:
+音声presence、音画差1frame以内、全体360〜480秒、黒画面・欠落assetなし、全overflowなし、-16±1 LUFS、peak≤-1dBTP。listen/thinkの意図的無字幕・無音を異常扱いしない。retrievalの固定無音とrecap末尾3秒以外の、予期しない連続無音1.2秒超は失敗。全編で期待される音声event区間とwaveformを照合する。
 
-- episode manifest path
-- optional render range
-- optional scale
+Playerの1frameとMP4 decoded frameの差は同じフォント・asset・frame番号で比較する。H.264圧縮差を許容し、SSIM≥0.98を基準、字幕の内容/矩形は完全一致で確認。品質判定の値は暫定基準でありRemotionの保証ではない。
 
-Recommended defaults:
+最終MP4は冒頭30秒、全学習scene、結論・recapの音声を実視聴。最初の3本は全編視聴。以降も自動検査が通ったことと内容レビューを混同しない。
 
-- 960x540 or 1280x720
-- H.264 MP4
-- first 60–120 seconds for ordinary UI work
-- full episode only when editorial timing must be reviewed
+## 7. 外部仕様
 
-Outputs:
-
-```text
-preview.mp4
-contact-sheet.jpg
-render-report.json
-```
-
-Upload them with `actions/upload-artifact` and short retention (for example 5–14 days).
-
-The MP4 artifact is the authoritative check for:
-
-- audio sync
-- font rendering
-- transitions
-- media loading
-- output encoding
-- actual render duration
-
-GitHub artifacts require downloading to view the MP4, so they are intentionally secondary to the browser Player preview.
-
----
-
-## 3. Optional contact sheet
-
-For fast asynchronous review, generate screenshots at representative timestamps and combine them into a contact sheet.
-
-Example sampling:
-
-```text
-00:05
-00:25
-01:00
-02:00
-04:00
-06:00
-08:00
-final recap
-```
-
-A contact sheet is useful for spotting:
-
-- text overflow
-- repetitive layouts
-- weak hierarchy
-- excessive Japanese
-- insufficient visual variation
-
-It is much cheaper to inspect than a full render.
-
----
-
-## 4. Why not commit preview MP4s to the repository
-
-Do not use Git history as video storage.
-
-Reasons:
-
-- repository size grows indefinitely
-- binary diffs are useless
-- cloning becomes expensive
-- old development renders have little long-term value
-
-Use Actions artifacts for ephemeral rendered files.
-
-If browser-streamable encoded preview files become necessary later, use object storage/CDN rather than the Git repository.
-
----
-
-## 5. Production workflow
-
-Production rendering should run only from a validated immutable episode manifest.
-
-```text
-validate manifest
-  -> verify assets
-  -> generate/fetch narration audio
-  -> calculate timings
-  -> render 1920x1080
-  -> generate subtitles
-  -> generate thumbnail assets
-  -> upload artifacts
-  -> optional YouTube publish
-```
-
-The production workflow should archive:
-
-- manifest SHA
-- git commit SHA
-- source list
-- model/generation metadata where useful
-- render duration
-- output checksum
-
-This makes every published video reproducible.
-
----
-
-## 6. Development loop
-
-### UI/component development
-
-```text
-push branch
- -> CI validates TypeScript/schema
- -> preview site build
- -> inspect in Remotion Player
- -> manually render representative preview if needed
-```
-
-### Daily agent run
-
-```text
-agent creates episode manifest
- -> schema/editorial validation
- -> browser preview becomes available
- -> preview MP4 render
- -> automated QA
- -> production render/publish if policy allows
-```
-
-### Scene Library change
-
-Scene Library changes should be treated like normal code changes and tested against a fixture suite containing edge cases:
-
-- very short/long captions
-- long Japanese gloss
-- large numbers
-- 2/5/8 timeline events
-- map labels
-- quotes
-- dense cause-effect diagrams
-
----
-
-## 7. Recommendation
-
-Start with **GitHub Pages + Remotion Player** as the default remote preview.
-
-It directly exploits Remotion's browser-preview model and avoids spending Actions minutes on every visual iteration. Keep **Actions MP4 artifacts** as the render-parity gate, not as the primary editing UI.
-
-Local `remotion studio` remains useful for intensive motion-design work, but it should not be required for ordinary episode review.
+[GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages)は静的hosting。[Pages deploy action](https://github.com/actions/deploy-pages)はartifactをdeployしpage_urlを返す。artifactの保持はリポジトリ側上限にも従う。[保持期間](https://docs.github.com/en/actions/how-tos/writing-workflows/choosing-what-your-workflow-does/storing-and-sharing-data-from-a-workflow)
