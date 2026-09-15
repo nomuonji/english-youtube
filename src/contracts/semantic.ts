@@ -25,6 +25,7 @@ export const semanticValidate=(doc:EpisodeManifest):ValidationIssue[]=>{
     if(utterance.translationJaChunks.length!==utterance.chunks.length)issues.push(issue("E_TEXT",utterance.id,"translation chunks must match English chunk count"));
     if(utterance.translationJaChunks.join("")!==utterance.translationJa)issues.push(issue("E_TEXT",utterance.id,"translation chunks must concatenate to translationJa"));
     if(words(utterance.text).length>26)issues.push(issue("E_TEXT",utterance.id,"utterance exceeds 26 words"));
+    utterance.chunks.forEach((chunk,index)=>{if(words(chunk).length>16)issues.push(issue("E_TEXT",`${utterance.id}:chunk-${index+1}`,"learning chunk exceeds 16 English words"));});
   }
 
   const owner=new Map<string,number>(); const ownershipOrder:string[]=[];
