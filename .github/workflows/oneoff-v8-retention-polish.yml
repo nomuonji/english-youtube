@@ -1,0 +1,137 @@
+name: One-off v8 retention polish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/oneoff-v8-retention-polish.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Apply v8 retention polish
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,re
+
+          # 1) Three-line upward-scrolling caption + denser study highlights.
+          p=Path('src/scenes/SceneRenderer.tsx')
+          s=p.read_text()
+          pattern=r'const BilingualCaption=.*?\nconst BilingualVisualLabel='
+          replacement=r'''const FOCUS_TERMS=[
+            "AI data centers","data centers","power generation","electricity demand","AI-focused data centers",
+            "grid access","grid connection","bottleneck","supply chains","reliable power","power availability",
+            "electricity consumption","financing","commercial and industrial demand","power density","infrastructure"
+          ] as const;
+          const focusForCue=(m:EpisodeManifest,cue:Cue|undefined):{text:string;label:string}|undefined=>{
+            if(!cue)return undefined;
+            const lower=cue.text.toLowerCase();
+            const learning=m.learningPoints.find(p=>lower.includes(p.phrase.toLowerCase()));
+            if(learning)return {text:learning.phrase,label:"KEY PHRASE · ここに注目"};
+            const term=FOCUS_TERMS.find(t=>lower.includes(t.toLowerCase()));
+            return term?{text:term,label:"KEY WORD · ここに注目"}:undefined;
+          };
+          const BilingualCaption=({manifest,scene,resolved,globalFrame,phaseName}:{manifest:EpisodeManifest;scene:Scene;resolved:ResolvedScene;globalFrame:number;phaseName:string})=>{
+            const hidden=scene.role==="retrieval"&&phaseName!=="reveal"&&phaseName!=="answer";
+            const cues=[...resolved.cues].sort((a,b)=>a.startFrame-b.startFrame);
+            const cue=hidden?undefined:(cueAt(globalFrame,resolved)??[...cues].filter(c=>c.startFrame<=globalFrame).at(-1));
+            const index=cue?cues.findIndex(c=>c===cue||c.startFrame===cue.startFrame&&c.text===cue.text):-1;
+            const prev=index>0?cues[index-1]:undefined;
+            const next=index>=0&&index<cues.length-1?cues[index+1]:undefined;
+            const focus=focusForCue(manifest,cue);
+            const enter=cue?interpolate(globalFrame,[cue.startFrame,cue.startFrame+9],[0,1],{extrapolateLeft:"clamp",extrapolateRight:"clamp"}):1;
+            const prevY=interpolate(enter,[0,1],[82,16]);
+            const currentY=interpolate(enter,[0,1],[188,72]);
+            const nextY=interpolate(enter,[0,1],[284,218]);
+            return <div style={{width:"100%",height:270,border:`1px solid ${COLORS.line}`,borderRadius:28,background:"rgba(255,255,255,.965)",boxShadow:`0 16px 44px ${COLORS.shadow}`,position:"relative",overflow:"hidden"}}>
+              <div style={{position:"absolute",left:52,right:52,top:0,transform:`translateY(${prevY}px)`,fontSize:24,lineHeight:1.2,fontWeight:560,color:COLORS.text,opacity:cue?interpolate(enter,[0,1],[.55,.20]):0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{prev?.text??" "}</div>
+              {focus?<div style={{position:"absolute",left:52,right:52,top:55,fontSize:14,fontWeight:950,letterSpacing:".12em",color:COLORS.accent,opacity:interpolate(enter,[0,1],[0,1])}}>{focus.label}</div>:null}
+              <div style={{position:"absolute",left:52,right:52,top:0,transform:`translateY(${currentY}px)`,opacity:cue?interpolate(enter,[0,1],[.35,1]):.12}}>
+                <div style={{fontSize:46,lineHeight:1.18,fontWeight:720,letterSpacing:"-.012em",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{cue?highlightPhrase(cue.text,focus?.text):" "}</div>
+                <div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:27,lineHeight:1.32,color:COLORS.muted,fontWeight:560,marginTop:10,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{cue?.translationJa??" "}</div>
+              </div>
+              <div style={{position:"absolute",left:52,right:52,top:0,transform:`translateY(${nextY}px)`,fontSize:23,lineHeight:1.2,fontWeight:540,color:COLORS.text,opacity:next?.text?.18:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{next?.text??" "}</div>
+              <div style={{position:"absolute",left:0,right:0,top:0,height:34,background:"linear-gradient(180deg,rgba(255,255,255,.98),rgba(255,255,255,0))",pointerEvents:"none"}}/>
+              <div style={{position:"absolute",left:0,right:0,bottom:0,height:34,background:"linear-gradient(0deg,rgba(255,255,255,.98),rgba(255,255,255,0))",pointerEvents:"none"}}/>
+            </div>;
+          };
+          const BilingualVisualLabel='''
+          s2,n=re.subn(pattern,replacement,s,flags=re.S)
+          if n!=1: raise SystemExit(f'caption replacement count={n}')
+          p.write_text(s2)
+
+          # 2) Stronger hook copy while staying grounded in existing claims.
+          mp=Path('episodes/2026-09-15-ai-power-project/manifest.json')
+          m=json.loads(mp.read_text())
+          m['revision']=3
+          m['generatedAt']='2026-09-16T06:20:00Z'
+          for u in m['utterances']:
+            if u['id']=='u-h1':
+              u['text']="AI's next bottleneck may not be chips. It may be electricity."
+              u['chunks']=["AI's next bottleneck may not be chips.","It may be electricity."]
+              u['translationJa']='AIの次のボトルネックは、半導体ではなく電力かもしれません。'
+              u['translationJaChunks']=['AIの次のボトルネックは半導体ではなく、','電力かもしれません。']
+              u['claimIds']=['c-bottleneck','c-inference']
+            if u['id']=='u-h2':
+              u['text']='One company is raising money for both AI data centers and power generation. Why are these becoming the same project?'
+              u['chunks']=['One company is raising money for both AI data centers and power generation.','Why are these becoming the same project?']
+              u['translationJa']='ある企業はAIデータセンターと発電の両方に資金を集めています。なぜこの2つが同じプロジェクトになりつつあるのでしょうか？'
+              u['translationJaChunks']=['ある企業はAIデータセンターと発電の両方に資金を集めています。','なぜこの2つが同じプロジェクトになりつつあるのでしょうか？']
+              u['claimIds']=['c-news','c-inference']
+          for sc in m['scenes']:
+            if sc['id']=='s-hook' and sc.get('visual',{}).get('type')=='card':
+              sc['visual']['headline']="AI's next bottleneck?"
+              sc['visual']['body']='The clue is electricity.'
+          mp.write_text(json.dumps(m,ensure_ascii=False,indent=2)+'\n')
+
+          # 3) READY: Cloudflare -> Commons fallback; generate deterministic BGM after timing compile.
+          wp=Path('.github/workflows/ready-gate.yml')
+          w=wp.read_text()
+          cf='''      - name: Generate optional editorial images with Cloudflare FLUX\n        env:\n          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}\n          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}\n        run: node scripts/generate_cloudflare_images.mjs public/generated/image-briefs.json public/generated/images\n'''
+          commons=cf+'''      - name: Fill missing editorial images from Wikimedia Commons\n        run: node scripts/fetch_commons_images.mjs public/generated/image-briefs.json public/generated/images\n'''
+          if 'Fill missing editorial images from Wikimedia Commons' not in w:
+            if cf not in w: raise SystemExit('Cloudflare step pattern missing')
+            w=w.replace(cf,commons)
+          compile_step='''      - name: Compile resolved timing and review assets\n        env:\n          ALLOW_BROLL_FETCH: "true"\n        run: npm run compile:tts -- "${{ steps.ready.outputs.manifest }}" public/generated/tts-timing.json public/generated/render-props.json\n'''
+          compile_plus=compile_step+'''      - name: Generate subtle background music bed\n        run: python3 scripts/generate_bgm.py public/generated/render-props.json public/generated/bgm.wav\n'''
+          if 'Generate subtle background music bed' not in w:
+            if compile_step not in w: raise SystemExit('READY compile step pattern missing')
+            w=w.replace(compile_step,compile_plus)
+          wp.write_text(w)
+
+          # 4) APPROVED: regenerate the same deterministic BGM from frozen timing.
+          ap=Path('.github/workflows/approved-final.yml')
+          a=ap.read_text()
+          approved_compile='''      - name: Compile resolved timing with frozen review assets\n        env:\n          ALLOW_BROLL_FETCH: "false"\n        run: npm run compile:tts -- "${{ steps.approval.outputs.manifest }}" public/generated/tts-timing.json public/generated/render-props.json\n'''
+          approved_plus=approved_compile+'''      - name: Generate reviewed background music bed\n        run: python3 scripts/generate_bgm.py public/generated/render-props.json public/generated/bgm.wav\n'''
+          if 'Generate reviewed background music bed' not in a:
+            if approved_compile not in a: raise SystemExit('APPROVED compile step pattern missing')
+            a=a.replace(approved_compile,approved_plus)
+          ap.write_text(a)
+          PY
+      - name: Validate patch
+        run: |
+          npm ci --ignore-scripts
+          npm run typecheck
+          npm test -- --run
+          npm run validate -- episodes/2026-09-15-ai-power-project/manifest.json
+          npm run review:retention -- episodes/2026-09-15-ai-power-project/manifest.json
+          npm run review:cognitive -- episodes/2026-09-15-ai-power-project/manifest.json
+          npm run build
+      - name: Commit patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/scenes/SceneRenderer.tsx episodes/2026-09-15-ai-power-project/manifest.json .github/workflows/ready-gate.yml .github/workflows/approved-final.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "ux: strengthen hook captions images and music"
+          git push origin HEAD:main
