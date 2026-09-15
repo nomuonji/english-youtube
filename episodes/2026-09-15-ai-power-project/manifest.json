@@ -1,0 +1,247 @@
+{
+  "schemaVersion": "2.1.0",
+  "kind": "production",
+  "episodeId": "2026-09-15-ai-power-project",
+  "revision": 1,
+  "generatedAt": "2026-09-15T03:50:00Z",
+  "asOf": "2026-09-15T03:45:00Z",
+  "category": "technology",
+  "newsPeg": {
+    "eventClaimId": "c-news",
+    "eventDate": "2026-09-15",
+    "whyNow": "Reuters reported today that SB Energy's planned financing would support both data centers and power generation, making the energy side of the AI buildout unusually visible."
+  },
+  "centralQuestion": "Why are AI data centers starting to look like energy projects?",
+  "answer": "Because AI infrastructure needs large, concentrated and reliable electricity supplies, power generation and grid access are becoming part of project design and financing.",
+  "sources": [
+    {
+      "id": "src-reuters",
+      "title": "SB Energy to sell up to $500 million in shares to Japan investors as part of US IPO",
+      "publisher": "Reuters",
+      "url": "https://www.reuters.com/business/energy/sb-energy-sell-up-500-million-shares-japan-investors-part-us-ipo-2026-09-15/",
+      "publishedDate": "2026-09-15",
+      "retrievedAt": "2026-09-15T03:45:00Z",
+      "independenceGroup": "reuters",
+      "isPrimary": false
+    },
+    {
+      "id": "src-iea-ai",
+      "title": "Key Questions on Energy and AI — Executive summary",
+      "publisher": "International Energy Agency",
+      "url": "https://www.iea.org/reports/key-questions-on-energy-and-ai/executive-summary",
+      "publishedDate": "2026-04-16",
+      "retrievedAt": "2026-09-15T03:45:00Z",
+      "independenceGroup": "iea",
+      "isPrimary": true
+    },
+    {
+      "id": "src-iea-elec",
+      "title": "Electricity 2026 — Demand",
+      "publisher": "International Energy Agency",
+      "url": "https://www.iea.org/reports/electricity-2026/demand",
+      "publishedDate": "2026-01-01",
+      "retrievedAt": "2026-09-15T03:45:00Z",
+      "independenceGroup": "iea",
+      "isPrimary": true
+    },
+    {
+      "id": "src-eia-steo",
+      "title": "Short-Term Energy Outlook — Electricity, Coal, and Renewables",
+      "publisher": "U.S. Energy Information Administration",
+      "url": "https://www.eia.gov/outlooks/steo/report/elec_coal_renew.php",
+      "publishedDate": "2026-09-09",
+      "retrievedAt": "2026-09-15T03:45:00Z",
+      "independenceGroup": "eia",
+      "isPrimary": true
+    }
+  ],
+  "claims": [
+    {
+      "id": "c-news",
+      "text": "Reuters reported on September 15, 2026 that SB Energy plans to sell up to $500 million in shares to Japanese investors as part of a U.S. IPO, with proceeds supporting data centers, power generation, and related infrastructure.",
+      "certainty": "reported",
+      "asOf": "2026-09-15T03:45:00Z",
+      "evidence": [
+        {
+          "sourceId": "src-reuters",
+          "locator": "Article summary and opening paragraphs",
+          "supportNote": "Supports the financing amount and stated uses of proceeds."
+        }
+      ]
+    },
+    {
+      "id": "c-iea-growth",
+      "text": "IEA reports global data-centre electricity demand grew 17% in 2025, while electricity consumption from AI-focused data centres grew 50%.",
+      "certainty": "confirmed",
+      "asOf": "2026-09-15T03:45:00Z",
+      "evidence": [
+        {
+          "sourceId": "src-iea-ai",
+          "locator": "Executive summary: energy consumption and AI demand section",
+          "supportNote": "Supports the 17% and 50% 2025 growth figures."
+        }
+      ]
+    },
+    {
+      "id": "c-iea-outlook",
+      "text": "IEA's central projection sees global data-centre electricity use rising from 485 TWh in 2025 to 950 TWh in 2030, about 3% of global electricity demand.",
+      "certainty": "forecast",
+      "asOf": "2026-09-15T03:45:00Z",
+      "evidence": [
+        {
+          "sourceId": "src-iea-ai",
+          "locator": "Executive summary: updated data centre electricity demand outlook",
+          "supportNote": "Supports 485 TWh, 950 TWh, and roughly 3% share by 2030."
+        }
+      ]
+    },
+    {
+      "id": "c-us-growth",
+      "text": "IEA expects U.S. electricity demand to rise close to 2% per year through 2030, with rapid data-centre expansion making up about half of demand growth.",
+      "certainty": "forecast",
+      "asOf": "2026-09-15T03:45:00Z",
+      "evidence": [
+        {
+          "sourceId": "src-iea-elec",
+          "locator": "Demand: US and EU electricity demand forecast section",
+          "supportNote": "Supports close to 2% annual U.S. growth and about 50% of growth from data centres."
+        }
+      ]
+    },
+    {
+      "id": "c-eia-us",
+      "text": "EIA's September 2026 outlook says U.S. electricity consumption is reaching record levels, with data-centre development supporting growth in commercial and industrial demand.",
+      "certainty": "forecast",
+      "asOf": "2026-09-15T03:45:00Z",
+      "evidence": [
+        {
+          "sourceId": "src-eia-steo",
+          "locator": "Electricity consumption section, September 9, 2026 release",
+          "supportNote": "Supports record consumption and data-centre development as a demand driver."
+        }
+      ]
+    },
+    {
+      "id": "c-bottleneck",
+      "text": "IEA says bottlenecks in grids, equipment, supply chains, and grid connections are constraining the pace of data-centre growth.",
+      "certainty": "confirmed",
+      "asOf": "2026-09-15T03:45:00Z",
+      "evidence": [
+        {
+          "sourceId": "src-iea-ai",
+          "locator": "Executive summary: scramble for electricity and updated outlook sections",
+          "supportNote": "Supports grid, equipment, supply-chain, and connection bottlenecks."
+        }
+      ]
+    },
+    {
+      "id": "c-inference",
+      "text": "As AI projects require larger and more concentrated electricity supplies, power availability and grid access are becoming core design and financing constraints for data-centre projects.",
+      "certainty": "inference",
+      "asOf": "2026-09-15T03:45:00Z",
+      "evidence": [
+        {
+          "sourceId": "src-iea-ai",
+          "locator": "Executive summary: financing, bottlenecks, and power-density sections",
+          "supportNote": "Supports the infrastructure and financing premises behind the inference."
+        },
+        {
+          "sourceId": "src-reuters",
+          "locator": "Article summary and opening paragraphs",
+          "supportNote": "Provides a current example where data centres and power generation are financed together."
+        }
+      ]
+    }
+  ],
+  "utterances": [
+    {"id":"u-h1","text":"A company building AI data centers is also raising money for power generation.","chunks":["A company building AI data centers","is also raising money for power generation."],"translationJa":"AIデータセンターを建設する企業が、発電にも資金を集めています。","claimIds":["c-news"],"translationJaChunks":["AIデータセンターを建設する企業が、","発電にも資金を集めています。"]},
+    {"id":"u-h2","text":"That sounds like an energy story, but it may actually be the next stage of the AI boom.","chunks":["That sounds like an energy story,","but it may actually be the next stage of the AI boom."],"translationJa":"一見するとエネルギーの話ですが、実はAIブームの次の段階なのかもしれません。","claimIds":["c-inference"],"translationJaChunks":["一見するとエネルギーの話ですが、","実はAIブームの次の段階なのかもしれません。"]},
+    {"id":"u-s1-1","text":"Reuters reported today that SB Energy plans to sell shares to Japanese investors as part of a U.S. IPO.","chunks":["Reuters reported today that SB Energy plans","to sell shares to Japanese investors as part of a U.S. IPO."],"translationJa":"Reutersは今日、SB Energyが米国IPOの一環として日本の投資家に株式を販売する計画だと報じました。","claimIds":["c-news"],"translationJaChunks":["Reutersは今日、SB Energyが米国IPOの一環として","日本の投資家に株式を販売する計画だと報じました。"]},
+    {"id":"u-s1-2","text":"The company says the money can support data centers, power generation, and related infrastructure.","chunks":["The company says the money can support data centers,","power generation, and related infrastructure."],"translationJa":"同社によれば、資金はデータセンター、発電、関連インフラに使われる可能性があります。","claimIds":["c-news"],"translationJaChunks":["同社によれば、資金はデータセンター、","発電、関連インフラに使われる可能性があります。"]},
+    {"id":"u-s1-3","text":"Putting those projects in the same sentence tells us something important about modern AI infrastructure.","chunks":["Putting those projects in the same sentence","tells us something important about modern AI infrastructure."],"translationJa":"これらの事業が同じ文脈で語られていることは、現代のAIインフラについて重要なことを示します。","claimIds":["c-inference"],"translationJaChunks":["これらの事業が同じ文脈で語られていることは、","現代のAIインフラについて重要なことを示します。"]},
+    {"id":"u-s1-4","text":"Computing power is no longer the only resource that determines how fast an AI project can grow.","chunks":["Computing power is no longer the only resource","that determines how fast an AI project can grow."],"translationJa":"AI事業の成長速度を決める資源は、もはや計算能力だけではありません。","claimIds":["c-inference"],"translationJaChunks":["AI事業の成長速度を決める資源は、","もはや計算能力だけではありません。"]},
+    {"id":"u-s2-1","text":"The International Energy Agency says global data-center electricity demand grew seventeen percent in 2025.","chunks":["The International Energy Agency says","global data-center electricity demand grew seventeen percent in 2025."],"translationJa":"IEAによると、世界のデータセンター電力需要は2025年に17パーセント増加しました。","claimIds":["c-iea-growth"],"translationJaChunks":["IEAによると、世界のデータセンター電力需要は","2025年に17パーセント増加しました。"]},
+    {"id":"u-s2-2","text":"Electricity use at AI-focused data centers grew even faster, rising fifty percent in one year.","chunks":["Electricity use at AI-focused data centers grew even faster,","rising fifty percent in one year."],"translationJa":"AI向けデータセンターの電力使用量はさらに速く、1年で50パーセント増えました。","claimIds":["c-iea-growth"],"translationJaChunks":["AI向けデータセンターの電力使用量はさらに速く、","1年で50パーセント増えました。"]},
+    {"id":"u-s2-3","text":"So the AI boom is appearing not only in chip sales, but also on electricity systems.","chunks":["So the AI boom is appearing not only in chip sales,","but also on electricity systems."],"translationJa":"つまりAIブームは半導体販売だけでなく、電力システムにも現れています。","claimIds":["c-iea-growth"],"translationJaChunks":["つまりAIブームは半導体販売だけでなく、","電力システムにも現れています。"]},
+    {"id":"u-s2-4","text":"For grid planners, a new AI campus can behave more like a large industrial project than an ordinary office.","chunks":["For grid planners, a new AI campus can behave","more like a large industrial project than an ordinary office."],"translationJa":"送電網の計画者にとって、新しいAIキャンパスは普通のオフィスより大規模工場に近い存在になり得ます。","claimIds":["c-inference"],"translationJaChunks":["送電網の計画者にとって、新しいAIキャンパスは","普通のオフィスより大規模工場に近い存在になり得ます。"]},
+    {"id":"u-s3-1","text":"The IEA estimates data centers used about four hundred eighty-five terawatt-hours of electricity in 2025.","chunks":["The IEA estimates data centers used about","four hundred eighty-five terawatt-hours of electricity in 2025."],"translationJa":"IEAは、データセンターが2025年に約485テラワット時の電力を使用したと推計しています。","claimIds":["c-iea-outlook"],"translationJaChunks":["IEAは、データセンターが2025年に約485テラワット時の","電力を使用したと推計しています。"]},
+    {"id":"u-s3-2","text":"That figure is expected to reach about nine hundred fifty terawatt-hours by 2030.","chunks":["That figure","is expected to reach about nine hundred fifty terawatt-hours by 2030."],"translationJa":"その数字は2030年までに約950テラワット時に達すると予想されています。","claimIds":["c-iea-outlook"],"translationJaChunks":["その数字は","2030年までに約950テラワット時に達すると予想されています。"]},
+    {"id":"u-s3-3","text":"In the central forecast, data centers would account for around three percent of global electricity demand.","chunks":["In the central forecast, data centers would account for","around three percent of global electricity demand."],"translationJa":"中心予測では、データセンターは世界の電力需要の約3パーセントを占めることになります。","claimIds":["c-iea-outlook"],"translationJaChunks":["中心予測では、データセンターは世界の電力需要の","約3パーセントを占めることになります。"]},
+    {"id":"u-s3-4","text":"Three percent sounds small globally, but the local effect can be much larger where projects cluster.","chunks":["Three percent sounds small globally,","but the local effect can be much larger where projects cluster."],"translationJa":"世界全体では3パーセントは小さく見えますが、施設が集中する地域では影響がより大きくなります。","claimIds":["c-iea-outlook","c-inference"],"translationJaChunks":["世界全体では3パーセントは小さく見えますが、","施設が集中する地域では影響がより大きくなります。"]},
+    {"id":"u-p1-1","text":"Is expected to is useful when a report gives a forecast rather than a guaranteed result.","chunks":["Is expected to is useful when a report gives a forecast","rather than a guaranteed result."],"translationJa":"is expected to は、確定ではなく予測を述べるときに便利な表現です。","claimIds":[],"translationJaChunks":["is expected to は、確定ではなく予測を述べるときに","便利な表現です。"]},
+    {"id":"u-p1-2","text":"For example, electricity demand is expected to rise as more data centers connect to the grid.","chunks":["For example, electricity demand","is expected to rise as more data centers connect to the grid."],"translationJa":"例えば、より多くのデータセンターが送電網につながるにつれて、電力需要は増えると予想されています。","claimIds":["c-us-growth"],"translationJaChunks":["例えば、より多くのデータセンターが送電網につながるにつれて、","電力需要は増えると予想されています。"]},
+    {"id":"u-m1-1","text":"To understand the pressure, start with what happens inside an AI data center.","chunks":["To understand the pressure, start with","what happens inside an AI data center."],"translationJa":"圧力の正体を理解するには、まずAIデータセンターの内部で何が起きているかを見ます。","claimIds":[],"translationJaChunks":["圧力の正体を理解するには、まずAIデータセンターの内部で","何が起きているかを見ます。"]},
+    {"id":"u-m1-2","text":"Thousands of specialized chips perform calculations, while cooling systems remove the heat those machines create.","chunks":["Thousands of specialized chips perform calculations,","while cooling systems remove the heat those machines create."],"translationJa":"何千もの専用チップが計算を行い、冷却設備が機械の生み出す熱を取り除きます。","claimIds":["c-inference"],"translationJaChunks":["何千もの専用チップが計算を行い、","冷却設備が機械の生み出す熱を取り除きます。"]},
+    {"id":"u-m1-3","text":"Servers, cooling, storage, networking, and backup equipment all need electricity at the same site.","chunks":["Servers, cooling, storage, networking, and backup equipment","all need electricity at the same site."],"translationJa":"サーバー、冷却、ストレージ、ネットワーク、予備設備のすべてが同じ場所で電力を必要とします。","claimIds":["c-inference"],"translationJaChunks":["サーバー、冷却、ストレージ、ネットワーク、予備設備のすべてが","同じ場所で電力を必要とします。"]},
+    {"id":"u-m1-4","text":"As the campus becomes larger, electricity stops being a utility bill and becomes a design constraint.","chunks":["As the campus becomes larger, electricity stops being a utility bill","and becomes a design constraint."],"translationJa":"施設が大きくなるほど、電力は単なる光熱費ではなく設計上の制約になります。","claimIds":["c-inference"],"translationJaChunks":["施設が大きくなるほど、電力は単なる光熱費ではなく","設計上の制約になります。"]},
+    {"id":"u-m2-1","text":"A power plant can generate electricity, but that does not mean every location can receive it immediately.","chunks":["A power plant can generate electricity,","but that does not mean every location can receive it immediately."],"translationJa":"発電所が電気を作れても、どの場所でもすぐ受け取れるとは限りません。","claimIds":["c-bottleneck"],"translationJaChunks":["発電所が電気を作れても、","どの場所でもすぐ受け取れるとは限りません。"]},
+    {"id":"u-m2-2","text":"Transmission lines move power across regions, and local substations deliver it to individual projects.","chunks":["Transmission lines move power across regions,","and local substations deliver it to individual projects."],"translationJa":"送電線が地域間で電力を運び、地域の変電所が個別の事業へ届けます。","claimIds":["c-bottleneck"],"translationJaChunks":["送電線が地域間で電力を運び、","地域の変電所が個別の事業へ届けます。"]},
+    {"id":"u-m2-3","text":"Each part has physical limits, and upgrades can require equipment, permits, construction, and time.","chunks":["Each part has physical limits,","and upgrades can require equipment, permits, construction, and time."],"translationJa":"各部分には物理的な限界があり、増強には機器、許認可、工事、時間が必要です。","claimIds":["c-bottleneck"],"translationJaChunks":["各部分には物理的な限界があり、","増強には機器、許認可、工事、時間が必要です。"]},
+    {"id":"u-m2-4","text":"That is why a project can have money and chips but still wait for a grid connection.","chunks":["That is why a project can have money and chips","but still wait for a grid connection."],"translationJa":"そのため、資金と半導体があっても送電網への接続を待つ事業が生まれます。","claimIds":["c-bottleneck"],"translationJaChunks":["そのため、資金と半導体があっても","送電網への接続を待つ事業が生まれます。"]},
+    {"id":"u-m3-1","text":"The difficult mismatch is speed: software can scale much faster than heavy energy infrastructure.","chunks":["The difficult mismatch is speed:","software can scale much faster than heavy energy infrastructure."],"translationJa":"難しいのは速度の不一致です。ソフトウェアは重いエネルギーインフラよりはるかに速く拡張できます。","claimIds":["c-bottleneck"],"translationJaChunks":["難しいのは速度の不一致です。","ソフトウェアは重いエネルギーインフラよりはるかに速く拡張できます。"]},
+    {"id":"u-m3-2","text":"If electricity infrastructure cannot keep up with computing demand, the data center cannot simply ignore that limit.","chunks":["If electricity infrastructure cannot keep up with computing demand,","the data center cannot simply ignore that limit."],"translationJa":"電力インフラが計算需要に追いつけなければ、データセンターはその制約を無視できません。","claimIds":["c-bottleneck"],"translationJaChunks":["電力インフラが計算需要に追いつけなければ、","データセンターはその制約を無視できません。"]},
+    {"id":"u-m3-3","text":"Developers may need new substations, new transmission capacity, storage, or generation closer to the site.","chunks":["Developers may need new substations, new transmission capacity,","storage, or generation closer to the site."],"translationJa":"開発者は新しい変電所、送電容量、蓄電設備、あるいは施設近くの発電設備を必要とすることがあります。","claimIds":["c-bottleneck","c-inference"],"translationJaChunks":["開発者は新しい変電所、送電容量、蓄電設備、","あるいは施設近くの発電設備を必要とすることがあります。"]},
+    {"id":"u-m3-4","text":"This turns energy planning into part of the schedule for building AI infrastructure.","chunks":["This turns energy planning into part of the schedule","for building AI infrastructure."],"translationJa":"こうしてエネルギー計画そのものがAIインフラ建設の工程表に組み込まれます。","claimIds":["c-inference"],"translationJaChunks":["こうしてエネルギー計画そのものが","AIインフラ建設の工程表に組み込まれます。"]},
+    {"id":"u-c1-1","text":"The change is easier to see when we compare the recent past with the next few years.","chunks":["The change is easier to see","when we compare the recent past with the next few years."],"translationJa":"最近と今後数年を比べると、この変化はより分かりやすくなります。","claimIds":[],"translationJaChunks":["最近と今後数年を比べると、","この変化はより分かりやすくなります。"]},
+    {"id":"u-c1-2","text":"Data-center electricity use rose sharply in 2025 and is expected to keep rising toward 2030.","chunks":["Data-center electricity use rose sharply in 2025","and is expected to keep rising toward 2030."],"translationJa":"データセンターの電力使用量は2025年に大きく増え、2030年に向けて増加が続くと予想されています。","claimIds":["c-iea-growth","c-iea-outlook"],"translationJaChunks":["データセンターの電力使用量は2025年に大きく増え、","2030年に向けて増加が続くと予想されています。"]},
+    {"id":"u-c1-3","text":"At the same time, the IEA says bottlenecks are limiting how quickly some projects can actually be built.","chunks":["At the same time, the IEA says bottlenecks are limiting","how quickly some projects can actually be built."],"translationJa":"同時にIEAは、ボトルネックによって一部の事業の建設速度が制限されているとしています。","claimIds":["c-bottleneck"],"translationJaChunks":["同時にIEAは、ボトルネックによって一部の事業の","建設速度が制限されているとしています。"]},
+    {"id":"u-c1-4","text":"So the story is not unlimited growth; it is a race between digital demand and physical construction.","chunks":["So the story is not unlimited growth;","it is a race between digital demand and physical construction."],"translationJa":"つまり無制限な成長ではなく、デジタル需要と物理的な建設速度の競争なのです。","claimIds":["c-inference"],"translationJaChunks":["つまり無制限な成長ではなく、","デジタル需要と物理的な建設速度の競争なのです。"]},
+    {"id":"u-c2-1","text":"The United States shows why this issue can matter even before data centers dominate national electricity use.","chunks":["The United States shows why this issue can matter","even before data centers dominate national electricity use."],"translationJa":"米国を見ると、データセンターが全国の電力を支配する前から問題が重要になる理由が分かります。","claimIds":["c-us-growth"],"translationJaChunks":["米国を見ると、データセンターが全国の電力を支配する前から","問題が重要になる理由が分かります。"]},
+    {"id":"u-c2-2","text":"IEA expects data centers to account for about half of U.S. electricity-demand growth through 2030.","chunks":["IEA expects data centers","to account for about half of U.S. electricity-demand growth through 2030."],"translationJa":"IEAは、2030年までの米国の電力需要増加の約半分をデータセンターが占めると予想しています。","claimIds":["c-us-growth"],"translationJaChunks":["IEAはデータセンターが、","2030年までの米国の電力需要増加の約半分を占めると予想しています。"]},
+    {"id":"u-c2-3","text":"EIA also expects record U.S. electricity consumption in 2026, with data-center development supporting demand growth.","chunks":["EIA also expects record U.S. electricity consumption in 2026,","with data-center development supporting demand growth."],"translationJa":"EIAも2026年の米国電力消費が過去最高になると予想し、データセンター開発を需要増加要因に挙げています。","claimIds":["c-eia-us"],"translationJaChunks":["EIAも2026年の米国電力消費が過去最高になると予想し、","データセンター開発を需要増加要因に挙げています。"]},
+    {"id":"u-c2-4","text":"A national percentage can therefore hide intense pressure in the regions where new campuses are concentrated.","chunks":["A national percentage can therefore hide intense pressure","in the regions where new campuses are concentrated."],"translationJa":"そのため全国平均の割合だけでは、新施設が集中する地域の強い圧力が見えにくくなります。","claimIds":["c-inference"],"translationJaChunks":["そのため全国平均の割合だけでは、","新施設が集中する地域の強い圧力が見えにくくなります。"]},
+    {"id":"u-p2-1","text":"Account for means to make up a particular share of a total.","chunks":["Account for means to make up","a particular share of a total."],"translationJa":"account for は、全体のうち一定の割合を占めるという意味です。","claimIds":[],"translationJaChunks":["account for は、全体のうち一定の割合を","占めるという意味です。"]},
+    {"id":"u-p2-2","text":"Here, data centers are expected to account for a large share of new U.S. electricity demand.","chunks":["Here, data centers are expected","to account for a large share of new U.S. electricity demand."],"translationJa":"ここでは、データセンターが米国の新たな電力需要の大きな割合を占めると予想されています。","claimIds":["c-us-growth"],"translationJaChunks":["ここではデータセンターが、","米国の新たな電力需要の大きな割合を占めると予想されています。"]},
+    {"id":"u-c3-1","text":"This distinction matters because electricity is both a national market and a local engineering problem.","chunks":["This distinction matters because electricity is both a national market","and a local engineering problem."],"translationJa":"この違いが重要なのは、電力が全国的な市場であると同時に地域の工学問題でもあるからです。","claimIds":["c-inference"],"translationJaChunks":["この違いが重要なのは、電力が全国的な市場であると同時に","地域の工学問題でもあるからです。"]},
+    {"id":"u-c3-2","text":"Data centers may account for a modest national share while creating very large loads in specific locations.","chunks":["Data centers may account for a modest national share","while creating very large loads in specific locations."],"translationJa":"データセンターは全国では控えめな割合でも、特定地域では非常に大きな負荷を生む可能性があります。","claimIds":["c-inference"],"translationJaChunks":["データセンターは全国では控えめな割合でも、","特定地域では非常に大きな負荷を生む可能性があります。"]},
+    {"id":"u-c3-3","text":"The grid must deliver power where the servers are, not somewhere else where spare electricity happens to exist.","chunks":["The grid must deliver power where the servers are,","not somewhere else where spare electricity happens to exist."],"translationJa":"送電網は余裕のある別の場所ではなく、サーバーが実際にある場所へ電力を届ける必要があります。","claimIds":["c-bottleneck"],"translationJaChunks":["送電網は余裕のある別の場所ではなく、","サーバーが実際にある場所へ電力を届ける必要があります。"]},
+    {"id":"u-c3-4","text":"That local reality helps explain why developers increasingly discuss generation, storage, and grid access together.","chunks":["That local reality helps explain why developers","increasingly discuss generation, storage, and grid access together."],"translationJa":"この地域的な現実が、開発者が発電、蓄電、送電網接続をまとめて議論する理由を説明します。","claimIds":["c-inference"],"translationJaChunks":["この地域的な現実が、開発者が発電、蓄電、","送電網接続をまとめて議論する理由を説明します。"]},
+    {"id":"u-a1-1","text":"Now we can answer the question: an AI data center is becoming an energy project because power is part of feasibility.","chunks":["Now we can answer the question: an AI data center is becoming","an energy project because power is part of feasibility."],"translationJa":"ここで答えが見えてきます。AIデータセンターがエネルギー事業化するのは、電力が実現可能性そのものを左右するからです。","claimIds":["c-inference"],"translationJaChunks":["ここで答えが見えてきます。AIデータセンターがエネルギー事業化するのは、","電力が実現可能性そのものを左右するからです。"]},
+    {"id":"u-a1-2","text":"The project needs enough electricity, reliable delivery, equipment, and a connection schedule that matches construction.","chunks":["The project needs enough electricity, reliable delivery, equipment,","and a connection schedule that matches construction."],"translationJa":"事業には十分な電力、安定供給、設備、そして建設工程に合う接続スケジュールが必要です。","claimIds":["c-bottleneck","c-inference"],"translationJaChunks":["事業には十分な電力、安定供給、設備、","そして建設工程に合う接続スケジュールが必要です。"]},
+    {"id":"u-a1-3","text":"If the grid cannot keep up with the planned computing load, financing extra energy infrastructure may become necessary.","chunks":["If the grid cannot keep up with the planned computing load,","financing extra energy infrastructure may become necessary."],"translationJa":"送電網が計画された計算負荷に追いつけなければ、追加のエネルギーインフラへの資金調達が必要になる場合があります。","claimIds":["c-inference"],"translationJaChunks":["送電網が計画された計算負荷に追いつけなければ、","追加のエネルギーインフラへの資金調達が必要になる場合があります。"]},
+    {"id":"u-a1-4","text":"That is why today's SB Energy financing story connects data centers and power generation so directly.","chunks":["That is why today's SB Energy financing story","connects data centers and power generation so directly."],"translationJa":"だからこそ今日のSB Energyの資金調達では、データセンターと発電がこれほど直接結び付いているのです。","claimIds":["c-news","c-inference"],"translationJaChunks":["だからこそ今日のSB Energyの資金調達では、","データセンターと発電がこれほど直接結び付いているのです。"]},
+    {"id":"u-a2-1","text":"This does not mean every data center will build its own power plant.","chunks":["This does not mean every data center","will build its own power plant."],"translationJa":"これは、すべてのデータセンターが自前の発電所を建てるという意味ではありません。","claimIds":["c-inference"],"translationJaChunks":["これは、すべてのデータセンターが","自前の発電所を建てるという意味ではありません。"]},
+    {"id":"u-a2-2","text":"Some projects will use existing grids, while others may add storage, generation, or dedicated infrastructure.","chunks":["Some projects will use existing grids,","while others may add storage, generation, or dedicated infrastructure."],"translationJa":"既存の送電網を使う事業もあれば、蓄電、発電、専用インフラを追加する事業もあります。","claimIds":["c-inference"],"translationJaChunks":["既存の送電網を使う事業もあれば、","蓄電、発電、専用インフラを追加する事業もあります。"]},
+    {"id":"u-a2-3","text":"The important change is that energy choices now influence where projects go, how fast they open, and how they are financed.","chunks":["The important change is that energy choices now influence","where projects go, how fast they open, and how they are financed."],"translationJa":"重要な変化は、エネルギーの選択が立地、開業速度、資金調達方法まで左右するようになったことです。","claimIds":["c-inference"],"translationJaChunks":["重要な変化は、エネルギーの選択が立地、開業速度、","資金調達方法まで左右するようになったことです。"]},
+    {"id":"u-a2-4","text":"For investors and communities, the AI story increasingly includes transformers, substations, power contracts, and permits.","chunks":["For investors and communities, the AI story increasingly includes","transformers, substations, power contracts, and permits."],"translationJa":"投資家や地域社会にとって、AIの話には変圧器、変電所、電力契約、許認可も含まれるようになっています。","claimIds":["c-inference"],"translationJaChunks":["投資家や地域社会にとって、AIの話には変圧器、変電所、","電力契約、許認可も含まれるようになっています。"]},
+    {"id":"u-a3-1","text":"So when you see another giant AI investment announcement, watch the energy details as closely as the chips.","chunks":["So when you see another giant AI investment announcement,","watch the energy details as closely as the chips."],"translationJa":"次に巨額のAI投資のニュースを見たら、半導体と同じくらいエネルギー面にも注目してください。","claimIds":["c-inference"],"translationJaChunks":["次に巨額のAI投資のニュースを見たら、","半導体と同じくらいエネルギー面にも注目してください。"]},
+    {"id":"u-a3-2","text":"Ask whether local grids can keep up with the new load and how developers plan to secure reliable power.","chunks":["Ask whether local grids can keep up with the new load","and how developers plan to secure reliable power."],"translationJa":"地域の送電網が新たな負荷に追いつけるのか、開発者が安定電力をどう確保するのかを見てください。","claimIds":["c-bottleneck"],"translationJaChunks":["地域の送電網が新たな負荷に追いつけるのか、","開発者が安定電力をどう確保するのかを見てください。"]},
+    {"id":"u-a3-3","text":"Those questions can reveal whether an ambitious data-center plan is physically realistic, not just financially exciting.","chunks":["Those questions can reveal whether an ambitious data-center plan is physically realistic,","not just financially exciting."],"translationJa":"その問いによって、野心的なデータセンター計画が資金面だけでなく物理的にも現実的か見えてきます。","claimIds":["c-inference"],"translationJaChunks":["その問いによって、野心的なデータセンター計画が","資金面だけでなく物理的にも現実的か見えてきます。"]},
+    {"id":"u-a3-4","text":"The next phase of AI may be shaped as much by electrons and construction as by algorithms.","chunks":["The next phase of AI may be shaped","as much by electrons and construction as by algorithms."],"translationJa":"AIの次の段階は、アルゴリズムと同じくらい電気と建設によって形作られるかもしれません。","claimIds":["c-inference"],"translationJaChunks":["AIの次の段階は、アルゴリズムと同じくらい","電気と建設によって形作られるかもしれません。"]},
+    {"id":"u-r1","text":"Is expected to signals a forecast: data-center electricity demand is expected to keep growing.","chunks":["Is expected to signals a forecast:","data-center electricity demand is expected to keep growing."],"translationJa":"is expected to は予測を示します。データセンターの電力需要は増加が続くと予想されています。","claimIds":["c-iea-outlook"],"translationJaChunks":["is expected to は予測を示します。","データセンターの電力需要は増加が続くと予想されています。"]},
+    {"id":"u-r2","text":"Account for describes a share: data centers may account for a large part of new demand.","chunks":["Account for describes a share:","data centers may account for a large part of new demand."],"translationJa":"account for は割合を示します。データセンターは新規需要の大きな部分を占める可能性があります。","claimIds":["c-us-growth"],"translationJaChunks":["account for は割合を示します。","データセンターは新規需要の大きな部分を占める可能性があります。"]},
+    {"id":"u-r3","text":"Keep up with means match the pace: grids must keep up with rapidly expanding computing loads.","chunks":["Keep up with means match the pace:","grids must keep up with rapidly expanding computing loads."],"translationJa":"keep up with は速度についていくという意味です。送電網は急増する計算負荷に追いつく必要があります。","claimIds":["c-bottleneck"],"translationJaChunks":["keep up with は速度についていくという意味です。","送電網は急増する計算負荷に追いつく必要があります。"]}
+  ],
+  "learningPoints": [
+    {"id":"lp-expected","phrase":"is expected to","meaningJa":"〜すると予想されている","sourceUtteranceId":"u-s3-2"},
+    {"id":"lp-account","phrase":"account for","meaningJa":"〜を占める","sourceUtteranceId":"u-c2-2"},
+    {"id":"lp-keep","phrase":"keep up with","meaningJa":"〜に追いつく","sourceUtteranceId":"u-m3-2"}
+  ],
+  "scenes": [
+    {"id":"s-hook","role":"hook","beat":null,"utteranceIds":["u-h1","u-h2"],"visual":{"type":"card","headline":"AI needs more than chips","body":"Why data centers are becoming energy projects","claimIds":["c-news","c-inference"]},"glossLearningPointId":null},
+    {"id":"s-setup-news","role":"story","beat":"setup","utteranceIds":["u-s1-1","u-s1-2","u-s1-3","u-s1-4"],"visual":{"type":"card","headline":"Today's news peg","body":"SB Energy's planned financing links data centers, power generation, and infrastructure.","claimIds":["c-news","c-inference"]},"glossLearningPointId":null},
+    {"id":"s-setup-growth","role":"story","beat":"setup","utteranceIds":["u-s2-1","u-s2-2","u-s2-3","u-s2-4"],"visual":{"type":"metric","value":"50","unit":"%","label":"AI data-center electricity growth, 2025","qualifier":"IEA","claimIds":["c-iea-growth"]},"glossLearningPointId":null},
+    {"id":"s-setup-outlook","role":"story","beat":"setup","utteranceIds":["u-s3-1","u-s3-2","u-s3-3","u-s3-4"],"visual":{"type":"compare","leftTitle":"2025","rightTitle":"2030","rows":[{"aspect":"Data-center electricity","left":"485 TWh","right":"950 TWh","revealAtUtteranceId":"u-s3-2"},{"aspect":"Global share","left":"—","right":"~3%","revealAtUtteranceId":"u-s3-3"}],"claimIds":["c-iea-outlook"]},"glossLearningPointId":null},
+    {"id":"s-phrase-expected","role":"phrase","beat":null,"utteranceIds":["u-p1-1","u-p1-2"],"visual":{"type":"phrase","learningPointId":"lp-expected"},"glossLearningPointId":null},
+    {"id":"s-mech-compute","role":"story","beat":"mechanism","utteranceIds":["u-m1-1","u-m1-2","u-m1-3","u-m1-4"],"visual":{"type":"chain","nodes":[{"label":"AI chips compute","revealAtUtteranceId":"u-m1-2"},{"label":"Cooling removes heat","revealAtUtteranceId":"u-m1-2"},{"label":"Many systems draw power","revealAtUtteranceId":"u-m1-3"},{"label":"Power becomes a design constraint","revealAtUtteranceId":"u-m1-4"}],"claimIds":["c-inference"]},"glossLearningPointId":null},
+    {"id":"s-mech-grid","role":"story","beat":"mechanism","utteranceIds":["u-m2-1","u-m2-2","u-m2-3","u-m2-4"],"visual":{"type":"chain","nodes":[{"label":"Generation","revealAtUtteranceId":"u-m2-1"},{"label":"Transmission","revealAtUtteranceId":"u-m2-2"},{"label":"Substation","revealAtUtteranceId":"u-m2-2"},{"label":"Data-center campus","revealAtUtteranceId":"u-m2-4"}],"claimIds":["c-bottleneck"]},"glossLearningPointId":null},
+    {"id":"s-mech-speed","role":"story","beat":"mechanism","utteranceIds":["u-m3-1","u-m3-2","u-m3-3","u-m3-4"],"visual":{"type":"compare","leftTitle":"Digital side","rightTitle":"Physical side","rows":[{"aspect":"Scaling","left":"Software can move fast","right":"Grid upgrades take time","revealAtUtteranceId":"u-m3-1"},{"aspect":"Constraint","left":"More compute wanted","right":"Connection must keep up","revealAtUtteranceId":"u-m3-2"},{"aspect":"Response","left":"Add servers","right":"Add substations / storage / generation","revealAtUtteranceId":"u-m3-3"}],"claimIds":["c-bottleneck","c-inference"]},"glossLearningPointId":"lp-keep"},
+    {"id":"s-comp-timeline","role":"story","beat":"complication","utteranceIds":["u-c1-1","u-c1-2","u-c1-3","u-c1-4"],"visual":{"type":"timeline","events":[{"dateLabel":"2025","label":"Data-center electricity demand +17%","revealAtUtteranceId":"u-c1-2"},{"dateLabel":"2026","label":"Grid and equipment bottlenecks matter now","revealAtUtteranceId":"u-c1-3"},{"dateLabel":"2030","label":"Central outlook: ~950 TWh","revealAtUtteranceId":"u-c1-4"}],"claimIds":["c-iea-growth","c-iea-outlook","c-bottleneck"]},"glossLearningPointId":null},
+    {"id":"s-comp-us","role":"story","beat":"complication","utteranceIds":["u-c2-1","u-c2-2","u-c2-3","u-c2-4"],"visual":{"type":"metric","value":"~50","unit":"%","label":"U.S. demand growth from data centers","qualifier":"IEA forecast","claimIds":["c-us-growth"]},"glossLearningPointId":null},
+    {"id":"s-phrase-account","role":"phrase","beat":null,"utteranceIds":["u-p2-1","u-p2-2"],"visual":{"type":"phrase","learningPointId":"lp-account"},"glossLearningPointId":null},
+    {"id":"s-comp-local","role":"story","beat":"complication","utteranceIds":["u-c3-1","u-c3-2","u-c3-3","u-c3-4"],"visual":{"type":"compare","leftTitle":"National view","rightTitle":"Local view","rows":[{"aspect":"Share","left":"Can look modest","right":"Can be a huge local load","revealAtUtteranceId":"u-c3-2"},{"aspect":"Electricity","left":"Exists somewhere","right":"Must arrive at this site","revealAtUtteranceId":"u-c3-3"},{"aspect":"Planning","left":"Annual demand","right":"Grid connection + equipment","revealAtUtteranceId":"u-c3-4"}],"claimIds":["c-inference","c-bottleneck"]},"glossLearningPointId":null},
+    {"id":"s-retrieval","role":"retrieval","beat":null,"utteranceIds":[],"visual":{"type":"retrieval","sourceUtteranceId":"u-m3-2","question":"What must keep up with computing demand?","options":["Electricity infrastructure","Office rent","Advertising budgets"],"correctIndex":0,"answerJa":"計算需要に追いつく必要があるのは電力インフラです。"},"glossLearningPointId":null},
+    {"id":"s-answer-integration","role":"story","beat":"answer","utteranceIds":["u-a1-1","u-a1-2","u-a1-3","u-a1-4"],"visual":{"type":"chain","nodes":[{"label":"Compute plan","revealAtUtteranceId":"u-a1-1"},{"label":"Reliable electricity","revealAtUtteranceId":"u-a1-2"},{"label":"Grid / generation investment","revealAtUtteranceId":"u-a1-3"},{"label":"AI becomes an energy project","revealAtUtteranceId":"u-a1-4"}],"claimIds":["c-news","c-bottleneck","c-inference"]},"glossLearningPointId":null},
+    {"id":"s-answer-design","role":"story","beat":"answer","utteranceIds":["u-a2-1","u-a2-2","u-a2-3","u-a2-4"],"visual":{"type":"compare","leftTitle":"Old mental model","rightTitle":"New project reality","rows":[{"aspect":"Power","left":"Utility bill","right":"Site constraint","revealAtUtteranceId":"u-a2-1"},{"aspect":"Infrastructure","left":"Mostly servers","right":"Grid + storage + generation options","revealAtUtteranceId":"u-a2-2"},{"aspect":"Finance","left":"Compute first","right":"Energy affects schedule and capital","revealAtUtteranceId":"u-a2-3"}],"claimIds":["c-inference"]},"glossLearningPointId":null},
+    {"id":"s-answer-watch","role":"story","beat":"answer","utteranceIds":["u-a3-1","u-a3-2","u-a3-3","u-a3-4"],"visual":{"type":"card","headline":"What to watch next","body":"Grid capacity • reliable power • connection timing • energy infrastructure","claimIds":["c-bottleneck","c-inference"]},"glossLearningPointId":null},
+    {"id":"s-recap","role":"recap","beat":null,"utteranceIds":["u-r1","u-r2","u-r3"],"visual":{"type":"recap","learningPointIds":["lp-expected","lp-account","lp-keep"]},"glossLearningPointId":null}
+  ],
+  "packaging": {
+    "candidates": [
+      {"titleJa":"AIデータセンターはなぜ「発電」まで必要なのか？","thumbnailJa":"AIは電気を食う"},
+      {"titleJa":"AIブームの本当のボトルネックは電力？","thumbnailJa":"電気が足りない？"},
+      {"titleJa":"なぜAI企業は電力まで確保し始めたのか","thumbnailJa":"次は電力争奪戦"}
+    ],
+    "selectedIndex": 0
+  }
+}
