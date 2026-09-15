@@ -21,10 +21,22 @@ const sceneSummary=(scene)=>{
   return lines.join(" ").slice(0,700);
 };
 const seed=(id)=>[...id].reduce((acc,c)=>((acc*31+c.charCodeAt(0))>>>0),2166136261)%2147483647;
+const central=String(manifest.centralQuestion??"").toLowerCase();
+const energy=central.includes("power")||central.includes("energy")||central.includes("data center");
+const searchQuery=(purpose)=>{
+  if(energy){
+    if(purpose==="hook")return "data center server room";
+    if(purpose==="analogy")return "high voltage electricity transmission grid";
+    return "power plant electricity infrastructure";
+  }
+  const category=String(manifest.category??"technology").replaceAll("_"," ");
+  return purpose==="hook"?`${category} technology`:purpose==="analogy"?`${category} infrastructure`:`${category} system`;
+};
 const briefs=chosen.slice(0,3).map(({scene,purpose})=>({
   sceneId:scene.id,
   purpose,
   seed:seed(scene.id),
+  searchQuery:searchQuery(purpose),
   prompt:[
     "Editorial documentary illustration for a serious long-form YouTube explainer.",
     `Central question: ${manifest.centralQuestion}`,
@@ -35,5 +47,5 @@ const briefs=chosen.slice(0,3).map(({scene,purpose})=>({
 }));
 
 fs.mkdirSync(path.dirname(outputPath),{recursive:true});
-fs.writeFileSync(outputPath,JSON.stringify({version:"1.0.0",episodeId:manifest.episodeId,briefs},null,2)+"\n");
+fs.writeFileSync(outputPath,JSON.stringify({version:"1.1.0",episodeId:manifest.episodeId,briefs},null,2)+"\n");
 console.log(JSON.stringify({ok:true,episodeId:manifest.episodeId,count:briefs.length,output:outputPath,scenes:briefs.map((b)=>b.sceneId)}));
