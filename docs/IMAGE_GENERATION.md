@@ -41,6 +41,18 @@ If either secret is missing, generation is skipped and rendering continues with 
 
 Generated JPEGs are cached by manifest hash. The APPROVED 1080p workflow restores only that reviewed cache; it does not generate new images after approval.
 
+## One-time Cloudflare setup
+
+1. Open Cloudflare Dashboard → Workers AI → Use REST API.
+2. Copy the Account ID shown there.
+3. Choose **Create a Workers AI API Token** and use the prefilled Workers AI token template. If creating a custom token, grant Account permissions **Workers AI Read** and **Workers AI Edit** for the target account.
+4. In GitHub, open this repository → Settings → Secrets and variables → Actions.
+5. Add repository secret `CLOUDFLARE_ACCOUNT_ID` with the copied account ID.
+6. Add repository secret `CLOUDFLARE_API_TOKEN` with the Workers AI API token.
+7. Trigger a new READY run. The log step `Generate optional editorial images with Cloudflare FLUX` reports the generated count. Missing credentials remain a non-fatal fallback.
+
+Do not put either value in the repository, manifest, issue, artifact, or log output.
+
 ## Review criteria
 
 Reject an image when:
