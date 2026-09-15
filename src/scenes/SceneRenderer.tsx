@@ -26,7 +26,6 @@ const currentReveal=(g:number,r:ResolvedScene,ids:string[]):string|null=>{
   return xs[0]?.id??null;
 };
 const sceneLabel=(scene:Scene)=>scene.role==="story"?(scene.beat==="setup"?"WHAT CHANGED":scene.beat==="mechanism"?"HOW IT WORKS":scene.beat==="complication"?"THE CATCH":"WHAT IT MEANS"):scene.role==="retrieval"?"LISTENING CHECK":scene.role==="phrase"?"USEFUL ENGLISH":scene.role==="recap"?"TAKEAWAYS":"THE QUESTION";
-const prettyCategory=(s:string)=>s.replaceAll("_"," ").toUpperCase();
 const pointForCue=(m:EpisodeManifest,cue:Cue|undefined):LearningPoint|undefined=>{
   if(!cue)return undefined;
   const text=cue.text.toLowerCase();
@@ -48,17 +47,30 @@ const Backdrop=({frame}:{frame:number})=>{
   </>;
 };
 
+const chapterFor=(scene:Scene):{step:string;label:string}=>{
+  if(scene.role==="story"){
+    if(scene.beat==="setup")return {step:"1 / 4",label:"WHAT CHANGED"};
+    if(scene.beat==="mechanism")return {step:"2 / 4",label:"HOW IT WORKS"};
+    if(scene.beat==="complication")return {step:"3 / 4",label:"THE CATCH"};
+    return {step:"4 / 4",label:"WHAT IT MEANS"};
+  }
+  if(scene.role==="hook")return {step:"START",label:"THE QUESTION"};
+  if(scene.role==="phrase"||scene.role==="retrieval")return {step:"PAUSE",label:"PRACTICE"};
+  if(scene.role==="recap")return {step:"END",label:"TAKEAWAYS"};
+  return {step:"",label:sceneLabel(scene)};
+};
+
 const TopRail=({manifest,scene,resolved,frame}:{manifest:EpisodeManifest;scene:Scene;resolved:ResolvedScene;frame:number})=>{
   const index=Math.max(0,manifest.scenes.findIndex(s=>s.id===scene.id));
   const whole=clamp((index+frame/Math.max(1,resolved.durationFrames-1))/Math.max(1,manifest.scenes.length));
+  const chapter=chapterFor(scene);
   return <>
     <div style={{position:"absolute",left:0,top:0,width:"100%",height:6,background:"rgba(16,42,54,.08)"}}><div style={{height:"100%",width:`${whole*100}%`,background:COLORS.accent}}/></div>
-    <div style={headerStyle}>
-      <div style={{display:"flex",alignItems:"center",gap:16}}>
-        <span style={{fontSize:18,fontWeight:850,color:COLORS.muted}}>{String(index+1).padStart(2,"0")} / {String(manifest.scenes.length).padStart(2,"0")}</span>
-        <span style={{fontWeight:850,color:COLORS.text}}>{sceneLabel(scene)}</span>
+    <div style={{...headerStyle,justifyContent:"flex-start"}}>
+      <div style={{display:"flex",alignItems:"center",gap:18}}>
+        <span style={{fontSize:18,fontWeight:900,color:COLORS.accent,letterSpacing:".04em"}}>{chapter.step}</span>
+        <span style={{fontSize:24,fontWeight:900,color:COLORS.text,letterSpacing:".02em"}}>{chapter.label}</span>
       </div>
-      <div style={{fontSize:19,fontWeight:760,color:COLORS.muted}}>{prettyCategory(manifest.category)}</div>
     </div>
   </>;
 };
