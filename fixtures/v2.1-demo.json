@@ -1,0 +1,196 @@
+{
+  "schemaVersion": "2.1.0",
+  "kind": "fixture",
+  "episodeId": "2026-09-15-v21-demo",
+  "revision": 1,
+  "generatedAt": "2026-09-15T03:00:00Z",
+  "asOf": "2026-09-15T02:00:00Z",
+  "category": "technology",
+  "newsPeg": {
+    "eventClaimId": "c-demo",
+    "eventDate": null,
+    "whyNow": "This fictional event exists only to exercise the news peg contract in the preview fixture."
+  },
+  "centralQuestion": "Why does our imaginary town need more power?",
+  "answer": "In this fictional example, new machines use more electricity.",
+  "sources": [
+    {
+      "id": "src-demo",
+      "title": "Fictional fixture data",
+      "publisher": "Design fixture",
+      "url": "https://example.org/fictional-test-data",
+      "publishedDate": null,
+      "retrievedAt": "2026-09-15T02:00:00Z",
+      "independenceGroup": "fixture",
+      "isPrimary": false
+    }
+  ],
+  "claims": [
+    {
+      "id": "c-demo",
+      "text": "All town details are invented for contract testing.",
+      "certainty": "forecast",
+      "asOf": "2026-09-15T02:00:00Z",
+      "evidence": [
+        {
+          "sourceId": "src-demo",
+          "locator": "Fixture only",
+          "supportNote": "This supports only the fixture contract, not a real-world claim."
+        }
+      ]
+    }
+  ],
+  "utterances": [
+    {
+      "id": "u-hook",
+      "text": "Why does our imaginary town need more power?",
+      "chunks": ["Why does our imaginary town", "need more power?"],
+      "translationJa": "架空の町はなぜ、より多くの電力が必要なのでしょう。",
+      "claimIds": [],
+      "translationJaChunks": ["架空の町はなぜ、", "より多くの電力が必要なのでしょう。"]
+    },
+    {
+      "id": "u-metric",
+      "text": "In this fictional example, demand is expected to rise by ten percent.",
+      "chunks": ["In this fictional example,", "demand is expected to rise", "by ten percent."],
+      "translationJa": "この架空例では需要が増えると予想されています。増加幅は10パーセントです。",
+      "claimIds": ["c-demo"],
+      "translationJaChunks": ["この架空例では", "需要が増えると予想されています。", "増加幅は10パーセントです。"]
+    },
+    {
+      "id": "u-chain",
+      "text": "New machines depend on electricity to process more requests in our imaginary town.",
+      "chunks": ["New machines depend on electricity", "to process more requests", "in our imaginary town."],
+      "translationJa": "新しい機械は電気を必要とします。より多くの要求を処理するためです。舞台は架空の町です。",
+      "claimIds": ["c-demo"],
+      "translationJaChunks": ["新しい機械は電気を必要とします。", "より多くの要求を処理するためです。", "舞台は架空の町です。"]
+    },
+    {
+      "id": "u-compare",
+      "text": "The change can lead to a larger power bill in this example.",
+      "chunks": ["The change can lead to", "a larger power bill", "in this example."],
+      "translationJa": "その変化は、電気代の増加につながり得ます。この例での話です。",
+      "claimIds": ["c-demo"],
+      "translationJaChunks": ["その変化は、", "電気代の増加につながり得ます。", "この例での話です。"]
+    },
+    {
+      "id": "u-timeline",
+      "text": "The imaginary project is expected to open next year.",
+      "chunks": ["The imaginary project is expected to", "open next year."],
+      "translationJa": "架空の計画は、来年稼働する予定です。",
+      "claimIds": ["c-demo"],
+      "translationJaChunks": ["架空の計画は、", "来年稼働する予定です。"]
+    },
+    {
+      "id": "u-phrase",
+      "text": "Is expected to describes a prediction, not a certain result.",
+      "chunks": ["Is expected to describes a prediction,", "not a certain result."],
+      "translationJa": "is expected toは予測を表し、確定した結果ではありません。",
+      "claimIds": [],
+      "translationJaChunks": ["is expected toは予測を表し、", "確定した結果ではありません。"]
+    },
+    {
+      "id": "u-recap-one",
+      "text": "Our imaginary demand is expected to rise.",
+      "chunks": ["Our imaginary demand is expected to rise."],
+      "translationJa": "架空の需要は増えると予想されています。",
+      "claimIds": ["c-demo"],
+      "translationJaChunks": ["架空の需要は増えると予想されています。"]
+    },
+    {
+      "id": "u-recap-two",
+      "text": "The machines depend on electricity.",
+      "chunks": ["The machines depend on electricity."],
+      "translationJa": "機械は電気を必要とします。",
+      "claimIds": ["c-demo"],
+      "translationJaChunks": ["機械は電気を必要とします。"]
+    },
+    {
+      "id": "u-recap-three",
+      "text": "That can lead to a larger bill.",
+      "chunks": ["That can lead to a larger bill."],
+      "translationJa": "それは請求額の増加につながり得ます。",
+      "claimIds": ["c-demo"],
+      "translationJaChunks": ["それは請求額の増加につながり得ます。"]
+    }
+  ],
+  "learningPoints": [
+    {"id": "lp-expected", "phrase": "is expected to", "meaningJa": "〜すると予想されている", "sourceUtteranceId": "u-metric"},
+    {"id": "lp-depend", "phrase": "depend on", "meaningJa": "〜を必要とする", "sourceUtteranceId": "u-chain"},
+    {"id": "lp-lead", "phrase": "lead to", "meaningJa": "〜につながる", "sourceUtteranceId": "u-compare"}
+  ],
+  "scenes": [
+    {
+      "id": "s-hook",
+      "role": "hook",
+      "beat": null,
+      "utteranceIds": ["u-hook"],
+      "visual": {"type": "card", "headline": "Why more power?", "body": "A fictional v2.1 preview", "claimIds": []},
+      "glossLearningPointId": null
+    },
+    {
+      "id": "s-metric",
+      "role": "story",
+      "beat": "setup",
+      "utteranceIds": ["u-metric"],
+      "visual": {"type": "metric", "value": "10", "unit": "percent", "label": "Imaginary demand increase", "qualifier": "Fictional forecast", "claimIds": ["c-demo"]},
+      "glossLearningPointId": null
+    },
+    {
+      "id": "s-chain",
+      "role": "story",
+      "beat": "mechanism",
+      "utteranceIds": ["u-chain"],
+      "visual": {"type": "chain", "nodes": [{"label": "New machines", "revealAtUtteranceId": "u-chain"}, {"label": "More electricity", "revealAtUtteranceId": "u-chain"}], "claimIds": ["c-demo"]},
+      "glossLearningPointId": "lp-depend"
+    },
+    {
+      "id": "s-compare",
+      "role": "story",
+      "beat": "complication",
+      "utteranceIds": ["u-compare"],
+      "visual": {"type": "compare", "leftTitle": "Before", "rightTitle": "After", "rows": [{"aspect": "Machines", "left": "Fewer", "right": "More", "revealAtUtteranceId": "u-compare"}, {"aspect": "Power bill", "left": "Lower", "right": "Higher", "revealAtUtteranceId": "u-compare"}], "claimIds": ["c-demo"]},
+      "glossLearningPointId": "lp-lead"
+    },
+    {
+      "id": "s-timeline",
+      "role": "story",
+      "beat": "answer",
+      "utteranceIds": ["u-timeline"],
+      "visual": {"type": "timeline", "events": [{"dateLabel": "Year one", "label": "Imaginary planning", "revealAtUtteranceId": "u-timeline"}, {"dateLabel": "Year two", "label": "Imaginary opening", "revealAtUtteranceId": "u-timeline"}], "claimIds": ["c-demo"]},
+      "glossLearningPointId": null
+    },
+    {
+      "id": "s-phrase",
+      "role": "phrase",
+      "beat": null,
+      "utteranceIds": ["u-phrase"],
+      "visual": {"type": "phrase", "learningPointId": "lp-expected"},
+      "glossLearningPointId": null
+    },
+    {
+      "id": "s-retrieval",
+      "role": "retrieval",
+      "beat": null,
+      "utteranceIds": [],
+      "visual": {"type": "retrieval", "sourceUtteranceId": "u-chain", "question": "What do the machines need?", "options": ["Electricity", "Paper"], "correctIndex": 0, "answerJa": "この例で機械が必要とするのは電気です。"},
+      "glossLearningPointId": null
+    },
+    {
+      "id": "s-recap",
+      "role": "recap",
+      "beat": null,
+      "utteranceIds": ["u-recap-one", "u-recap-two", "u-recap-three"],
+      "visual": {"type": "recap", "learningPointIds": ["lp-expected", "lp-depend", "lp-lead"]},
+      "glossLearningPointId": null
+    }
+  ],
+  "packaging": {
+    "candidates": [
+      {"titleJa": "架空の町と電力｜やさしい英語", "thumbnailJa": "テスト専用"},
+      {"titleJa": "電力の架空例｜やさしい英語", "thumbnailJa": "架空の需要"},
+      {"titleJa": "機械と電気の架空例｜やさしい英語", "thumbnailJa": "公開不可"}
+    ],
+    "selectedIndex": 0
+  }
+}
