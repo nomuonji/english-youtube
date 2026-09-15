@@ -107,6 +107,11 @@ jobs:
         with:
           path: .cache/kokoro-chunks
           key: kokoro-chunks-v2-${{ runner.os }}-${{ github.sha }}
+      - name: Restore reviewed editorial images
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: public/generated/images
+          key: editorial-images-v1-${{ runner.os }}-${{ steps.approval.outputs.manifest_hash }}
       - name: Compile resolved timing
         run: npm run compile:tts -- "${{ steps.approval.outputs.manifest }}" public/generated/tts-timing.json public/generated/render-props.json
       - name: Render approved 1080p final
@@ -125,5 +130,5 @@ jobs:
           retention-days: 14
       - name: Publishing boundary
         run: |
-          echo "Explicit approval -> retention/cognitive review -> 1080p final render -> loudness normalization passed."
+          echo "Explicit approval -> retention/cognitive review -> reviewed editorial image restore -> 1080p final render -> loudness normalization passed."
           echo "YouTube upload remains disabled until the publishing adapter is implemented and separately gated."
