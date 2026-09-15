@@ -16,5 +16,7 @@ const timing=JSON.parse(readFileSync(timingPath,"utf8")) as MeasuredTimingBundle
 const resolved=compileMeasuredResolved(manifest,timing,process.env.GITHUB_SHA??"local-measured-tts");
 const imagesManifestPath=resolve(process.cwd(),"public/generated/images/manifest.json");
 const imageAssets=existsSync(imagesManifestPath)?(JSON.parse(readFileSync(imagesManifestPath,"utf8")).generated??[]).map((item:{sceneId:string;purpose:"hook"|"analogy"|"context";file:string})=>({sceneId:item.sceneId,purpose:item.purpose,path:`generated/images/${item.file}`})):[];
-writeFileSync(outputPath,JSON.stringify({manifest,resolved,imageAssets},null,2)+"\n","utf8");
-console.log(JSON.stringify({ok:true,provider:timing.provider,output:outputArg,durationFrames:resolved.durationFrames,durationSeconds:resolved.durationFrames/resolved.fps,clips:resolved.clips.length,imageAssets:imageAssets.length,manifestHash:resolved.manifestHash}));
+const brollManifestPath=resolve(process.cwd(),"public/generated/broll/manifest.json");
+const brollAssets=existsSync(brollManifestPath)?(JSON.parse(readFileSync(brollManifestPath,"utf8")).generated??[]):[];
+writeFileSync(outputPath,JSON.stringify({manifest,resolved,imageAssets,brollAssets},null,2)+"\n","utf8");
+console.log(JSON.stringify({ok:true,provider:timing.provider,output:outputArg,durationFrames:resolved.durationFrames,durationSeconds:resolved.durationFrames/resolved.fps,clips:resolved.clips.length,imageAssets:imageAssets.length,brollAssets:brollAssets.length,manifestHash:resolved.manifestHash}));
