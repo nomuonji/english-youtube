@@ -12,7 +12,7 @@ permissions:
 jobs:
   gate:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - name: Checkout exact READY commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -35,12 +35,57 @@ jobs:
             echo "No READY.json added in head commit" >&2
             exit 2
           fi
+          episode_id="$(node -e 'const fs=require("fs"); const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(r.episodeId)' "$path")"
+          if ! [[ "$episode_id" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "Unsafe episodeId in READY.json" >&2
+            exit 2
+          fi
           echo "path=$path" >> "$GITHUB_OUTPUT"
+          echo "episode_id=$episode_id" >> "$GITHUB_OUTPUT"
+          echo "manifest=episodes/$episode_id/manifest.json" >> "$GITHUB_OUTPUT"
       - name: Validate READY and manifest hash
         run: npm run check-ready -- "${{ steps.ready.outputs.path }}"
-      - name: Build preview app
-        run: npm run build
-      - name: M2 boundary
+      - name: Install local Kokoro TTS runtime
         run: |
-          echo "READY contract passed."
-          echo "TTS/compile/render prepare is intentionally not implemented in this M1 gate yet."
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq espeak-ng
+          python3 -m pip install --disable-pip-version-check -r requirements-tts.txt
+      - name: Download Kokoro int8 model
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .cache/kokoro
+          curl -fL --retry 3 --retry-delay 2 \
+            -o .cache/kokoro/kokoro-v1.0.int8.onnx \
+            https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/kokoro-v1.0.int8.onnx
+          curl -fL --retry 3 --retry-delay 2 \
+            -o .cache/kokoro/voices-v1.0.bin \
+            https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/voices-v1.0.bin
+          test -s .cache/kokoro/kokoro-v1.0.int8.onnx
+          test -s .cache/kokoro/voices-v1.0.bin
+      - name: Synthesize local speech with exact chunk sample boundaries
+        env:
+          KOKORO_VOICE: af_sarah
+          KOKORO_SPEED: "0.95"
+          KOKORO_MODEL_PATH: .cache/kokoro/kokoro-v1.0.int8.onnx
+          KOKORO_VOICES_PATH: .cache/kokoro/voices-v1.0.bin
+        run: |
+          mkdir -p public/generated out
+          python3 scripts/synthesize_kokoro.py "${{ steps.ready.outputs.manifest }}" public/generated generated
+      - name: Compile resolved timing
+        run: npm run compile:tts -- "${{ steps.ready.outputs.manifest }}" public/generated/tts-timing.json public/generated/render-props.json
+      - name: Render 540p preview
+        run: npx remotion render src/composition/index.ts EpisodeVideo "out/${{ steps.ready.outputs.episode_id }}-preview-540p.mp4" --props=public/generated/render-props.json --scale=0.5 --codec=h264 --crf=23
+      - name: Upload review artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ready-preview-${{ steps.ready.outputs.episode_id }}-${{ github.sha }}
+          path: |
+            out/*-preview-540p.mp4
+            public/generated/tts-timing.json
+            public/generated/render-props.json
+          retention-days: 7
+      - name: Publication boundary
+        run: |
+          echo "READY -> validate -> local TTS -> exact timing -> 540p render passed."
+          echo "Publishing is intentionally disabled until archive/review/YouTube gates are implemented."
