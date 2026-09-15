@@ -1,6 +1,6 @@
 name: Preview Pages
 
-# Deploys the Remotion Player preview to GitHub Pages.
+# Deploys the Remotion Player and preserves the latest READY review at /review/.
 on:
   push:
     branches: [main]
@@ -11,6 +11,7 @@ on:
       - "src/fixtures/**"
       - "fixtures/**"
       - "config/**"
+      - "scripts/build_review_page.mjs"
       - "package.json"
       - "package-lock.json"
       - "vite.config.ts"
@@ -20,12 +21,13 @@ on:
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
 concurrency:
-  group: "preview-pages"
-  cancel-in-progress: true
+  group: "pages-deploy"
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -47,11 +49,31 @@ jobs:
         run: npm run validate -- fixtures/v2.1-demo.json
       - name: Build Player site
         run: npm run build
-      - name: Assert public preview contains no episode or run data
+      - name: Include latest READY review when available
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          if grep -R -E 'runs/|READY\.json|editorial-review|research\.json' dist; then
+          run_id="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/ready-gate.yml/runs?status=success&per_page=10" --jq '.workflow_runs[0].id // empty')"
+          if [ -z "$run_id" ]; then
+            echo "No successful READY run yet; deploying Player without /review/."
+            exit 0
+          fi
+          artifact_name="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts?per_page=100" --jq '.artifacts[] | select(.expired == false and (.name | startswith("ready-preview-"))) | .name' | head -n 1 || true)"
+          if [ -z "$artifact_name" ]; then
+            echo "Latest successful READY run has no live review artifact; preserving Player only."
+            exit 0
+          fi
+          rm -rf review-artifact
+          mkdir -p review-artifact
+          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name "$artifact_name" --dir review-artifact
+          node scripts/build_review_page.mjs review-artifact dist/review
+      - name: Assert public preview contains no internal run data
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -R -E 'READY\.json|editorial-review|research\.json' dist --exclude='*.map'; then
             echo "Internal run/research data leaked into Pages output" >&2
             exit 2
           fi
