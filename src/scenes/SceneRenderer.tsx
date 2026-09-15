@@ -13,6 +13,12 @@ const getP=(m:EpisodeManifest,id:string):LearningPoint|undefined=>m.learningPoin
 const phaseAt=(g:number,r:ResolvedScene)=>r.phases.find(p=>p.startFrame<=g&&g<p.endFrame);
 const cueAt=(g:number,r:ResolvedScene)=>r.cues.find(c=>c.startFrame<=g&&g<c.endFrame);
 const captionCueAt=(g:number,r:ResolvedScene)=>cueAt(g,r)??[...r.cues].filter(c=>c.startFrame<=g).sort((a,b)=>b.startFrame-a.startFrame)[0];
+const cueContext=(cue:Cue|undefined,r:ResolvedScene)=>{
+  if(!cue)return {prev:undefined,current:undefined,next:undefined,index:-1};
+  const cues=[...r.cues].sort((a,b)=>a.startFrame-b.startFrame);
+  const index=cues.findIndex(c=>c.startFrame===cue.startFrame&&c.endFrame===cue.endFrame&&c.text===cue.text);
+  return {prev:index>0?cues[index-1]:undefined,current:cue,next:index>=0&&index<cues.length-1?cues[index+1]:undefined,index};
+};
 const clamp=(v:number,min=0,max=1)=>Math.max(min,Math.min(max,v));
 const utteranceStart=(r:ResolvedScene,id:string):number|undefined=>{
   const frames=r.cues.filter(c=>c.utteranceId===id).map(c=>c.startFrame);
@@ -84,12 +90,19 @@ const TopRail=({manifest,scene,resolved,frame}:{manifest:EpisodeManifest;scene:S
 const BilingualCaption=({manifest,scene,resolved,globalFrame,phaseName}:{manifest:EpisodeManifest;scene:Scene;resolved:ResolvedScene;globalFrame:number;phaseName:string})=>{
   const hidden=scene.role==="retrieval"&&phaseName!=="reveal"&&phaseName!=="answer";
   const cue=hidden?undefined:captionCueAt(globalFrame,resolved);
-  const point=pointForCue(manifest,cue);
-  const phrase=point&&cue?.text.toLowerCase().includes(point.phrase.toLowerCase())?point.phrase:undefined;
-  return <div style={{width:"100%",height:224,border:`1px solid ${COLORS.line}`,borderRadius:28,background:"rgba(255,255,255,.965)",boxShadow:`0 16px 44px ${COLORS.shadow}`,padding:"24px 52px",display:"flex",flexDirection:"column",justifyContent:"center",gap:10,overflow:"hidden"}}>
-    {phrase?<div style={{fontSize:15,fontWeight:950,letterSpacing:".12em",color:COLORS.accent}}>KEY PHRASE · ここに注目</div>:null}
-    <div style={{fontSize:48,lineHeight:1.22,fontWeight:700,letterSpacing:"-.012em",minHeight:59,opacity:cue?1:.16}}>{cue?highlightPhrase(cue.text,phrase):" "}</div>
-    <div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:29,lineHeight:1.35,color:COLORS.muted,fontWeight:560,minHeight:39,opacity:cue?1:.14}}>{cue?.translationJa??" "}</div>
+  const {prev,current,next}=cueContext(cue,resolved);
+  const point=pointForCue(manifest,current);
+  const phrase=point&&current?.text.toLowerCase().includes(point.phrase.toLowerCase())?point.phrase:undefined;
+  const transition=current?interpolate(globalFrame,[current.startFrame,current.startFrame+9],[1,0],{extrapolateLeft:"clamp",extrapolateRight:"clamp"}):0;
+  const slide=transition*24;
+  return <div style={{width:"100%",height:278,border:`1px solid ${COLORS.line}`,borderRadius:28,background:"rgba(255,255,255,.965)",boxShadow:`0 16px 44px ${COLORS.shadow}`,padding:"14px 50px",display:"grid",gridTemplateRows:"38px 1fr 38px",overflow:"hidden",position:"relative"}}>
+    <div style={{fontSize:23,lineHeight:"32px",fontWeight:560,color:COLORS.muted,opacity:prev?.text?.trim()?0.28:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",transform:`translateY(${-slide*.45}px)`}}>{prev?.text??" "}</div>
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:7,transform:`translateY(${slide}px)`}}>
+      {phrase?<div style={{fontSize:14,fontWeight:950,letterSpacing:".12em",color:COLORS.accent}}>KEY PHRASE · ここに注目</div>:null}
+      <div style={{fontSize:46,lineHeight:1.18,fontWeight:710,letterSpacing:"-.012em",minHeight:54,opacity:current?1:.16}}>{current?highlightPhrase(current.text,phrase):" "}</div>
+      <div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:27,lineHeight:1.3,color:COLORS.muted,fontWeight:560,minHeight:35,opacity:current?1:.14}}>{current?.translationJa??" "}</div>
+    </div>
+    <div style={{fontSize:23,lineHeight:"32px",fontWeight:560,color:COLORS.muted,opacity:next?.text?.trim()?0.22:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",transform:`translateY(${slide*.3}px)`}}>{next?.text??" "}</div>
   </div>;
 };
 const BilingualVisualLabel=({text,large=false}:{text:string;large?:boolean})=>{const ja=visualJa(text);return <div style={{textAlign:"center"}}><div style={{fontSize:large?42:28,fontWeight:820,lineHeight:1.15}}>{text}</div>{ja?<div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:large?23:18,color:"currentColor",opacity:.68,fontWeight:650,marginTop:7}}>{ja}</div>:null}</div>;};
