@@ -75,7 +75,7 @@ const TopRail=({manifest,scene,resolved,frame}:{manifest:EpisodeManifest;scene:S
       </div>
       <div style={{display:"flex",alignItems:"center",gap:16,maxWidth:820}}>
         <div style={{padding:"8px 13px",borderRadius:999,background:COLORS.navy,color:COLORS.white,textAlign:"center",minWidth:116}}><div style={{fontSize:15,fontWeight:900,letterSpacing:".08em"}}>{corner.en}</div><div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:13,opacity:.8}}>{corner.ja}</div></div>
-        <div style={{fontSize:22,fontWeight:760,color:COLORS.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{topic}</div>
+        <div style={{minWidth:0}}><div style={{fontSize:22,fontWeight:760,color:COLORS.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{topic}</div>{visualJa(topic)?<div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:14,fontWeight:650,color:COLORS.muted,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{visualJa(topic)}</div>:null}</div>
       </div>
     </div>
   </>;
@@ -92,7 +92,7 @@ const BilingualCaption=({manifest,scene,resolved,globalFrame,phaseName}:{manifes
     <div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:29,lineHeight:1.35,color:COLORS.muted,fontWeight:560,minHeight:39,opacity:cue?1:.14}}>{cue?.translationJa??" "}</div>
   </div>;
 };
-const BilingualVisualLabel=({text,large=false}:{text:string;large?:boolean})=>{const ja=visualJa(text);return <div style={{textAlign:"center"}}><div style={{fontSize:large?42:28,fontWeight:820,lineHeight:1.15}}>{text}</div>{ja?<div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:large?23:18,color:COLORS.muted,fontWeight:650,marginTop:7}}>{ja}</div>:null}</div>;};
+const BilingualVisualLabel=({text,large=false}:{text:string;large?:boolean})=>{const ja=visualJa(text);return <div style={{textAlign:"center"}}><div style={{fontSize:large?42:28,fontWeight:820,lineHeight:1.15}}>{text}</div>{ja?<div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:large?23:18,color:"currentColor",opacity:.68,fontWeight:650,marginTop:7}}>{ja}</div>:null}</div>;};
 
 const focusStyle=(active:boolean,visible=true):React.CSSProperties=>({
   opacity:visible?(active?1:.44):0,
