@@ -45,10 +45,10 @@ jobs:
           echo "manifest=episodes/$episode_id/manifest.json" >> "$GITHUB_OUTPUT"
       - name: Validate READY and manifest hash
         run: npm run check-ready -- "${{ steps.ready.outputs.path }}"
-      - name: Install local Kokoro TTS runtime
+      - name: Install local Kokoro TTS runtime and render fonts
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq espeak-ng
+          sudo apt-get install -y -qq espeak-ng fonts-noto-cjk
           python3 -m pip install --disable-pip-version-check -r requirements-tts.txt
       - name: Download Kokoro int8 model
         shell: bash
