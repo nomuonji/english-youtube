@@ -86,7 +86,10 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .cache/kokoro-chunks
-          key: kokoro-chunks-v1-${{ runner.os }}-${{ steps.ready.outputs.manifest_hash }}
+          key: kokoro-chunks-v2-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            kokoro-chunks-v2-${{ runner.os }}-
+            kokoro-chunks-v1-${{ runner.os }}-
       - name: Synthesize local speech with exact chunk sample boundaries
         env:
           KOKORO_VOICE: af_sarah
@@ -97,12 +100,12 @@ jobs:
         run: |
           mkdir -p public/generated
           python3 scripts/synthesize_kokoro.py "${{ steps.ready.outputs.manifest }}" public/generated generated
-      - name: Save Kokoro chunk cache
+      - name: Save expanded Kokoro chunk cache
         if: steps.tts-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .cache/kokoro-chunks
-          key: kokoro-chunks-v1-${{ runner.os }}-${{ steps.ready.outputs.manifest_hash }}
+          key: kokoro-chunks-v2-${{ runner.os }}-${{ github.sha }}
       - name: Compile resolved timing
         run: npm run compile:tts -- "${{ steps.ready.outputs.manifest }}" public/generated/tts-timing.json public/generated/render-props.json
       - name: Upload speech bundle for render job
