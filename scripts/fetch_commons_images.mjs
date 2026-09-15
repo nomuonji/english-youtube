@@ -3,8 +3,7 @@ import fs from "node:fs/promises";
 import fssync from "node:fs";
 import path from "node:path";
 
-const [manifestArg="fixtures/v2.1-demo.json",briefsArg="public/generated/image-briefs.json",outDirArg="public/generated/images"] = process.argv.slice(2);
-const manifest=JSON.parse(await fs.readFile(manifestArg,"utf8"));
+const [briefsArg="public/generated/image-briefs.json",outDirArg="public/generated/images"] = process.argv.slice(2);
 const briefsPayload=JSON.parse(await fs.readFile(briefsArg,"utf8"));
 const outDir=path.resolve(outDirArg);
 await fs.mkdir(outDir,{recursive:true});
@@ -13,17 +12,6 @@ const cleanHtml=s=>String(s??"").replace(/<[^>]*>/g," ").replace(/&[^;]+;/g," ")
 const allowedLicense=s=>/public domain|cc0|cc by(?:-|\s)|cc-by/i.test(s??"");
 const json=async url=>{const r=await fetch(url,{headers:{"User-Agent":"english-youtube-review/1.0 (GitHub Actions; educational video builder)"}});if(!r.ok)throw new Error(`${r.status} ${r.statusText}`);return r.json();};
 
-const qText=(manifest.centralQuestion??"").toLowerCase();
-const energy=qText.includes("power")||qText.includes("energy")||qText.includes("data center");
-const defaultQuery=(brief)=>{
-  if(energy){
-    if(brief.purpose==="hook")return "data center server room";
-    if(brief.purpose==="analogy")return "high voltage electricity transmission grid";
-    return "power plant electricity infrastructure";
-  }
-  const category=String(manifest.category??"technology").replaceAll("_"," ");
-  return brief.purpose==="hook"?`${category} technology`:brief.purpose==="analogy"?`${category} infrastructure`:`${category} system`;
-};
 async function searchTitles(query){
   const u=new URL(API);u.search=new URLSearchParams({action:"query",format:"json",generator:"search",gsrnamespace:"6",gsrlimit:"14",gsrsearch:`${query} filetype:bitmap`}).toString();
   const data=await json(u);
@@ -63,7 +51,7 @@ let added=0;
 for(const brief of briefsPayload.briefs??[]){
   if(have.has(brief.sceneId))continue;
   try{
-    const query=defaultQuery(brief);
+    const query=brief.searchQuery||"technology infrastructure";
     const selected=await pick(query);
     if(!selected)continue;
     const file=`${brief.sceneId}.jpg`;
