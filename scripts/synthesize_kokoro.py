@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Generate exact sample-timed scene speech with local Kokoro ONNX.
 
-MVP timing rule: each pedagogical chunk is synthesized separately, then concatenated
-into one scene-level WAV. Chunk boundaries therefore come from actual generated sample
-positions, never word-count or fixed-duration estimates. Retrieval audio is sliced from
-the already generated source story clip.
+Each pedagogical chunk is synthesized separately, then concatenated into one
+scene-level WAV. Chunk boundaries therefore come from actual generated sample
+positions, never word-count or fixed-duration estimates. Synthesized chunks are
+cached by text + Kokoro configuration so READY retries and APPROVED renders do
+not need to run inference again for unchanged narration.
 """
 from __future__ import annotations
 
@@ -25,6 +26,7 @@ SPEED = float(os.environ.get("KOKORO_SPEED", "0.95"))
 LANG = os.environ.get("KOKORO_LANG", "en-us")
 MODEL_PATH = Path(os.environ.get("KOKORO_MODEL_PATH", ".cache/kokoro/kokoro-v1.0.int8.onnx"))
 VOICES_PATH = Path(os.environ.get("KOKORO_VOICES_PATH", ".cache/kokoro/voices-v1.0.bin"))
+CHUNK_CACHE_DIR = Path(os.environ.get("KOKORO_CHUNK_CACHE_DIR", ".cache/kokoro-chunks"))
 CHUNK_PAUSE_MS = int(os.environ.get("KOKORO_CHUNK_PAUSE_MS", "70"))
 UTTERANCE_PAUSE_MS = int(os.environ.get("KOKORO_UTTERANCE_PAUSE_MS", "160"))
 
@@ -45,6 +47,48 @@ def save_wav(path: Path, samples: np.ndarray, sample_rate: int) -> None:
     sf.write(path, samples.astype(np.float32, copy=False), sample_rate, subtype="PCM_16")
 
 
+def chunk_cache_path(text: str, provider_version: str) -> Path:
+    payload = json.dumps(
+        {
+            "provider": "kokoro-onnx",
+            "providerVersion": provider_version,
+            "voice": VOICE,
+            "speed": SPEED,
+            "lang": LANG,
+            "text": text,
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return CHUNK_CACHE_DIR / f"{hashlib.sha256(payload).hexdigest()}.wav"
+
+
+def synthesize_chunk(
+    kokoro: Kokoro,
+    text: str,
+    provider_version: str,
+) -> tuple[np.ndarray, int, bool]:
+    cache_path = chunk_cache_path(text, provider_version)
+    if cache_path.exists():
+        audio, sample_rate = sf.read(cache_path, dtype="float32", always_2d=False)
+        audio = np.asarray(audio, dtype=np.float32).reshape(-1)
+        if audio.size:
+            return audio, int(sample_rate), True
+        cache_path.unlink(missing_ok=True)
+
+    audio, sample_rate = kokoro.create(text, voice=VOICE, speed=SPEED, lang=LANG)
+    audio = np.asarray(audio, dtype=np.float32).reshape(-1)
+    if audio.size == 0:
+        raise RuntimeError("Kokoro returned empty audio")
+
+    CHUNK_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    temp_path = cache_path.with_name(f"{cache_path.name}.{os.getpid()}.tmp.wav")
+    save_wav(temp_path, audio, int(sample_rate))
+    os.replace(temp_path, cache_path)
+    return audio, int(sample_rate), False
+
+
 def main() -> None:
     if len(sys.argv) < 3:
         raise SystemExit("usage: synthesize_kokoro.py <manifest.json> <output-dir> [public-prefix]")
@@ -52,17 +96,21 @@ def main() -> None:
     output_dir = Path(sys.argv[2])
     public_prefix = sys.argv[3] if len(sys.argv) > 3 else "generated"
     output_dir.mkdir(parents=True, exist_ok=True)
+    CHUNK_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
     if not MODEL_PATH.exists() or not VOICES_PATH.exists():
         raise FileNotFoundError(f"Kokoro model assets missing: {MODEL_PATH} / {VOICES_PATH}")
 
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     utterance_by_id = {item["id"]: item for item in manifest["utterances"]}
+    provider_version = importlib.metadata.version("kokoro-onnx")
     kokoro = Kokoro(str(MODEL_PATH), str(VOICES_PATH))
 
     clips: list[dict[str, Any]] = []
     utterance_location: dict[str, tuple[dict[str, Any], dict[str, Any]]] = {}
     bundle_sample_rate: int | None = None
+    cache_hits = 0
+    cache_misses = 0
 
     for scene in manifest["scenes"]:
         if scene["role"] == "retrieval" or not scene["utteranceIds"]:
@@ -81,8 +129,11 @@ def main() -> None:
             utterance_start = cursor
 
             for chunk_index, chunk in enumerate(utterance["chunks"]):
-                audio, sample_rate = kokoro.create(chunk, voice=VOICE, speed=SPEED, lang=LANG)
-                audio = np.asarray(audio, dtype=np.float32).reshape(-1)
+                audio, sample_rate, cache_hit = synthesize_chunk(kokoro, chunk, provider_version)
+                if cache_hit:
+                    cache_hits += 1
+                else:
+                    cache_misses += 1
                 if audio.size == 0:
                     raise RuntimeError(f"Kokoro returned empty audio for {utterance_id}:{chunk_index}")
                 if bundle_sample_rate is None:
@@ -176,7 +227,7 @@ def main() -> None:
     timing = {
         "version": "1.0.0",
         "provider": "kokoro-onnx",
-        "providerVersion": importlib.metadata.version("kokoro-onnx"),
+        "providerVersion": provider_version,
         "voice": VOICE,
         "speed": SPEED,
         "sampleRate": bundle_sample_rate,
@@ -187,10 +238,13 @@ def main() -> None:
     print(json.dumps({
         "ok": True,
         "provider": "kokoro-onnx",
+        "providerVersion": provider_version,
         "voice": VOICE,
         "speed": SPEED,
         "sampleRate": bundle_sample_rate,
         "clips": len(clips),
+        "cacheHits": cache_hits,
+        "cacheMisses": cache_misses,
         "timing": str(timing_path),
     }))
 
