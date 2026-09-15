@@ -7,7 +7,7 @@ import {EpisodeVideo,type EpisodeVideoProps} from "./EpisodeVideo";
 
 const manifest=fixture as EpisodeManifest;
 const resolved=buildDemoResolved(manifest);
-export const RemotionRoot:React.FC=()=> <Composition<EpisodeVideoProps>
+export const RemotionRoot:React.FC=()=> <Composition
   id="EpisodeVideo"
   component={EpisodeVideo}
   durationInFrames={resolved.durationFrames}
@@ -15,5 +15,5 @@ export const RemotionRoot:React.FC=()=> <Composition<EpisodeVideoProps>
   width={resolved.width}
   height={resolved.height}
   defaultProps={{manifest,resolved}}
-  calculateMetadata={({props})=>({durationInFrames:props.resolved.durationFrames,fps:props.resolved.fps,width:props.resolved.width,height:props.resolved.height})}
+  calculateMetadata={({props})=>{const typed=props as EpisodeVideoProps;return {durationInFrames:typed.resolved.durationFrames,fps:typed.resolved.fps,width:typed.resolved.width,height:typed.resolved.height};}}
 />;
