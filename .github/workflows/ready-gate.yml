@@ -45,10 +45,10 @@ jobs:
           echo "manifest=episodes/$episode_id/manifest.json" >> "$GITHUB_OUTPUT"
       - name: Validate READY and manifest hash
         run: npm run check-ready -- "${{ steps.ready.outputs.path }}"
-      - name: Install local Kokoro TTS runtime and render fonts
+      - name: Install local Kokoro TTS runtime, render fonts, and review tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq espeak-ng fonts-noto-cjk
+          sudo apt-get install -y -qq espeak-ng fonts-noto-cjk ffmpeg
           python3 -m pip install --disable-pip-version-check -r requirements-tts.txt
       - name: Download Kokoro int8 model
         shell: bash
@@ -76,16 +76,34 @@ jobs:
         run: npm run compile:tts -- "${{ steps.ready.outputs.manifest }}" public/generated/tts-timing.json public/generated/render-props.json
       - name: Render 540p preview
         run: npx remotion render src/composition/index.ts EpisodeVideo "out/${{ steps.ready.outputs.episode_id }}-preview-540p.mp4" --props=public/generated/render-props.json --scale=0.5 --codec=h264 --crf=23
+      - name: Generate 3x3 contact sheet
+        shell: bash
+        run: |
+          set -euo pipefail
+          video="out/${{ steps.ready.outputs.episode_id }}-preview-540p.mp4"
+          sheet="out/${{ steps.ready.outputs.episode_id }}-contact-sheet.jpg"
+          duration="$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$video")"
+          interval="$(python3 - <<'PY' "$duration"
+          import sys
+          duration = max(float(sys.argv[1]), 1.0)
+          print(max(duration / 9.0, 0.25))
+          PY
+          )"
+          ffmpeg -hide_banner -loglevel error -y -i "$video" \
+            -vf "fps=1/${interval},scale=320:-1,tile=3x3:padding=6:margin=6" \
+            -frames:v 1 -q:v 2 "$sheet"
+          test -s "$sheet"
       - name: Upload review artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ready-preview-${{ steps.ready.outputs.episode_id }}-${{ github.sha }}
           path: |
             out/*-preview-540p.mp4
+            out/*-contact-sheet.jpg
             public/generated/tts-timing.json
             public/generated/render-props.json
           retention-days: 7
       - name: Publication boundary
         run: |
-          echo "READY -> validate -> local TTS -> exact timing -> 540p render passed."
-          echo "Publishing is intentionally disabled until archive/review/YouTube gates are implemented."
+          echo "READY -> validate -> local TTS -> exact timing -> 540p render -> contact sheet passed."
+          echo "Publishing is intentionally disabled. A separate APPROVED.json marker is required for a 1080p final render."
