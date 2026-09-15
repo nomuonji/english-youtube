@@ -6,11 +6,11 @@ v2.1設計を実装中。実装・稼働状況はREADMEに記載する。設計�
 
 エンジニアリング依頼では文書・schema・コードを一緒に変更できる。通常の定期コンテンツ生成ではepisodes/とruns/だけを更新できる。React、CSS、schema、workflow、設計、予算、公開設定を日次処理で変更しない。
 
-v2.1の変更点は必ず `docs/V2_1_CHANGES.md` を先に読む。既存v2文書と衝突する場合はv2.1修正を優先する。視聴体験・学習体験については `docs/EDITORIAL_SYSTEM.md`、`docs/RETENTION_AND_LEARNING.md`、`docs/VIDEO_QUALITY_SYSTEM.md` を合わせて正本とする。
+v2.1の変更点は必ず `docs/V2_1_CHANGES.md` を先に読む。既存v2文書と衝突する場合はv2.1修正を優先する。視聴体験・学習体験については `docs/EDITORIAL_SYSTEM.md`、`docs/RETENTION_AND_LEARNING.md`、`docs/VIDEO_QUALITY_SYSTEM.md` を合わせて正本とする。ただし、viewer-facing な画面設計・字幕・画像/B-roll・BGM/SFX・chapter call・視線誘導については、現在の実視聴レビューを反映した `docs/VIDEO_PRODUCTION_PLAYBOOK.md` を暫定的に最優先する。
 
 ## 作業開始時
 
-README、docs/V2_1_CHANGES.md、担当領域の仕様、docs/DATA_CONTRACT.md、docs/OPERATIONS.mdを読む。日次生成ではdocs/EDITORIAL_SYSTEM.md、docs/RETENTION_AND_LEARNING.md、docs/VIDEO_QUALITY_SYSTEM.md、docs/AGENT_PIPELINE.mdも読む。
+README、docs/V2_1_CHANGES.md、担当領域の仕様、docs/DATA_CONTRACT.md、docs/OPERATIONS.mdを読む。日次生成ではdocs/EDITORIAL_SYSTEM.md、docs/RETENTION_AND_LEARNING.md、docs/VIDEO_QUALITY_SYSTEM.md、docs/VIDEO_PRODUCTION_PLAYBOOK.md、docs/AGENT_PIPELINE.mdも読む。
 
 ## 日次処理の必須順序
 
