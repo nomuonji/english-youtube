@@ -1,0 +1,14 @@
+{
+  "version": "2.1.0",
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "colors": {
+    "background": "#F7F5EF",
+    "text": "#152B3C",
+    "muted": "#425569",
+    "accent": "#006D77",
+    "warning": "#9A4D00",
+    "line": "#CCD2D4"
+  }
+}
