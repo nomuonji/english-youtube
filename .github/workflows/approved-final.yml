@@ -123,6 +123,8 @@ jobs:
         env:
           ALLOW_BROLL_FETCH: "false"
         run: npm run compile:tts -- "${{ steps.approval.outputs.manifest }}" public/generated/tts-timing.json public/generated/render-props.json
+      - name: Generate reviewed background music bed
+        run: python3 scripts/generate_bgm.py public/generated/render-props.json public/generated/bgm.wav
       - name: Render approved 1080p final
         run: npx remotion render src/composition/index.ts EpisodeVideo "out/${{ steps.approval.outputs.episode_id }}-final-1080p.mp4" --props=public/generated/render-props.json --codec=h264 --crf=18
       - name: Normalize final narration loudness
@@ -140,5 +142,5 @@ jobs:
           retention-days: 14
       - name: Publishing boundary
         run: |
-          echo "Explicit approval -> retention/cognitive review -> reviewed image/B-roll restore -> deterministic SFX -> 1080p final render -> loudness normalization passed."
+          echo "Explicit approval -> retention/cognitive review -> reviewed image/B-roll restore -> deterministic BGM/SFX -> 1080p final render -> loudness normalization passed."
           echo "YouTube upload remains disabled until the publishing adapter is implemented and separately gated."
