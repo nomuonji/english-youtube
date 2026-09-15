@@ -112,7 +112,16 @@ jobs:
         with:
           path: public/generated/images
           key: editorial-images-v1-${{ runner.os }}-${{ steps.approval.outputs.manifest_hash }}
-      - name: Compile resolved timing
+      - name: Restore reviewed B-roll
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: public/generated/broll
+          key: reviewed-broll-v1-${{ runner.os }}-${{ steps.approval.outputs.manifest_hash }}
+      - name: Require reviewed B-roll manifest
+        run: test -s public/generated/broll/manifest.json
+      - name: Compile resolved timing with frozen review assets
+        env:
+          ALLOW_BROLL_FETCH: "false"
         run: npm run compile:tts -- "${{ steps.approval.outputs.manifest }}" public/generated/tts-timing.json public/generated/render-props.json
       - name: Render approved 1080p final
         run: npx remotion render src/composition/index.ts EpisodeVideo "out/${{ steps.approval.outputs.episode_id }}-final-1080p.mp4" --props=public/generated/render-props.json --codec=h264 --crf=18
@@ -126,9 +135,10 @@ jobs:
             out/*-final-1080p.mp4
             public/generated/tts-timing.json
             public/generated/render-props.json
+            public/generated/broll/manifest.json
             ${{ steps.approval.outputs.path }}
           retention-days: 14
       - name: Publishing boundary
         run: |
-          echo "Explicit approval -> retention/cognitive review -> reviewed editorial image restore -> 1080p final render -> loudness normalization passed."
+          echo "Explicit approval -> retention/cognitive review -> reviewed image/B-roll restore -> deterministic SFX -> 1080p final render -> loudness normalization passed."
           echo "YouTube upload remains disabled until the publishing adapter is implemented and separately gated."
