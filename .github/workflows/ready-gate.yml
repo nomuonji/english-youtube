@@ -131,8 +131,22 @@ jobs:
         with:
           path: public/generated/images
           key: editorial-images-v1-${{ runner.os }}-${{ steps.ready.outputs.manifest_hash }}
-      - name: Compile resolved timing
+      - name: Restore reviewed B-roll cache
+        id: broll-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: public/generated/broll
+          key: reviewed-broll-v1-${{ runner.os }}-${{ steps.ready.outputs.manifest_hash }}
+      - name: Compile resolved timing and review assets
+        env:
+          ALLOW_BROLL_FETCH: "true"
         run: npm run compile:tts -- "${{ steps.ready.outputs.manifest }}" public/generated/tts-timing.json public/generated/render-props.json
+      - name: Save reviewed B-roll cache
+        if: steps.broll-cache.outputs.cache-hit != 'true' && hashFiles('public/generated/broll/manifest.json') != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: public/generated/broll
+          key: reviewed-broll-v1-${{ runner.os }}-${{ steps.ready.outputs.manifest_hash }}
       - name: Upload speech bundle for render job
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -196,10 +210,11 @@ jobs:
             public/generated/tts-timing.json
             public/generated/render-props.json
             public/generated/image-briefs.json
+            public/generated/broll/manifest.json
           retention-days: 30
       - name: Publication boundary
         run: |
-          echo "READY -> validate -> retention/cognitive review -> local TTS -> optional editorial images -> exact timing -> 540p render -> loudness normalization -> contact sheet passed."
+          echo "READY -> validate -> retention/cognitive review -> local TTS -> optional editorial images/B-roll -> exact timing -> chapter calls/SFX -> 540p render -> loudness normalization -> contact sheet passed."
           echo "Publishing is intentionally disabled. A separate APPROVED.json marker is required for a 1080p final render."
 
   deploy_review:
