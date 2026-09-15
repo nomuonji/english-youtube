@@ -1,0 +1,59 @@
+name: Expose approved final asset
+
+on:
+  workflow_run:
+    workflows: ["Approved final render"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  expose:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download approved final artifact
+        id: artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_REPO: ${{ github.repository }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          artifact_name="$(gh api "repos/$SOURCE_REPO/actions/runs/$SOURCE_RUN_ID/artifacts" --jq '.artifacts[] | select(.name | startswith("approved-final-")) | .name' | head -n 1)"
+          if [ -z "$artifact_name" ]; then
+            echo "Approved final artifact not found for run $SOURCE_RUN_ID" >&2
+            exit 2
+          fi
+          mkdir -p dist
+          gh run download "$SOURCE_RUN_ID" --repo "$SOURCE_REPO" --name "$artifact_name" --dir dist
+          video="$(find dist -type f -name '*-final-1080p.mp4' -print -quit)"
+          if [ -z "$video" ]; then
+            echo "Final MP4 not found in artifact $artifact_name" >&2
+            exit 2
+          fi
+          asset_name="$(basename "$video")"
+          echo "video=$video" >> "$GITHUB_OUTPUT"
+          echo "asset_name=$asset_name" >> "$GITHUB_OUTPUT"
+
+      - name: Publish immutable GitHub release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+          VIDEO: ${{ steps.artifact.outputs.video }}
+          ASSET_NAME: ${{ steps.artifact.outputs.asset_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="approved-$SOURCE_SHA"
+          notes="Approved production render from workflow run $SOURCE_RUN_ID at commit $SOURCE_SHA. This release exists only to hand the immutable final MP4 to the publishing repository."
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" "$VIDEO#$ASSET_NAME" --clobber
+          else
+            gh release create "$tag" "$VIDEO#$ASSET_NAME" --title "Approved final $SOURCE_SHA" --notes "$notes" --target "$SOURCE_SHA"
+          fi
+          echo "Release asset: https://github.com/${{ github.repository }}/releases/download/$tag/$ASSET_NAME"
