@@ -15,12 +15,12 @@ const getValidator = ():ValidateFunction => {
   if (validateFunction) return validateFunction;
   const legacy = loadObject(resolve(root,"schemas/episode.schema.json"));
   const schema = loadObject(resolve(root,"schemas/episode-v2.1.schema.json")) as AnySchema;
-  const definitionsOnly = {
-    $schema: legacy.$schema,
-    $id: legacy.$id,
-    $defs: legacy.$defs,
-  } as AnySchema;
-  const ajv = new Ajv2020({allErrors:true, strict:true});
+  const definitionsOnly = {$schema:legacy.$schema,$id:legacy.$id,$defs:legacy.$defs} as AnySchema;
+  // The v2.0 shared $defs predate Ajv strictTypes and contain conditional
+  // property fragments without repeated type declarations. Runtime validation
+  // remains strict for unknown keywords/properties/required fields; only the
+  // legacy schema-lint rule is relaxed until common v2.1 defs are extracted.
+  const ajv = new Ajv2020({allErrors:true,strict:true,strictTypes:false});
   addFormats(ajv);
   ajv.addSchema(definitionsOnly);
   validateFunction = ajv.compile(schema);
