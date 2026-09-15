@@ -1,1 +1,2 @@
-edge-tts==7.2.1
+kokoro-onnx==0.6.1
+soundfile==0.14.0
