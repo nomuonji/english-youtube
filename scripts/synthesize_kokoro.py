@@ -27,8 +27,10 @@ LANG = os.environ.get("KOKORO_LANG", "en-us")
 MODEL_PATH = Path(os.environ.get("KOKORO_MODEL_PATH", ".cache/kokoro/kokoro-v1.0.int8.onnx"))
 VOICES_PATH = Path(os.environ.get("KOKORO_VOICES_PATH", ".cache/kokoro/voices-v1.0.bin"))
 CHUNK_CACHE_DIR = Path(os.environ.get("KOKORO_CHUNK_CACHE_DIR", ".cache/kokoro-chunks"))
-CHUNK_PAUSE_MS = int(os.environ.get("KOKORO_CHUNK_PAUSE_MS", "70"))
-UTTERANCE_PAUSE_MS = int(os.environ.get("KOKORO_UTTERANCE_PAUSE_MS", "160"))
+# Learner-facing pacing: chunks stay connected, while sentence boundaries give
+# enough time to finish reading the Japanese line and return attention to the visual.
+CHUNK_PAUSE_MS = int(os.environ.get("KOKORO_CHUNK_PAUSE_MS", "120"))
+UTTERANCE_PAUSE_MS = int(os.environ.get("KOKORO_UTTERANCE_PAUSE_MS", "360"))
 
 
 def sha256_file(path: Path) -> str:
