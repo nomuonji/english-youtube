@@ -1,0 +1,26 @@
+name: Repair production translation chunks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/repair-translation-chunks.mjs"
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: node scripts/repair-translation-chunks.mjs
+      - shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add episodes/2026-09-15-ai-power-project/manifest.json
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: align Japanese translation chunks"
+          git push
