@@ -40,6 +40,17 @@ async function download(url,file){
   const len=Number(r.headers.get("content-length")||0);if(len>12_000_000)throw new Error(`asset too large: ${len}`);
   const buf=Buffer.from(await r.arrayBuffer());if(buf.length>12_000_000)throw new Error(`asset too large: ${buf.length}`);await fs.writeFile(file,buf);
 }
+const queriesFor=(brief)=>{
+  const primary=brief.searchQuery||"technology infrastructure";
+  const extra=brief.purpose==="context"
+    ? ["electricity transmission tower","high voltage power lines","electrical substation"]
+    : brief.purpose==="analogy"
+      ? ["high voltage power lines","electrical substation"]
+      : brief.purpose==="hook"
+        ? ["data center servers","server room racks"]
+        : [];
+  return [...new Set([primary,...extra])];
+};
 
 const manifestPath=path.join(outDir,"manifest.json");
 let generated=[];
@@ -51,14 +62,17 @@ let added=0;
 for(const brief of briefsPayload.briefs??[]){
   if(have.has(brief.sceneId))continue;
   try{
-    const query=brief.searchQuery||"technology infrastructure";
-    const selected=await pick(query);
+    let selected=null;let usedQuery="";
+    for(const query of queriesFor(brief)){
+      selected=await pick(query);
+      if(selected){usedQuery=query;break;}
+    }
     if(!selected)continue;
     const file=`${brief.sceneId}.jpg`;
     await download(selected.info.url,path.join(outDir,file));
-    generated.push({sceneId:brief.sceneId,purpose:brief.purpose,file,provider:"wikimedia-commons",sourcePage:`https://commons.wikimedia.org/wiki/${encodeURIComponent(selected.title.replaceAll(" ","_"))}`,license:selected.info.license,artist:selected.info.artist,credit:selected.info.credit,query});
+    generated.push({sceneId:brief.sceneId,purpose:brief.purpose,file,provider:"wikimedia-commons",sourcePage:`https://commons.wikimedia.org/wiki/${encodeURIComponent(selected.title.replaceAll(" ","_"))}`,license:selected.info.license,artist:selected.info.artist,credit:selected.info.credit,query:usedQuery});
     have.add(brief.sceneId);added++;
   }catch(err){console.warn(`[commons-image] ${brief.sceneId} skipped: ${err instanceof Error?err.message:String(err)}`);}
 }
-if(generated.length)await fs.writeFile(manifestPath,JSON.stringify({version:"1.1.0",episodeId:briefsPayload.episodeId,generated},null,2)+"\n");
-console.log(JSON.stringify({ok:true,count:generated.length,added,missing:Math.max(0,(briefsPayload.briefs??[]).length-generated.length),assets:generated.map(x=>({sceneId:x.sceneId,provider:x.provider??"cloudflare",license:x.license??"generated"}))}));
+if(generated.length)await fs.writeFile(manifestPath,JSON.stringify({version:"1.2.0",episodeId:briefsPayload.episodeId,generated},null,2)+"\n");
+console.log(JSON.stringify({ok:true,count:generated.length,added,missing:Math.max(0,(briefsPayload.briefs??[]).length-generated.length),assets:generated.map(x=>({sceneId:x.sceneId,provider:x.provider??"cloudflare",license:x.license??"generated",query:x.query??null}))}));
