@@ -1,5 +1,6 @@
 name: Preview Pages
 
+# Deploys the Remotion Player preview to GitHub Pages.
 on:
   push:
     branches: [main]
