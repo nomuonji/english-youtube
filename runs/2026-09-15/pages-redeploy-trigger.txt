@@ -1,1 +1,0 @@
-Pages redeploy trigger after repository Pages source was switched to GitHub Actions.
