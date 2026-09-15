@@ -90,6 +90,8 @@ retrievalでは:
 - before / after
 - scale comparison
 
+1episode最大3枚を基本上限とし、phrase / retrieval / recapには原則使わない。画像を入れるsceneでは、既存diagramと画像を同じ強度で見せず、画像を中央visualの代替として扱う。
+
 画像生成briefには最低限以下を含める:
 - viewerに一目で理解させたい概念
 - 主役1つ
@@ -97,16 +99,56 @@ retrievalでは:
 - factual photoのように誤認させる必要がない場合はillustrative / diagrammaticにする
 - 実在人物・事件を表現する場合は、生成画像を事実資料として扱わない
 
-## 6. 長尺retention
+詳細は `docs/IMAGE_GENERATION.md` を正本とする。
+
+## 6. Orientation: 今どこにいるか
+
+視聴者はscene番号ではなく、説明の論理的な章で現在地を理解できるようにする。
+
+基本4章:
+1. WHAT CHANGED — 何が起きたか
+2. HOW IT WORKS — なぜそうなるか
+3. THE CATCH — 何がボトルネックか
+4. WHAT IT MEANS — 結局どう見るべきか
+
+ルール:
+- viewer-facing navigationでは `03/17` のようなscene数より `2 / 4 HOW IT WORKS` のような章を優先する。
+- category名や制作内部ラベルを現在地UIへ重ねない。
+- 新章の最初のsceneでは、その章で答える小さな問いを明確にする。
+- 字幕・visualと競合する大きな常設ナビは作らない。現在地は短く一目で分かること。
+- phrase/retrievalは「本編から逸れた別動画」に見せず、短いPAUSE & PRACTICEとして扱ってから本編へ戻る。
+
+## 7. 長尺retention
 
 - 0〜15秒: promise / tension / central question。
+- 最初の30秒はtitle/thumbnailの期待と同じ問いを扱い、前置きで消費しない。
 - 30〜60秒ごと: micro payoff。
 - 20〜40秒ごと: 意味のあるpattern break。
 - pattern breakは派手なanimationではなく、理解対象の変化で作る。
 - open loopを作ったら必ず回収する。
 - scene末尾の少なくとも半数は、contrast / consequence / unresolved question / scale shift / exceptionのどれかで次へ送る。
 
-## 7. Review gates
+## 8. 公開後のretention feedback loop
+
+制作時のscoreだけで品質完成としない。YouTube Studioで十分な視聴データが得られた動画は、次回生成前にretention evidenceへ変換する。
+
+記録するもの:
+- 30秒時点のIntro retention
+- Top moments
+- Spikes
+- Dips
+- 同程度の長さの直近動画とのtypical retention比較
+
+解釈ルール:
+- 後半のTop moment: 同種の魅力を次回は前半へ移せないか検討する。
+- Dip: その時点のscene / utterance / visual type / learning interruptionを特定し、原因候補を記録する。
+- Spike: 魅力による再視聴か、理解できず巻き戻されたのかを区別する。自動的に成功扱いしない。
+- 30秒Introが弱い: hook、title/thumbnailとの期待一致、最初のpayoffまでの時間を優先して修正する。
+- 単一動画の偶然を一般則にしない。複数動画で同じpatternが再現した場合に生成方針へ昇格する。
+
+将来analytics adapterを実装する場合も、生の維持率から直接rendererを変更せず、`observation → hypothesis → next-video experiment → result` の台帳を残す。
+
+## 9. Review gates
 
 production manifestはREADY前に以下を通す。
 
@@ -131,15 +173,15 @@ npm run review:cognitive -- <manifest>
 - card body過多
 - 1sceneにutteranceを詰め込みすぎていないか
 
-## 8. Design research basis
+## 10. Design research basis
 
 このシステムは以下の考え方を制作ルールへ翻訳している。
 
-- YouTube: long-formでも冒頭で価値を示し、storytellingとcuriosityでengagementを維持する。
+- YouTube audience retention: Intro（最初の30秒）、Top moments、Spikes、Dipsを使い、後半にある強い内容は前倒しを検討する。
 - Netflix timed text: subtitleは音声と同期し、視聴者が「読む作業」ではなくコンテンツを自然に見られることを優先する。
 - Multimedia learning research: coherence / signaling / redundancy / spatial contiguity / temporal contiguity / segmentingを使い、extraneous processingを減らす。
 
 参考:
-- https://support.google.com/youtube/answer/16559650
+- https://support.google.com/youtube/answer/9314415
 - https://partnerhelp.netflixstudios.com/hc/en-us/articles/360051554394-Timed-Text-Style-Guide-Subtitle-Timing-Guidelines
 - https://www.cambridge.org/core/books/cambridge-handbook-of-multimedia-learning/principles-for-reducing-extraneous-processing-in-multimedia-learning/F29A19FCD34C542806F736E0661C05F5
