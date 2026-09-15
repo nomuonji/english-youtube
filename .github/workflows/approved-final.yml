@@ -51,6 +51,10 @@ jobs:
           echo "manifest=episodes/$episode_id/manifest.json" >> "$GITHUB_OUTPUT"
       - name: Validate explicit approval, READY marker, and manifest hash
         run: npm run check-approval -- "${{ steps.approval.outputs.path }}"
+      - name: Retention review approved manifest
+        run: npm run review:retention -- "${{ steps.approval.outputs.manifest }}"
+      - name: Cognitive-load review approved manifest
+        run: npm run review:cognitive -- "${{ steps.approval.outputs.manifest }}"
       - name: Install local Kokoro TTS runtime and render tools
         run: |
           sudo apt-get update -qq
@@ -83,7 +87,10 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .cache/kokoro-chunks
-          key: kokoro-chunks-v1-${{ runner.os }}-${{ steps.approval.outputs.manifest_hash }}
+          key: kokoro-chunks-v2-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            kokoro-chunks-v2-${{ runner.os }}-
+            kokoro-chunks-v1-${{ runner.os }}-
       - name: Synthesize approved speech
         env:
           KOKORO_VOICE: af_sarah
@@ -99,7 +106,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .cache/kokoro-chunks
-          key: kokoro-chunks-v1-${{ runner.os }}-${{ steps.approval.outputs.manifest_hash }}
+          key: kokoro-chunks-v2-${{ runner.os }}-${{ github.sha }}
       - name: Compile resolved timing
         run: npm run compile:tts -- "${{ steps.approval.outputs.manifest }}" public/generated/tts-timing.json public/generated/render-props.json
       - name: Render approved 1080p final
@@ -118,5 +125,5 @@ jobs:
           retention-days: 14
       - name: Publishing boundary
         run: |
-          echo "Explicit approval -> 1080p final render -> loudness normalization passed."
+          echo "Explicit approval -> retention/cognitive review -> 1080p final render -> loudness normalization passed."
           echo "YouTube upload remains disabled until the publishing adapter is implemented and separately gated."
