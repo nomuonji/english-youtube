@@ -1,0 +1,78 @@
+name: Kokoro TTS preview
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/synthesize_kokoro.py"
+      - "requirements-tts.txt"
+      - "src/compiler/measuredTiming.ts"
+      - "src/cli/compile-tts.ts"
+      - "src/contracts/types.ts"
+      - "src/composition/**"
+      - "src/scenes/**"
+      - "fixtures/v2.1-demo.json"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/kokoro-tts-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install Node dependencies
+        run: npm ci --ignore-scripts
+      - name: Install local TTS runtime
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq espeak-ng
+          python3 -m pip install --disable-pip-version-check -r requirements-tts.txt
+      - name: Download Kokoro int8 model
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .cache/kokoro
+          curl -fL --retry 3 --retry-delay 2 \
+            -o .cache/kokoro/kokoro-v1.0.int8.onnx \
+            https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/kokoro-v1.0.int8.onnx
+          curl -fL --retry 3 --retry-delay 2 \
+            -o .cache/kokoro/voices-v1.0.bin \
+            https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/voices-v1.0.bin
+          test -s .cache/kokoro/kokoro-v1.0.int8.onnx
+          test -s .cache/kokoro/voices-v1.0.bin
+      - name: Validate fixture
+        run: npm run validate -- fixtures/v2.1-demo.json
+      - name: Synthesize local scene speech with exact chunk samples
+        env:
+          KOKORO_VOICE: af_sarah
+          KOKORO_SPEED: "0.95"
+          KOKORO_MODEL_PATH: .cache/kokoro/kokoro-v1.0.int8.onnx
+          KOKORO_VOICES_PATH: .cache/kokoro/voices-v1.0.bin
+        run: |
+          mkdir -p public/generated out
+          python3 scripts/synthesize_kokoro.py fixtures/v2.1-demo.json public/generated generated
+      - name: Compile resolved timing
+        run: npm run compile:tts -- fixtures/v2.1-demo.json public/generated/tts-timing.json public/generated/render-props.json
+      - name: Render 540p preview
+        run: npx remotion render src/composition/index.ts EpisodeVideo out/kokoro-preview.mp4 --props=public/generated/render-props.json --scale=0.5 --codec=h264 --crf=23
+      - name: Upload preview artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: kokoro-tts-preview-${{ github.sha }}
+          path: |
+            out/kokoro-preview.mp4
+            public/generated/tts-timing.json
+            public/generated/render-props.json
+          retention-days: 7
