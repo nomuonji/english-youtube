@@ -51,10 +51,10 @@ jobs:
           echo "manifest=episodes/$episode_id/manifest.json" >> "$GITHUB_OUTPUT"
       - name: Validate explicit approval, READY marker, and manifest hash
         run: npm run check-approval -- "${{ steps.approval.outputs.path }}"
-      - name: Install local Kokoro TTS runtime and render fonts
+      - name: Install local Kokoro TTS runtime and render tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq espeak-ng fonts-noto-cjk
+          sudo apt-get install -y -qq espeak-ng fonts-noto-cjk ffmpeg
           python3 -m pip install --disable-pip-version-check -r requirements-tts.txt
       - name: Cache Kokoro model
         id: kokoro-model-cache
@@ -104,6 +104,8 @@ jobs:
         run: npm run compile:tts -- "${{ steps.approval.outputs.manifest }}" public/generated/tts-timing.json public/generated/render-props.json
       - name: Render approved 1080p final
         run: npx remotion render src/composition/index.ts EpisodeVideo "out/${{ steps.approval.outputs.episode_id }}-final-1080p.mp4" --props=public/generated/render-props.json --codec=h264 --crf=18
+      - name: Normalize final narration loudness
+        run: bash scripts/normalize_video_audio.sh "out/${{ steps.approval.outputs.episode_id }}-final-1080p.mp4"
       - name: Upload approved final artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -116,5 +118,5 @@ jobs:
           retention-days: 14
       - name: Publishing boundary
         run: |
-          echo "Explicit approval -> 1080p final render passed."
+          echo "Explicit approval -> 1080p final render -> loudness normalization passed."
           echo "YouTube upload remains disabled until the publishing adapter is implemented and separately gated."
