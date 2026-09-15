@@ -2,6 +2,9 @@ import React from "react";
 import {interpolate,spring,useCurrentFrame,useVideoConfig} from "remotion";
 import type {Cue,EpisodeManifest,LearningPoint,ResolvedScene,Scene,Utterance} from "../contracts/types";
 import {base,COLORS,headerStyle,mainArea,subtitleArea} from "./styles";
+import {ChapterCall} from "./ChapterCall";
+import {chapterForBeat} from "../chapters";
+import {visualJa} from "./visualJa";
 
 type Props={manifest:EpisodeManifest;scene:Scene;resolved:ResolvedScene};
 
@@ -9,6 +12,7 @@ const getU=(m:EpisodeManifest,id:string):Utterance|undefined=>m.utterances.find(
 const getP=(m:EpisodeManifest,id:string):LearningPoint|undefined=>m.learningPoints.find(i=>i.id===id);
 const phaseAt=(g:number,r:ResolvedScene)=>r.phases.find(p=>p.startFrame<=g&&g<p.endFrame);
 const cueAt=(g:number,r:ResolvedScene)=>r.cues.find(c=>c.startFrame<=g&&g<c.endFrame);
+const captionCueAt=(g:number,r:ResolvedScene)=>cueAt(g,r)??[...r.cues].filter(c=>c.startFrame<=g).sort((a,b)=>b.startFrame-a.startFrame)[0];
 const clamp=(v:number,min=0,max=1)=>Math.max(min,Math.min(max,v));
 const utteranceStart=(r:ResolvedScene,id:string):number|undefined=>{
   const frames=r.cues.filter(c=>c.utteranceId===id).map(c=>c.startFrame);
@@ -35,57 +39,60 @@ const highlightPhrase=(text:string,phrase?:string)=>{
   if(!phrase)return <>{text}</>;
   const i=text.toLowerCase().indexOf(phrase.toLowerCase());
   if(i<0)return <>{text}</>;
-  return <>{text.slice(0,i)}<span style={{color:COLORS.accent,fontWeight:820}}>{text.slice(i,i+phrase.length)}</span>{text.slice(i+phrase.length)}</>;
+  return <>{text.slice(0,i)}<span style={{color:COLORS.navy,fontWeight:900,background:COLORS.accentSoft,borderBottom:`6px solid ${COLORS.accent}`,borderRadius:8,padding:"0 .08em",boxDecorationBreak:"clone",WebkitBoxDecorationBreak:"clone"}}>{text.slice(i,i+phrase.length)}</span>{text.slice(i+phrase.length)}</>;
 };
 
 const Backdrop=({frame}:{frame:number})=>{
   const x=42+Math.sin(frame/95)*5;
   const y=34+Math.cos(frame/110)*4;
   return <>
-    <div style={{position:"absolute",inset:0,background:`radial-gradient(circle at ${x}% ${y}%, rgba(0,139,139,.08), transparent 34%), ${COLORS.background}`}}/>
+    <div style={{position:"absolute",inset:0,background:`radial-gradient(circle at ${x}% ${y}%, rgba(0,139,139,.08), transparent 34%), rgba(244,241,232,.82)`}}/>
     <div style={{position:"absolute",inset:0,opacity:.08,backgroundImage:"linear-gradient(rgba(16,42,54,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(16,42,54,.08) 1px, transparent 1px)",backgroundSize:"72px 72px"}}/>
   </>;
 };
 
-const chapterFor=(scene:Scene):{step:string;label:string}=>{
-  if(scene.role==="story"){
-    if(scene.beat==="setup")return {step:"1 / 4",label:"WHAT CHANGED"};
-    if(scene.beat==="mechanism")return {step:"2 / 4",label:"HOW IT WORKS"};
-    if(scene.beat==="complication")return {step:"3 / 4",label:"THE CATCH"};
-    return {step:"4 / 4",label:"WHAT IT MEANS"};
-  }
-  if(scene.role==="hook")return {step:"START",label:"THE QUESTION"};
-  if(scene.role==="phrase"||scene.role==="retrieval")return {step:"PAUSE",label:"PRACTICE"};
-  if(scene.role==="recap")return {step:"END",label:"TAKEAWAYS"};
-  return {step:"",label:sceneLabel(scene)};
+const chapterFor=(scene:Scene):{step:string;label:string;labelJa:string}=>{
+  if(scene.role==="story"){const c=chapterForBeat(scene.beat);if(c)return {step:`${c.index} / 4`,label:c.labelEn,labelJa:c.labelJa};}
+  if(scene.role==="hook")return {step:"START",label:"THE QUESTION",labelJa:"今日の問い"};
+  if(scene.role==="phrase")return {step:"PAUSE",label:"KEY PHRASE",labelJa:"重要表現"};
+  if(scene.role==="retrieval")return {step:"PAUSE",label:"LISTENING CHECK",labelJa:"リスニング確認"};
+  if(scene.role==="recap")return {step:"END",label:"TAKEAWAYS",labelJa:"まとめ"};
+  return {step:"",label:sceneLabel(scene),labelJa:""};
 };
+const cornerFor=(scene:Scene)=>scene.role==="story"?{en:"STORY",ja:"解説"}:scene.role==="phrase"?{en:"KEY PHRASE",ja:"重要表現"}:scene.role==="retrieval"?{en:"CHECK",ja:"確認"}:scene.role==="recap"?{en:"RECAP",ja:"まとめ"}:{en:"HOOK",ja:"導入"};
+const topicFor=(scene:Scene)=>scene.visual.type==="card"?scene.visual.headline:scene.visual.type==="metric"?scene.visual.label:scene.visual.type==="chain"?"Cause and effect":scene.visual.type==="compare"?`${scene.visual.leftTitle} vs ${scene.visual.rightTitle}`:scene.visual.type==="timeline"?"How the story develops":scene.visual.type==="phrase"?"Use it in context":scene.visual.type==="retrieval"?"Listen and check":"Three phrases to keep";
 
 const TopRail=({manifest,scene,resolved,frame}:{manifest:EpisodeManifest;scene:Scene;resolved:ResolvedScene;frame:number})=>{
   const index=Math.max(0,manifest.scenes.findIndex(s=>s.id===scene.id));
   const whole=clamp((index+frame/Math.max(1,resolved.durationFrames-1))/Math.max(1,manifest.scenes.length));
-  const chapter=chapterFor(scene);
+  const chapter=chapterFor(scene);const corner=cornerFor(scene);const topic=topicFor(scene);
   return <>
     <div style={{position:"absolute",left:0,top:0,width:"100%",height:6,background:"rgba(16,42,54,.08)"}}><div style={{height:"100%",width:`${whole*100}%`,background:COLORS.accent}}/></div>
-    <div style={{...headerStyle,justifyContent:"flex-start"}}>
-      <div style={{display:"flex",alignItems:"center",gap:18}}>
-        <span style={{fontSize:18,fontWeight:900,color:COLORS.accent,letterSpacing:".04em"}}>{chapter.step}</span>
-        <span style={{fontSize:24,fontWeight:900,color:COLORS.text,letterSpacing:".02em"}}>{chapter.label}</span>
+    <div style={{...headerStyle}}>
+      <div style={{display:"flex",alignItems:"center",gap:16}}>
+        <span style={{fontSize:18,fontWeight:900,color:COLORS.accent}}>{chapter.step}</span>
+        <div><div style={{fontSize:24,fontWeight:900,color:COLORS.text}}>{chapter.label}</div><div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:16,fontWeight:650,color:COLORS.muted,marginTop:1}}>{chapter.labelJa}</div></div>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:16,maxWidth:820}}>
+        <div style={{padding:"8px 13px",borderRadius:999,background:COLORS.navy,color:COLORS.white,textAlign:"center",minWidth:116}}><div style={{fontSize:15,fontWeight:900,letterSpacing:".08em"}}>{corner.en}</div><div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:13,opacity:.8}}>{corner.ja}</div></div>
+        <div style={{fontSize:22,fontWeight:760,color:COLORS.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{topic}</div>
       </div>
     </div>
   </>;
 };
 
 const BilingualCaption=({manifest,scene,resolved,globalFrame,phaseName}:{manifest:EpisodeManifest;scene:Scene;resolved:ResolvedScene;globalFrame:number;phaseName:string})=>{
-  const cue=cueAt(globalFrame,resolved);
-  if(scene.role==="retrieval"&&phaseName!=="reveal"&&phaseName!=="answer")return null;
-  if(!cue)return null;
+  const hidden=scene.role==="retrieval"&&phaseName!=="reveal"&&phaseName!=="answer";
+  const cue=hidden?undefined:captionCueAt(globalFrame,resolved);
   const point=pointForCue(manifest,cue);
-  const phrase=point&&cue.text.toLowerCase().includes(point.phrase.toLowerCase())?point.phrase:undefined;
-  return <div style={{width:"100%",minHeight:220,border:`1px solid ${COLORS.line}`,borderRadius:28,background:"rgba(255,255,255,.96)",boxShadow:`0 16px 44px ${COLORS.shadow}`,padding:"28px 52px",display:"flex",flexDirection:"column",justifyContent:"center",gap:14}}>
-    <div style={{fontSize:50,lineHeight:1.24,fontWeight:690,letterSpacing:"-.012em"}}>{highlightPhrase(cue.text,phrase)}</div>
-    <div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:30,lineHeight:1.4,color:COLORS.muted,fontWeight:560}}>{cue.translationJa}</div>
+  const phrase=point&&cue?.text.toLowerCase().includes(point.phrase.toLowerCase())?point.phrase:undefined;
+  return <div style={{width:"100%",height:224,border:`1px solid ${COLORS.line}`,borderRadius:28,background:"rgba(255,255,255,.965)",boxShadow:`0 16px 44px ${COLORS.shadow}`,padding:"24px 52px",display:"flex",flexDirection:"column",justifyContent:"center",gap:10,overflow:"hidden"}}>
+    {phrase?<div style={{fontSize:15,fontWeight:950,letterSpacing:".12em",color:COLORS.accent}}>KEY PHRASE · ここに注目</div>:null}
+    <div style={{fontSize:48,lineHeight:1.22,fontWeight:700,letterSpacing:"-.012em",minHeight:59,opacity:cue?1:.16}}>{cue?highlightPhrase(cue.text,phrase):" "}</div>
+    <div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:29,lineHeight:1.35,color:COLORS.muted,fontWeight:560,minHeight:39,opacity:cue?1:.14}}>{cue?.translationJa??" "}</div>
   </div>;
 };
+const BilingualVisualLabel=({text,large=false}:{text:string;large?:boolean})=>{const ja=visualJa(text);return <div style={{textAlign:"center"}}><div style={{fontSize:large?42:28,fontWeight:820,lineHeight:1.15}}>{text}</div>{ja?<div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:large?23:18,color:COLORS.muted,fontWeight:650,marginTop:7}}>{ja}</div>:null}</div>;};
 
 const focusStyle=(active:boolean,visible=true):React.CSSProperties=>({
   opacity:visible?(active?1:.44):0,
@@ -103,6 +110,8 @@ export const SceneRenderer:React.FC<Props>=({manifest,scene,resolved})=>{
   const intro=spring({frame:f,fps,config:{damping:18,stiffness:115,mass:.9}});
   const fadeOut=interpolate(f,[Math.max(0,resolved.durationFrames-10),Math.max(1,resolved.durationFrames-1)],[1,.94],{extrapolateLeft:"clamp",extrapolateRight:"clamp"});
   let visual:React.ReactNode=null;
+  const activeChapter=scene.role==="story"?chapterForBeat(scene.beat):undefined;
+  if(activeChapter&&(resolved.chapterCallFrames??0)>0&&f<(resolved.chapterCallFrames??0))return <ChapterCall chapter={activeChapter}/>;
 
   if(scene.visual.type==="card"){
     const v=scene.visual;
@@ -122,7 +131,7 @@ export const SceneRenderer:React.FC<Props>=({manifest,scene,resolved})=>{
     const value=raw?`${raw[1]??""}${(Number(raw[2])*p).toFixed((raw[2].split(".")[1]??"").length)}`:v.value;
     visual=<div style={{width:1320,textAlign:"center",padding:"48px 70px",borderRadius:42,background:COLORS.panel,border:`1px solid ${COLORS.line}`,boxShadow:`0 22px 62px ${COLORS.shadow}`}}>
       <div style={{fontSize:150,fontWeight:900,lineHeight:1,color:COLORS.accent,letterSpacing:"-.055em"}}>{value}<span style={{fontSize:60,marginLeft:18,color:COLORS.text}}>{v.unit}</span></div>
-      <div style={{fontSize:45,fontWeight:800,marginTop:28}}>{v.label}</div>
+      <div style={{marginTop:28}}><BilingualVisualLabel text={v.label} large/></div>
       <div style={{fontSize:28,color:COLORS.muted,marginTop:12}}>{v.qualifier}</div>
     </div>;
   }
@@ -134,7 +143,7 @@ export const SceneRenderer:React.FC<Props>=({manifest,scene,resolved})=>{
       const visible=revealed(g,resolved,n.revealAtUtteranceId);
       const active=current===n.revealAtUtteranceId;
       return <React.Fragment key={`${n.label}-${i}`}>
-        <div style={{minWidth:220,maxWidth:330,padding:"30px 28px",borderRadius:28,border:"3px solid",background:COLORS.white,fontSize:30,lineHeight:1.2,textAlign:"center",fontWeight:active?820:650,transition:"none",...focusStyle(active,visible)}}>{n.label}</div>
+        <div style={{minWidth:220,maxWidth:330,padding:"30px 28px",borderRadius:28,border:"3px solid",background:COLORS.white,fontSize:30,lineHeight:1.2,textAlign:"center",fontWeight:active?820:650,transition:"none",...focusStyle(active,visible)}}><BilingualVisualLabel text={n.label}/></div>
         {i<v.nodes.length-1?<div style={{fontSize:42,color:visible?COLORS.accent:COLORS.line}}>→</div>:null}
       </React.Fragment>;
     })}</div>;
@@ -144,15 +153,15 @@ export const SceneRenderer:React.FC<Props>=({manifest,scene,resolved})=>{
     const v=scene.visual;
     const current=currentReveal(g,resolved,v.rows.map(r=>r.revealAtUtteranceId));
     visual=<div style={{width:1450,borderRadius:34,overflow:"hidden",border:`1px solid ${COLORS.line}`,background:COLORS.panel,boxShadow:`0 20px 58px ${COLORS.shadow}`}}>
-      <div style={{display:"grid",gridTemplateColumns:"280px 1fr 1fr",padding:"22px 30px",background:COLORS.navy,color:COLORS.white,fontSize:28,fontWeight:820}}><div/><div>{v.leftTitle}</div><div>{v.rightTitle}</div></div>
-      {v.rows.map((r,i)=>{const visible=revealed(g,resolved,r.revealAtUtteranceId),active=current===r.revealAtUtteranceId;return <div key={`${r.aspect}-${i}`} style={{display:"grid",gridTemplateColumns:"280px 1fr 1fr",padding:"22px 30px",fontSize:28,borderTop:`1px solid ${COLORS.line}`,background:active?COLORS.accentSoft:COLORS.white,...focusStyle(active,visible)}}><div style={{fontWeight:820}}>{r.aspect}</div><div>{r.left}</div><div>{r.right}</div></div>;})}
+      <div style={{display:"grid",gridTemplateColumns:"280px 1fr 1fr",padding:"22px 30px",background:COLORS.navy,color:COLORS.white,fontSize:28,fontWeight:820}}><div/><BilingualVisualLabel text={v.leftTitle}/><BilingualVisualLabel text={v.rightTitle}/></div>
+      {v.rows.map((r,i)=>{const visible=revealed(g,resolved,r.revealAtUtteranceId),active=current===r.revealAtUtteranceId;return <div key={`${r.aspect}-${i}`} style={{display:"grid",gridTemplateColumns:"280px 1fr 1fr",padding:"22px 30px",fontSize:28,borderTop:`1px solid ${COLORS.line}`,background:active?COLORS.accentSoft:COLORS.white,...focusStyle(active,visible)}}><div style={{fontWeight:820}}><BilingualVisualLabel text={r.aspect}/></div><BilingualVisualLabel text={r.left}/><BilingualVisualLabel text={r.right}/></div>;})}
     </div>;
   }
 
   if(scene.visual.type==="timeline"){
     const v=scene.visual;
     const current=currentReveal(g,resolved,v.events.map(e=>e.revealAtUtteranceId));
-    visual=<div style={{width:1470,display:"flex",alignItems:"stretch",gap:20}}>{v.events.map((e,i)=>{const visible=revealed(g,resolved,e.revealAtUtteranceId),active=current===e.revealAtUtteranceId;return <div key={`${e.dateLabel}-${i}`} style={{flex:1,minHeight:220,padding:"30px 26px",borderRadius:28,border:"3px solid",background:COLORS.white,...focusStyle(active,visible)}}><div style={{fontSize:22,fontWeight:900,color:COLORS.accent,marginBottom:18}}>{e.dateLabel}</div><div style={{fontSize:30,lineHeight:1.28,fontWeight:active?820:650}}>{e.label}</div></div>;})}</div>;
+    visual=<div style={{width:1470,display:"flex",alignItems:"stretch",gap:20}}>{v.events.map((e,i)=>{const visible=revealed(g,resolved,e.revealAtUtteranceId),active=current===e.revealAtUtteranceId;return <div key={`${e.dateLabel}-${i}`} style={{flex:1,minHeight:220,padding:"30px 26px",borderRadius:28,border:"3px solid",background:COLORS.white,...focusStyle(active,visible)}}><div style={{fontSize:22,fontWeight:900,color:COLORS.accent,marginBottom:18}}>{e.dateLabel}</div><div style={{fontSize:30,lineHeight:1.28,fontWeight:active?820:650}}><BilingualVisualLabel text={e.label}/></div></div>;})}</div>;
   }
 
   if(scene.visual.type==="phrase"){
