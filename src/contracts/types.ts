@@ -23,6 +23,6 @@ export type EpisodeManifest = {
   packaging:{candidates:Array<{titleJa:string;thumbnailJa:string}>; selectedIndex:0|1|2};
 };
 export type Cue = {startFrame:number; endFrame:number; utteranceId:string; chunkIndices:number[]; text:string; translationJa:string};
-export type ResolvedScene = {sceneId:string; startFrame:number; durationFrames:number; audioEvents:Array<{clipId?:string;utteranceId:string;startFrame:number;startSample?:number;endSample?:number}>; cues:Cue[]; phases:Array<{name:"normal"|"prompt"|"listen"|"think"|"reveal"|"answer";startFrame:number;endFrame:number}>};
+export type ResolvedScene = {sceneId:string; startFrame:number; durationFrames:number; chapterCallFrames?:number; audioEvents:Array<{clipId?:string;utteranceId:string;startFrame:number;startSample?:number;endSample?:number}>; cues:Cue[]; phases:Array<{name:"normal"|"prompt"|"listen"|"think"|"reveal"|"answer";startFrame:number;endFrame:number}>};
 export type ResolvedEpisode = {version:"2.1.0"; episodeId:string; revision:number; manifestHash:string; engineCommit:string; fps:30; width:1920; height:1080; durationFrames:number; clips:Array<{clipId:string;sceneId:string;path:string;sha256:string;sampleRate:number;samples:number;utterances:Array<{utteranceId:string;startSample:number;endSample:number;chunkBoundariesSamples:number[]}>}>; scenes:ResolvedScene[]};
 export type ValidationIssue = {code:string; targetId:string; detail:string};
