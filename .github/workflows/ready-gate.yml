@@ -240,10 +240,30 @@ jobs:
           test -s dist/review/index.html
           test -s dist/review/video.mp4
           test -s dist/review/contact-sheet.jpg
+      - name: Check this is the latest READY
+        id: freshness
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --depth=100
+          latest_ready_sha="$(git log origin/main --format='%H' --diff-filter=A -- ':(glob)runs/**/READY.json' | head -n 1 || true)"
+          if [ -z "$latest_ready_sha" ]; then
+            echo "No READY commit found on origin/main" >&2
+            exit 2
+          fi
+          if [ "$latest_ready_sha" = "$GITHUB_SHA" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+            echo "Current run is the latest READY: $GITHUB_SHA"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping stale review deploy. latest READY=$latest_ready_sha current=$GITHUB_SHA"
+          fi
       - name: Upload Pages artifact
+        if: steps.freshness.outputs.deploy == 'true'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: dist
       - name: Deploy Pages
+        if: steps.freshness.outputs.deploy == 'true'
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
