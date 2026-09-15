@@ -1,0 +1,38 @@
+name: One-off caption simplification
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/oneoff-caption-simplify.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Remove inline vocabulary meaning pill
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/scenes/SceneRenderer.tsx')
+          s=p.read_text()
+          old='''    {point&&phrase?<div style={{alignSelf:"center",padding:"7px 14px",borderRadius:999,background:COLORS.accentSoft,color:COLORS.accent,fontSize:19,fontWeight:850}}>{point.phrase} · {point.meaningJa}</div>:null}\n'''
+          if old not in s:
+              raise SystemExit('inline vocabulary pill not found; refusing partial patch')
+          p.write_text(s.replace(old,''))
+          PY
+      - name: Commit patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/scenes/SceneRenderer.tsx
+          git diff --cached --quiet && exit 0
+          git commit -m "ux: keep story captions focused on bilingual meaning"
+          git push origin HEAD:main
