@@ -21,7 +21,6 @@ jobs:
           from pathlib import Path
           import json,re
 
-          # 1) Three-line upward-scrolling caption + denser study highlights.
           p=Path('src/scenes/SceneRenderer.tsx')
           s=p.read_text()
           pattern=r'const BilingualCaption=.*?\nconst BilingualVisualLabel='
@@ -67,21 +66,20 @@ jobs:
           if n!=1: raise SystemExit(f'caption replacement count={n}')
           p.write_text(s2)
 
-          # 2) Stronger hook copy while staying grounded in existing claims.
           mp=Path('episodes/2026-09-15-ai-power-project/manifest.json')
           m=json.loads(mp.read_text())
           m['revision']=3
-          m['generatedAt']='2026-09-16T06:20:00Z'
+          m['generatedAt']='2026-09-15T06:54:00Z'
           for u in m['utterances']:
             if u['id']=='u-h1':
               u['text']="AI's next bottleneck may not be chips. It may be electricity."
               u['chunks']=["AI's next bottleneck may not be chips.","It may be electricity."]
               u['translationJa']='AIの次のボトルネックは、半導体ではなく電力かもしれません。'
-              u['translationJaChunks']=['AIの次のボトルネックは半導体ではなく、','電力かもしれません。']
+              u['translationJaChunks']=['AIの次のボトルネックは、半導体ではなく','電力かもしれません。']
               u['claimIds']=['c-bottleneck','c-inference']
             if u['id']=='u-h2':
-              u['text']='One company is raising money for both AI data centers and power generation. Why are these becoming the same project?'
-              u['chunks']=['One company is raising money for both AI data centers and power generation.','Why are these becoming the same project?']
+              u['text']='One company is funding both AI data centers and power generation. Why are these becoming the same project?'
+              u['chunks']=['One company is funding both AI data centers and power generation.','Why are these becoming the same project?']
               u['translationJa']='ある企業はAIデータセンターと発電の両方に資金を集めています。なぜこの2つが同じプロジェクトになりつつあるのでしょうか？'
               u['translationJaChunks']=['ある企業はAIデータセンターと発電の両方に資金を集めています。','なぜこの2つが同じプロジェクトになりつつあるのでしょうか？']
               u['claimIds']=['c-news','c-inference']
@@ -91,7 +89,6 @@ jobs:
               sc['visual']['body']='The clue is electricity.'
           mp.write_text(json.dumps(m,ensure_ascii=False,indent=2)+'\n')
 
-          # 3) READY: generated image -> Commons fallback; deterministic BGM after timing compile.
           wp=Path('.github/workflows/ready-gate.yml')
           w=wp.read_text()
           if 'Fill missing editorial images from Wikimedia Commons' not in w:
@@ -103,7 +100,6 @@ jobs:
             if n!=1: raise SystemExit(f'READY compile patch count={n}')
           wp.write_text(w)
 
-          # 4) APPROVED: same deterministic BGM from frozen timing.
           ap=Path('.github/workflows/approved-final.yml')
           a=ap.read_text()
           if 'Generate reviewed background music bed' not in a:
