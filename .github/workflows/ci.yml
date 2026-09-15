@@ -28,7 +28,7 @@ jobs:
         run: npm test
       - name: Validate v2.1 fixture
         run: npm run validate -- fixtures/v2.1-demo.json
-      - name: Validate and retention-review every episode manifest
+      - name: Validate and editorial-review every episode manifest
         shell: bash
         run: |
           set -euo pipefail
@@ -45,6 +45,8 @@ jobs:
             if [ "$kind" = "production" ]; then
               echo "Retention-reviewing $manifest"
               npm run review:retention -- "$manifest"
+              echo "Cognitive-load reviewing $manifest"
+              npm run review:cognitive -- "$manifest"
             fi
           done
       - name: Build browser preview
