@@ -28,7 +28,7 @@ jobs:
         run: npm test
       - name: Validate v2.1 fixture
         run: npm run validate -- fixtures/v2.1-demo.json
-      - name: Validate every episode manifest
+      - name: Validate and retention-review every episode manifest
         shell: bash
         run: |
           set -euo pipefail
@@ -41,6 +41,11 @@ jobs:
           for manifest in "${manifests[@]}"; do
             echo "Validating $manifest"
             npm run validate -- "$manifest"
+            kind=$(node -e 'const fs=require("node:fs");const p=process.argv[1];process.stdout.write(JSON.parse(fs.readFileSync(p,"utf8")).kind)' "$manifest")
+            if [ "$kind" = "production" ]; then
+              echo "Retention-reviewing $manifest"
+              npm run review:retention -- "$manifest"
+            fi
           done
       - name: Build browser preview
         run: npm run build
