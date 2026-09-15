@@ -1,0 +1,11 @@
+{
+  "version": "2.1.0",
+  "provider": "google",
+  "apiVersion": "v1beta1",
+  "voice": "en-US-Neural2-F",
+  "language": "en-US",
+  "speakingRate": 0.9,
+  "pitch": 0,
+  "encoding": "LINEAR16",
+  "outputSampleRate": 48000
+}
