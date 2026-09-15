@@ -20,7 +20,7 @@ const runOptional=(command:string,args:string[])=>{
   if(r.status!==0)console.warn(`[optional-assets] ${command} ${args.join(" ")} exited ${r.status}; continuing without that asset layer`);
 };
 runOptional("python3",["scripts/generate_sfx.py"]);
-if(process.env.GITHUB_ACTIONS==="true"&&!existsSync(resolve(process.cwd(),"public/generated/broll/manifest.json"))){
+if(process.env.ALLOW_BROLL_FETCH==="true"&&!existsSync(resolve(process.cwd(),"public/generated/broll/manifest.json"))){
   runOptional("node",["scripts/fetch_commons_broll.mjs",manifestArg,"public/generated/broll"]);
 }
 
