@@ -18,7 +18,7 @@ export const COLORS={
 } as const;
 
 export const base:CSSProperties={
-  backgroundColor:COLORS.background,
+  backgroundColor:"transparent",
   color:COLORS.text,
   fontFamily:'Inter, "Noto Sans CJK JP", "Noto Sans JP", "Yu Gothic", Meiryo, Arial, sans-serif',
 };
