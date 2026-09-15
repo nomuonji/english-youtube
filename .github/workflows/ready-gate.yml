@@ -1,0 +1,45 @@
+name: READY gate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "runs/**/READY.json"
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact READY commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+      - name: Find READY marker in head commit
+        id: ready
+        shell: bash
+        run: |
+          set -euo pipefail
+          path="$(git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA" | grep -E '^runs/[0-9]{4}-[0-9]{2}-[0-9]{2}/[^/]+/READY\.json$' | head -n 1 || true)"
+          if [ -z "$path" ]; then
+            echo "No READY.json added in head commit" >&2
+            exit 2
+          fi
+          echo "path=$path" >> "$GITHUB_OUTPUT"
+      - name: Validate READY and manifest hash
+        run: npm run check-ready -- "${{ steps.ready.outputs.path }}"
+      - name: Build preview app
+        run: npm run build
+      - name: M2 boundary
+        run: |
+          echo "READY contract passed."
+          echo "TTS/compile/render prepare is intentionally not implemented in this M1 gate yet."
