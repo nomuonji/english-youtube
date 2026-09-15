@@ -6,11 +6,11 @@ v2.1設計を実装中。実装・稼働状況はREADMEに記載する。設計�
 
 エンジニアリング依頼では文書・schema・コードを一緒に変更できる。通常の定期コンテンツ生成ではepisodes/とruns/だけを更新できる。React、CSS、schema、workflow、設計、予算、公開設定を日次処理で変更しない。
 
-v2.1の変更点は必ず `docs/V2_1_CHANGES.md` を先に読む。既存v2文書と衝突する場合はv2.1修正を優先する。視聴体験・学習体験については `docs/EDITORIAL_SYSTEM.md` と `docs/RETENTION_AND_LEARNING.md` を合わせて正本とする。
+v2.1の変更点は必ず `docs/V2_1_CHANGES.md` を先に読む。既存v2文書と衝突する場合はv2.1修正を優先する。視聴体験・学習体験については `docs/EDITORIAL_SYSTEM.md`、`docs/RETENTION_AND_LEARNING.md`、`docs/VIDEO_QUALITY_SYSTEM.md` を合わせて正本とする。
 
 ## 作業開始時
 
-README、docs/V2_1_CHANGES.md、担当領域の仕様、docs/DATA_CONTRACT.md、docs/OPERATIONS.mdを読む。日次生成ではdocs/EDITORIAL_SYSTEM.md、docs/RETENTION_AND_LEARNING.md、docs/AGENT_PIPELINE.mdも読む。
+README、docs/V2_1_CHANGES.md、担当領域の仕様、docs/DATA_CONTRACT.md、docs/OPERATIONS.mdを読む。日次生成ではdocs/EDITORIAL_SYSTEM.md、docs/RETENTION_AND_LEARNING.md、docs/VIDEO_QUALITY_SYSTEM.md、docs/AGENT_PIPELINE.mdも読む。
 
 ## 日次処理の必須順序
 
@@ -20,7 +20,7 @@ README、docs/V2_1_CHANGES.md、担当領域の仕様、docs/DATA_CONTRACT.md、
 4. 出典・claimと反証を先に作る。原稿から出典を後付けしない。
 5. `newsPeg`、中心の問い、答え、4つのstory beat、3表現を決める。各beatにopen loop / micro payoff / forward pullを設計する。
 6. 英語原稿、文の意味chunk、日本語chunk訳、シーンpayloadを作る。
-7. schemaと意味検査に加え `npm run review:retention -- <manifest>` 相当のretention review、編集レビューを通す。retention hard failure 0、score 80以上。修復は最大2回。
+7. schemaと意味検査に加え `npm run review:retention -- <manifest>` と `npm run review:cognitive -- <manifest>` 相当のレビュー、編集レビューを通す。hard failure 0、retention score 80以上、cognitive score 75以上。修復は最大2回。
 8. manifestをfreezeする。
 9. runごとに `runs/YYYY-MM-DD/<runId>/READY.json` を最後のGit変更として新規作成する。READYには `runId / episodeId / revision / manifestHash / generatedAt` を入れ、後から上書きしない。
 10. READY pushを受けたActionsがreview previewを開始する。日次エージェントはworkflow_dispatchを直接呼べることを前提にしない。
@@ -40,13 +40,25 @@ READY push triggerがM0 probeで動作しない環境では、READYを残してb
 
 - learningPointsは正確に3つ。ただしこれは全学習内容ではなく、最後まで強く回収するアンカー表現。
 - 全story/hookのutteranceを1〜4個の意味chunkに分け、対応するtranslationJaChunksを作る。単なる文字数分割は禁止。
-- rendererは各chunkを英語先行で表示し、少し遅れて日本語を答え合わせとして表示する。日次エージェントはこの表示ロジックをpayloadで上書きしない。
-- `but / however / because / so / therefore / although / even though / while / instead / if` などの論理語はrendererが自動で機能ラベルを出せるため、不自然に避けない。
+- 通常のstory/hookでは、現在chunkの英語と対応する日本語訳を同時に表示する。日本語を意図的に遅延表示して認知負荷を上げない。
+- 一文・chunkごとのシークバー、CHUNK番号、論理語ラベルを通常画面へ常時表示しない。動画全体の進行だけで十分。
+- story中の補助学習UIは同時に最大1個。learning pointを扱う場合も短い1つのヒントに限定し、図・字幕・単語解説を同時に全部読ませない。
+- retrievalだけは最初のlistenで字幕を隠し、reveal時に同一音声と英日表示で答え合わせする。
 - retrievalは正確に1回。
 - recapは正確に1回。
 - 専用phrase sceneは1〜2回。
-- phrase sceneで扱わないlearning pointは、`sourceUtteranceId` を含む最初のstory sceneで `glossLearningPointId` として表示する。
+- phrase sceneで扱わないlearning pointは、`sourceUtteranceId` を含む最初のstory sceneで `glossLearningPointId` として扱う。ただしrendererは補助表示を短く保つ。
 - recapでは3つすべて回収する。
+
+## 認知負荷と視線誘導
+
+- 1つの瞬間に視聴者へ強く読ませる主役は1つだけ。主役は `visual / English+Japanese caption / retrieval prompt` のいずれか。
+- 画面内の補助情報は原則1個以下。字幕、図、語彙、進行UIを同じ強度で競合させない。
+- visualは「読む図」ではなく「見れば関係が分かる図」にする。chain / compare / timelineは現在話している項目だけを強くし、未到達項目を目立たせない。
+- cardの本文を長文説明欄として使わない。説明をナレーションへ移し、画面は短いmessageかvisualへ寄せる。
+- 画像やイラストが文章を減らせる場面では画像を優先する。ただし装飾目的だけの画像は使わない。
+- 強いvisual imageを使う候補は hook、section transition、analogy、mechanismの具体例。画像は説明を追加するためではなく、説明文を削るために使う。
+- 画像がない場合も、巨大なテキストカードで穴埋めせず、metric / chain / compare / timelineなど意味構造に合うvisualを選ぶ。
 
 ## 長尺視聴の構造
 
