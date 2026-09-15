@@ -125,6 +125,8 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: node scripts/generate_cloudflare_images.mjs public/generated/image-briefs.json public/generated/images
+      - name: Fill missing editorial images from Wikimedia Commons
+        run: node scripts/fetch_commons_images.mjs public/generated/image-briefs.json public/generated/images
       - name: Save editorial image cache
         if: steps.editorial-image-cache.outputs.cache-hit != 'true' && hashFiles('public/generated/images/*.jpg') != ''
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -141,6 +143,8 @@ jobs:
         env:
           ALLOW_BROLL_FETCH: "true"
         run: npm run compile:tts -- "${{ steps.ready.outputs.manifest }}" public/generated/tts-timing.json public/generated/render-props.json
+      - name: Generate subtle background music bed
+        run: python3 scripts/generate_bgm.py public/generated/render-props.json public/generated/bgm.wav
       - name: Save reviewed B-roll cache
         if: steps.broll-cache.outputs.cache-hit != 'true' && hashFiles('public/generated/broll/manifest.json') != ''
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -214,7 +218,7 @@ jobs:
           retention-days: 30
       - name: Publication boundary
         run: |
-          echo "READY -> validate -> retention/cognitive review -> local TTS -> optional editorial images/B-roll -> exact timing -> chapter calls/SFX -> 540p render -> loudness normalization -> contact sheet passed."
+          echo "READY -> validate -> retention/cognitive review -> local TTS -> editorial images/B-roll -> exact timing -> BGM/chapter calls/SFX -> 540p render -> loudness normalization -> contact sheet passed."
           echo "Publishing is intentionally disabled. A separate APPROVED.json marker is required for a 1080p final render."
 
   deploy_review:
