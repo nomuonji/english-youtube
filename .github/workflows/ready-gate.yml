@@ -117,7 +117,7 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: public/generated/images
-          key: editorial-images-v1-${{ runner.os }}-${{ steps.ready.outputs.manifest_hash }}
+          key: editorial-images-v2-${{ runner.os }}-${{ steps.ready.outputs.manifest_hash }}
       - name: Build editorial image briefs
         run: node scripts/build_image_briefs.mjs "${{ steps.ready.outputs.manifest }}" public/generated/image-briefs.json
       - name: Generate optional editorial images with Cloudflare FLUX
@@ -132,7 +132,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: public/generated/images
-          key: editorial-images-v1-${{ runner.os }}-${{ steps.ready.outputs.manifest_hash }}
+          key: editorial-images-v2-${{ runner.os }}-${{ steps.ready.outputs.manifest_hash }}
       - name: Restore reviewed B-roll cache
         id: broll-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
