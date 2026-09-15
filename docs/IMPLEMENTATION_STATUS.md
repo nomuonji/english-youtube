@@ -2,7 +2,7 @@
 
 最終更新: 2026-09-15
 
-## 実装済み
+## 実装済み・検証済み
 
 - Node / TypeScript / React / Remotion / Vite のプロジェクト基盤
 - v2.1 JSON Schema を読む Ajv validator
@@ -26,6 +26,9 @@
 - Vite + Remotion Playerのブラウザpreview
 - GitHub Actions CI
 - READY path専用のActions gate
+- **GitHub connectorからREADYをcommit → push trigger → READY gate起動 → hash検査 → Player build成功**を実地確認
+
+CI run `34923784206` で typecheck / 6 unit tests / v2.1 fixture validation / Vite build がすべて成功。READY probe run `34923880150` でREADY検出・manifest hash検証・preview buildが成功した。
 
 ## 未実装 / 未検証
 
@@ -39,9 +42,10 @@
 - GitHub Pages deployment
 - GCS / OIDC / archive
 - YouTube adapter
-- READY commit -> workflow起動の定期エージェント実接続probe
 - publishは引き続きdisabled
 
 ## 注意
 
 `buildDemoResolved.ts` はPlayer UIを確認するための無音fixture用の疑似timingであり、production compilerではない。productionの時刻を語数や固定秒数から推定してはいけない。
+
+`episodes/2026-09-15-v21-demo/` と `runs/2026-09-15/connector-probe/READY.json` はREADY経路を検証するためのfixture/probeであり、公開対象ではない。
