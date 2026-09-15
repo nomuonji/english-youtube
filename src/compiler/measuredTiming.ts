@@ -1,5 +1,6 @@
-import type {EpisodeManifest,ResolvedEpisode,ResolvedScene} from "../contracts/types";
+import type {EpisodeManifest,ResolvedEpisode,ResolvedScene,StoryBeat} from "../contracts/types";
 import {sha256Canonical} from "../contracts/hash";
+import {chapterForBeat} from "../chapters";
 
 export type MeasuredTimingUtterance={
   utteranceId:string;
@@ -68,7 +69,12 @@ export const compileMeasuredResolved=(manifest:EpisodeManifest,timing:MeasuredTi
   timing.clips.forEach(assertClip);
   let cursor=0;
   const scenes:ResolvedScene[]=[];
+  const calledBeats=new Set<StoryBeat>();
   for(const scene of manifest.scenes){
+    const chapter=scene.role==="story"&&scene.beat?chapterForBeat(scene.beat):undefined;
+    const chapterCallFrames=chapter&&!calledBeats.has(chapter.beat)?chapter.callFrames:0;
+    if(chapter)calledBeats.add(chapter.beat);
+
     if(scene.role==="retrieval"&&scene.visual.type==="retrieval"){
       const clip=timing.clips.find(item=>item.sceneId===scene.id&&item.clipId===`retrieval-${scene.id}`);
       if(!clip)throw new Error(`E_TIMING: retrieval clip missing for ${scene.id}`);
@@ -85,7 +91,7 @@ export const compileMeasuredResolved=(manifest:EpisodeManifest,timing:MeasuredTi
         {name:"reveal",startFrame:revealStart,endFrame:revealStart+duration},
         {name:"answer",startFrame:revealStart+duration,endFrame:end},
       ];
-      scenes.push({sceneId:scene.id,startFrame:start,durationFrames:end-start,audioEvents:[
+      scenes.push({sceneId:scene.id,startFrame:start,durationFrames:end-start,chapterCallFrames:0,audioEvents:[
         {clipId:clip.clipId,utteranceId:scene.visual.sourceUtteranceId,startFrame:listenStart},
         {clipId:clip.clipId,utteranceId:scene.visual.sourceUtteranceId,startFrame:revealStart},
       ],cues:buildCues(manifest,clip,revealStart,scene.visual.sourceUtteranceId),phases});
@@ -96,9 +102,9 @@ export const compileMeasuredResolved=(manifest:EpisodeManifest,timing:MeasuredTi
     const clip=timing.clips.find(item=>item.sceneId===scene.id&&item.clipId===`speech-${scene.id}`);
     if(!clip)throw new Error(`E_TIMING: speech clip missing for ${scene.id}`);
     const start=cursor;
-    const audioStart=start+LEAD_FRAMES;
-    const durationFrames=LEAD_FRAMES+clipFrames(clip)+TAIL_FRAMES;
-    scenes.push({sceneId:scene.id,startFrame:start,durationFrames,audioEvents:[{clipId:clip.clipId,utteranceId:scene.utteranceIds[0],startFrame:audioStart}],cues:buildCues(manifest,clip,audioStart),phases:[{name:"normal",startFrame:start,endFrame:start+durationFrames}]});
+    const audioStart=start+chapterCallFrames+LEAD_FRAMES;
+    const durationFrames=chapterCallFrames+LEAD_FRAMES+clipFrames(clip)+TAIL_FRAMES;
+    scenes.push({sceneId:scene.id,startFrame:start,durationFrames,chapterCallFrames,audioEvents:[{clipId:clip.clipId,utteranceId:scene.utteranceIds[0],startFrame:audioStart}],cues:buildCues(manifest,clip,audioStart),phases:[{name:"normal",startFrame:start+chapterCallFrames,endFrame:start+durationFrames}]});
     cursor+=durationFrames;
   }
   return {
