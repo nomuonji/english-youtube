@@ -1,0 +1,28 @@
+export type Category = "technology" | "work_money" | "science_society";
+export type SceneRole = "hook" | "story" | "phrase" | "retrieval" | "recap";
+export type StoryBeat = "setup" | "mechanism" | "complication" | "answer";
+
+export type Source = {id:string; title:string; publisher:string; url:string; publishedDate:string|null; retrievedAt:string; independenceGroup:string; isPrimary:boolean};
+export type Claim = {id:string; text:string; certainty:"confirmed"|"reported"|"estimate"|"forecast"|"disputed"|"inference"; asOf:string; evidence:Array<{sourceId:string; locator:string; supportNote:string}>};
+export type Utterance = {id:string; text:string; chunks:string[]; translationJa:string; translationJaChunks:string[]; claimIds:string[]};
+export type LearningPoint = {id:string; phrase:string; meaningJa:string; sourceUtteranceId:string};
+export type CardVisual = {type:"card"; headline:string; body:string; claimIds:string[]};
+export type MetricVisual = {type:"metric"; value:string; unit:string; label:string; qualifier:string; claimIds:string[]};
+export type ChainVisual = {type:"chain"; nodes:Array<{label:string; revealAtUtteranceId:string}>; claimIds:string[]};
+export type CompareVisual = {type:"compare"; leftTitle:string; rightTitle:string; rows:Array<{aspect:string; left:string; right:string; revealAtUtteranceId:string}>; claimIds:string[]};
+export type TimelineVisual = {type:"timeline"; events:Array<{dateLabel:string; label:string; revealAtUtteranceId:string}>; claimIds:string[]};
+export type PhraseVisual = {type:"phrase"; learningPointId:string};
+export type RetrievalVisual = {type:"retrieval"; sourceUtteranceId:string; question:string; options:[string,string]; correctIndex:0|1; answerJa:string};
+export type RecapVisual = {type:"recap"; learningPointIds:[string,string,string]};
+export type Visual = CardVisual|MetricVisual|ChainVisual|CompareVisual|TimelineVisual|PhraseVisual|RetrievalVisual|RecapVisual;
+export type Scene = {id:string; role:SceneRole; beat:StoryBeat|null; utteranceIds:string[]; visual:Visual; glossLearningPointId:string|null};
+export type EpisodeManifest = {
+  schemaVersion:"2.1.0"; kind:"fixture"|"production"; episodeId:string; revision:number; generatedAt:string; asOf:string; category:Category;
+  newsPeg:{eventClaimId:string; eventDate:string|null; whyNow:string}; centralQuestion:string; answer:string;
+  sources:Source[]; claims:Claim[]; utterances:Utterance[]; learningPoints:[LearningPoint,LearningPoint,LearningPoint]; scenes:Scene[];
+  packaging:{candidates:Array<{titleJa:string;thumbnailJa:string}>; selectedIndex:0|1|2};
+};
+export type Cue = {startFrame:number; endFrame:number; utteranceId:string; chunkIndices:number[]; text:string; translationJa:string};
+export type ResolvedScene = {sceneId:string; startFrame:number; durationFrames:number; audioEvents:Array<{clipId?:string;utteranceId:string;startFrame:number;startSample?:number;endSample?:number}>; cues:Cue[]; phases:Array<{name:"normal"|"prompt"|"listen"|"think"|"reveal"|"answer";startFrame:number;endFrame:number}>};
+export type ResolvedEpisode = {version:"2.1.0"; episodeId:string; revision:number; manifestHash:string; engineCommit:string; fps:30; width:1920; height:1080; durationFrames:number; clips:Array<{clipId:string;sceneId:string;path:string;sha256:string;sampleRate:48000;samples:number;utterances:Array<{utteranceId:string;startSample:number;endSample:number;chunkBoundariesSamples:number[]}>}>; scenes:ResolvedScene[]};
+export type ValidationIssue = {code:string; targetId:string; detail:string};
