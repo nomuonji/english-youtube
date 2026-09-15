@@ -8,16 +8,21 @@ import type {EpisodeManifest, ValidationIssue} from "./types";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../..");
-const loadJson = (path:string):AnySchema => JSON.parse(readFileSync(path,"utf8")) as AnySchema;
+const loadObject = (path:string):Record<string,unknown> => JSON.parse(readFileSync(path,"utf8")) as Record<string,unknown>;
 let validateFunction:ValidateFunction|null = null;
 
 const getValidator = ():ValidateFunction => {
   if (validateFunction) return validateFunction;
-  const baseSchema = loadJson(resolve(root,"schemas/episode.schema.json"));
-  const schema = loadJson(resolve(root,"schemas/episode-v2.1.schema.json"));
+  const legacy = loadObject(resolve(root,"schemas/episode.schema.json"));
+  const schema = loadObject(resolve(root,"schemas/episode-v2.1.schema.json")) as AnySchema;
+  const definitionsOnly = {
+    $schema: legacy.$schema,
+    $id: legacy.$id,
+    $defs: legacy.$defs,
+  } as AnySchema;
   const ajv = new Ajv2020({allErrors:true, strict:true});
   addFormats(ajv);
-  ajv.addSchema(baseSchema);
+  ajv.addSchema(definitionsOnly);
   validateFunction = ajv.compile(schema);
   return validateFunction;
 };
