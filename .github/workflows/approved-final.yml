@@ -12,7 +12,7 @@ permissions:
 jobs:
   final-render:
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 60
     steps:
       - name: Checkout exact approval commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -36,12 +36,18 @@ jobs:
             exit 2
           fi
           episode_id="$(node -e 'const fs=require("fs"); const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(r.episodeId)' "$path")"
+          manifest_hash="$(node -e 'const fs=require("fs"); const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(r.manifestHash)' "$path")"
           if ! [[ "$episode_id" =~ ^[A-Za-z0-9._-]+$ ]]; then
             echo "Unsafe episodeId in APPROVED.json" >&2
             exit 2
           fi
+          if ! [[ "$manifest_hash" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "Unsafe manifestHash in APPROVED.json" >&2
+            exit 2
+          fi
           echo "path=$path" >> "$GITHUB_OUTPUT"
           echo "episode_id=$episode_id" >> "$GITHUB_OUTPUT"
+          echo "manifest_hash=$manifest_hash" >> "$GITHUB_OUTPUT"
           echo "manifest=episodes/$episode_id/manifest.json" >> "$GITHUB_OUTPUT"
       - name: Validate explicit approval, READY marker, and manifest hash
         run: npm run check-approval -- "${{ steps.approval.outputs.path }}"
@@ -50,7 +56,14 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq espeak-ng fonts-noto-cjk
           python3 -m pip install --disable-pip-version-check -r requirements-tts.txt
+      - name: Cache Kokoro model
+        id: kokoro-model-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/kokoro
+          key: kokoro-model-v1.1-int8-${{ runner.os }}
       - name: Download Kokoro int8 model
+        if: steps.kokoro-model-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -61,17 +74,32 @@ jobs:
           curl -fL --retry 3 --retry-delay 2 \
             -o .cache/kokoro/voices-v1.0.bin \
             https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/voices-v1.0.bin
+      - name: Verify Kokoro model assets
+        run: |
           test -s .cache/kokoro/kokoro-v1.0.int8.onnx
           test -s .cache/kokoro/voices-v1.0.bin
+      - name: Restore Kokoro chunk cache
+        id: tts-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/kokoro-chunks
+          key: kokoro-chunks-v1-${{ runner.os }}-${{ steps.approval.outputs.manifest_hash }}
       - name: Synthesize approved speech
         env:
           KOKORO_VOICE: af_sarah
           KOKORO_SPEED: "0.95"
           KOKORO_MODEL_PATH: .cache/kokoro/kokoro-v1.0.int8.onnx
           KOKORO_VOICES_PATH: .cache/kokoro/voices-v1.0.bin
+          KOKORO_CHUNK_CACHE_DIR: .cache/kokoro-chunks
         run: |
           mkdir -p public/generated out
           python3 scripts/synthesize_kokoro.py "${{ steps.approval.outputs.manifest }}" public/generated generated
+      - name: Save Kokoro chunk cache
+        if: steps.tts-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/kokoro-chunks
+          key: kokoro-chunks-v1-${{ runner.os }}-${{ steps.approval.outputs.manifest_hash }}
       - name: Compile resolved timing
         run: npm run compile:tts -- "${{ steps.approval.outputs.manifest }}" public/generated/tts-timing.json public/generated/render-props.json
       - name: Render approved 1080p final
