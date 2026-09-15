@@ -1,0 +1,39 @@
+name: One-off READY deploy freshness guard
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/oneoff-ready-deploy-freshness.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Prevent stale READY from overwriting Pages
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('.github/workflows/ready-gate.yml')
+          s=p.read_text()
+          old='''      - name: Upload Pages artifact\n        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0\n        with:\n          path: dist\n      - name: Deploy Pages\n        id: deployment\n        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1\n'''
+          new='''      - name: Check this is the latest READY\n        id: freshness\n        shell: bash\n        run: |\n          set -euo pipefail\n          git fetch origin main --depth=100\n          latest_ready_sha="$(git log origin/main --format='%H' --diff-filter=A -- ':(glob)runs/**/READY.json' | head -n 1 || true)"\n          if [ -z "$latest_ready_sha" ]; then\n            echo "No READY commit found on origin/main" >&2\n            exit 2\n          fi\n          if [ "$latest_ready_sha" = "$GITHUB_SHA" ]; then\n            echo "deploy=true" >> "$GITHUB_OUTPUT"\n            echo "Current run is the latest READY: $GITHUB_SHA"\n          else\n            echo "deploy=false" >> "$GITHUB_OUTPUT"\n            echo "Skipping stale review deploy. latest READY=$latest_ready_sha current=$GITHUB_SHA"\n          fi\n      - name: Upload Pages artifact\n        if: steps.freshness.outputs.deploy == 'true'\n        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0\n        with:\n          path: dist\n      - name: Deploy Pages\n        if: steps.freshness.outputs.deploy == 'true'\n        id: deployment\n        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1\n'''
+          if old not in s:
+              raise SystemExit('READY deploy block not found; refusing partial patch')
+          p.write_text(s.replace(old,new))
+          PY
+      - name: Commit patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/ready-gate.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "ci: prevent stale READY review deploys"
+          git push origin HEAD:main
