@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import {spawnSync} from "node:child_process";
 
 const briefsPath=process.argv[2]??"public/generated/image-briefs.json";
 const outputDir=process.argv[3]??"public/generated/images";
@@ -34,8 +35,17 @@ for(const brief of payload.briefs??[]){
   if(typeof image!=="string"||image.length<100)throw new Error(`Cloudflare returned no image for ${brief.sceneId}`);
   fs.writeFileSync(filePath,Buffer.from(image,"base64"));
   generatedNow++;
-  generated.push({sceneId:brief.sceneId,purpose:brief.purpose,file});
+  generated.push({sceneId:brief.sceneId,purpose:brief.purpose,file,provider:"cloudflare-flux"});
 }
-if(generated.length){fs.writeFileSync(path.join(outputDir,"manifest.json"),JSON.stringify({version:"1.0.0",episodeId:payload.episodeId,generated},null,2)+"\n");}
-const missing=(payload.briefs??[]).length-generated.length;
-console.log(JSON.stringify({ok:true,skipped:missing>0&&!accountId&&!token,reason:missing>0&&!accountId&&!token?"cloudflare_credentials_missing":undefined,count:generated.length,cacheHits,generatedNow,missing,outputDir,scenes:generated.map((x)=>x.sceneId)}));
+if(generated.length){fs.writeFileSync(path.join(outputDir,"manifest.json"),JSON.stringify({version:"1.1.0",episodeId:payload.episodeId,generated},null,2)+"\n");}
+let missing=(payload.briefs??[]).length-generated.length;
+let fallbackUsed=false;
+if(missing>0){
+  const r=spawnSync(process.execPath,["scripts/fetch_commons_images.mjs",briefsPath,outputDir],{stdio:"inherit",env:process.env});
+  fallbackUsed=true;
+  if(r.status!==0)console.warn(`[images] Commons fallback exited ${r.status}`);
+  if(fs.existsSync(path.join(outputDir,"manifest.json"))){
+    try{missing=Math.max(0,(payload.briefs??[]).length-(JSON.parse(fs.readFileSync(path.join(outputDir,"manifest.json"),"utf8")).generated??[]).length);}catch{}
+  }
+}
+console.log(JSON.stringify({ok:true,cloudflareConfigured:Boolean(accountId&&token),count:(payload.briefs??[]).length-missing,cacheHits,generatedNow,missing,fallbackUsed,outputDir}));
