@@ -28,5 +28,19 @@ jobs:
         run: npm test
       - name: Validate v2.1 fixture
         run: npm run validate -- fixtures/v2.1-demo.json
+      - name: Validate every episode manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          manifests=(episodes/*/manifest.json)
+          if [ ${#manifests[@]} -eq 0 ]; then
+            echo "No episode manifests found"
+            exit 0
+          fi
+          for manifest in "${manifests[@]}"; do
+            echo "Validating $manifest"
+            npm run validate -- "$manifest"
+          done
       - name: Build browser preview
         run: npm run build
