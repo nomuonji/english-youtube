@@ -6,7 +6,7 @@ v2.1設計を実装中。実装・稼働状況はREADMEに記載する。設計�
 
 エンジニアリング依頼では文書・schema・コードを一緒に変更できる。通常の定期コンテンツ生成ではepisodes/とruns/だけを更新できる。React、CSS、schema、workflow、設計、予算、公開設定を日次処理で変更しない。
 
-v2.1の変更点は必ず `docs/V2_1_CHANGES.md` を先に読む。既存v2文書と衝突する場合はv2.1修正を優先する。
+v2.1の変更点は必ず `docs/V2_1_CHANGES.md` を先に読む。既存v2文書と衝突する場合はv2.1修正を優先する。視聴体験・学習体験については最新の `docs/EDITORIAL_SYSTEM.md` を正本とする。
 
 ## 作業開始時
 
@@ -19,7 +19,7 @@ README、docs/V2_1_CHANGES.md、担当領域の仕様、docs/DATA_CONTRACT.md、
 3. 採点し、上位最大3件の出典を確認。基準未達ならskipped。
 4. 出典・claimと反証を先に作る。原稿から出典を後付けしない。
 5. `newsPeg`、中心の問い、答え、4つのstory beat、3表現を決める。
-6. 英語原稿、文のチャンク、日本語SRT用の訳、シーンpayloadを作る。
+6. 英語原稿、文の意味chunk、日本語chunk訳、シーンpayloadを作る。各beatにopen loop→micro payoff→forward pullを持たせる。
 7. schemaと意味検査、編集レビューを通す。修復は最大2回。
 8. manifestをfreezeする。
 9. runごとに `runs/YYYY-MM-DD/<runId>/READY.json` を最後のGit変更として新規作成する。READYには `runId / episodeId / revision / manifestHash / generatedAt` を入れ、後から上書きしない。
@@ -38,12 +38,24 @@ READY push triggerがM0 probeで動作しない環境では、READYを残してb
 
 ## 学習構造
 
-- learningPointsは正確に3つ。
+- learningPointsは正確に3つ。ただしこれは全学習内容ではなく、最後まで強く回収するアンカー表現。
+- 全story/hookのutteranceを1〜4個の意味chunkに分け、対応するtranslationJaChunksを作る。単なる文字数分割は禁止。
+- rendererは各chunkを英語先行で表示し、少し遅れて日本語を答え合わせとして表示する。日次エージェントはこの表示ロジックをpayloadで上書きしない。
+- `but / however / because / so / therefore / although / even though / instead / if` などの論理語はrendererが自動で機能ラベルを出せるため、不自然に避けない。
 - retrievalは正確に1回。
 - recapは正確に1回。
 - 専用phrase sceneは1〜2回。
 - phrase sceneで扱わないlearning pointは、`sourceUtteranceId` を含む最初のstory sceneで `glossLearningPointId` として表示する。
 - recapでは3つすべて回収する。
+
+## 長尺視聴の構造
+
+- 最初の25秒で、具体的な違和感・stakes・centralQuestionを出す。挨拶やチャンネル説明から始めない。
+- 各story beatは open loop → evidence → micro payoff → forward pull の順を基本とする。
+- 20〜40秒ごとに、意味のあるpattern breakを最低1回作る。数字のreveal、比較の反転、chainの進行、beat切替、learning moment、retrievalなど内容に結びついた変化を使う。
+- `news peg`、`setup`、`mechanism` のような内部編集用語をviewer-facingな見出しに使わない。
+- factsを4文並べただけのsceneを作らない。同じ事実でも「なぜ意外か」「何が変わるか」「次に何を見るべきか」のいずれかで前後をつなぐ。
+- visual payloadはナレーションの進行に合わせて段階的に意味が増えるものを優先し、長い静止スライドを避ける。
 
 ## 必須事項
 
