@@ -10,9 +10,12 @@ permissions:
   contents: read
 
 jobs:
-  gate:
+  synthesize:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 35
+    outputs:
+      episode_id: ${{ steps.ready.outputs.episode_id }}
+      manifest_hash: ${{ steps.ready.outputs.manifest_hash }}
     steps:
       - name: Checkout exact READY commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -36,21 +39,34 @@ jobs:
             exit 2
           fi
           episode_id="$(node -e 'const fs=require("fs"); const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(r.episodeId)' "$path")"
+          manifest_hash="$(node -e 'const fs=require("fs"); const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(r.manifestHash)' "$path")"
           if ! [[ "$episode_id" =~ ^[A-Za-z0-9._-]+$ ]]; then
             echo "Unsafe episodeId in READY.json" >&2
             exit 2
           fi
+          if ! [[ "$manifest_hash" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "Unsafe manifestHash in READY.json" >&2
+            exit 2
+          fi
           echo "path=$path" >> "$GITHUB_OUTPUT"
           echo "episode_id=$episode_id" >> "$GITHUB_OUTPUT"
+          echo "manifest_hash=$manifest_hash" >> "$GITHUB_OUTPUT"
           echo "manifest=episodes/$episode_id/manifest.json" >> "$GITHUB_OUTPUT"
       - name: Validate READY and manifest hash
         run: npm run check-ready -- "${{ steps.ready.outputs.path }}"
-      - name: Install local Kokoro TTS runtime, render fonts, and review tools
+      - name: Install local Kokoro TTS runtime
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq espeak-ng fonts-noto-cjk ffmpeg
+          sudo apt-get install -y -qq espeak-ng
           python3 -m pip install --disable-pip-version-check -r requirements-tts.txt
+      - name: Cache Kokoro model
+        id: kokoro-model-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/kokoro
+          key: kokoro-model-v1.1-int8-${{ runner.os }}
       - name: Download Kokoro int8 model
+        if: steps.kokoro-model-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -61,27 +77,74 @@ jobs:
           curl -fL --retry 3 --retry-delay 2 \
             -o .cache/kokoro/voices-v1.0.bin \
             https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/voices-v1.0.bin
+      - name: Verify Kokoro model assets
+        run: |
           test -s .cache/kokoro/kokoro-v1.0.int8.onnx
           test -s .cache/kokoro/voices-v1.0.bin
+      - name: Restore Kokoro chunk cache
+        id: tts-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/kokoro-chunks
+          key: kokoro-chunks-v1-${{ runner.os }}-${{ steps.ready.outputs.manifest_hash }}
       - name: Synthesize local speech with exact chunk sample boundaries
         env:
           KOKORO_VOICE: af_sarah
           KOKORO_SPEED: "0.95"
           KOKORO_MODEL_PATH: .cache/kokoro/kokoro-v1.0.int8.onnx
           KOKORO_VOICES_PATH: .cache/kokoro/voices-v1.0.bin
+          KOKORO_CHUNK_CACHE_DIR: .cache/kokoro-chunks
         run: |
-          mkdir -p public/generated out
+          mkdir -p public/generated
           python3 scripts/synthesize_kokoro.py "${{ steps.ready.outputs.manifest }}" public/generated generated
+      - name: Save Kokoro chunk cache
+        if: steps.tts-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/kokoro-chunks
+          key: kokoro-chunks-v1-${{ runner.os }}-${{ steps.ready.outputs.manifest_hash }}
       - name: Compile resolved timing
         run: npm run compile:tts -- "${{ steps.ready.outputs.manifest }}" public/generated/tts-timing.json public/generated/render-props.json
+      - name: Upload speech bundle for render job
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ready-tts-${{ steps.ready.outputs.episode_id }}-${{ github.sha }}
+          path: public/generated/
+          retention-days: 2
+
+  render:
+    needs: synthesize
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact READY commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+      - name: Install render fonts and review tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk ffmpeg
+      - name: Download synthesized speech bundle
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ready-tts-${{ needs.synthesize.outputs.episode_id }}-${{ github.sha }}
+          path: public/generated
       - name: Render 540p preview
-        run: npx remotion render src/composition/index.ts EpisodeVideo "out/${{ steps.ready.outputs.episode_id }}-preview-540p.mp4" --props=public/generated/render-props.json --scale=0.5 --codec=h264 --crf=23
+        run: |
+          mkdir -p out
+          npx remotion render src/composition/index.ts EpisodeVideo "out/${{ needs.synthesize.outputs.episode_id }}-preview-540p.mp4" --props=public/generated/render-props.json --scale=0.5 --codec=h264 --crf=23
       - name: Generate 3x3 contact sheet
         shell: bash
         run: |
           set -euo pipefail
-          video="out/${{ steps.ready.outputs.episode_id }}-preview-540p.mp4"
-          sheet="out/${{ steps.ready.outputs.episode_id }}-contact-sheet.jpg"
+          video="out/${{ needs.synthesize.outputs.episode_id }}-preview-540p.mp4"
+          sheet="out/${{ needs.synthesize.outputs.episode_id }}-contact-sheet.jpg"
           duration="$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$video")"
           interval="$(python3 - <<'PY' "$duration"
           import sys
@@ -96,7 +159,7 @@ jobs:
       - name: Upload review artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ready-preview-${{ steps.ready.outputs.episode_id }}-${{ github.sha }}
+          name: ready-preview-${{ needs.synthesize.outputs.episode_id }}-${{ github.sha }}
           path: |
             out/*-preview-540p.mp4
             out/*-contact-sheet.jpg
