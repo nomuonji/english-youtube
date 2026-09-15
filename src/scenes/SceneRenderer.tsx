@@ -82,7 +82,6 @@ const BilingualCaption=({manifest,scene,resolved,globalFrame,phaseName}:{manifes
   const point=pointForCue(manifest,cue);
   const phrase=point&&cue.text.toLowerCase().includes(point.phrase.toLowerCase())?point.phrase:undefined;
   return <div style={{width:"100%",minHeight:220,border:`1px solid ${COLORS.line}`,borderRadius:28,background:"rgba(255,255,255,.96)",boxShadow:`0 16px 44px ${COLORS.shadow}`,padding:"28px 52px",display:"flex",flexDirection:"column",justifyContent:"center",gap:14}}>
-    {point&&phrase?<div style={{alignSelf:"center",padding:"7px 14px",borderRadius:999,background:COLORS.accentSoft,color:COLORS.accent,fontSize:19,fontWeight:850}}>{point.phrase} · {point.meaningJa}</div>:null}
     <div style={{fontSize:50,lineHeight:1.24,fontWeight:690,letterSpacing:"-.012em"}}>{highlightPhrase(cue.text,phrase)}</div>
     <div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:30,lineHeight:1.4,color:COLORS.muted,fontWeight:560}}>{cue.translationJa}</div>
   </div>;
