@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/nomuonji/english-youtube/blob/main/schemas/episode-v2.1.schema.json",
+  "title": "EpisodeManifest v2.1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "2.1.0"
+    },
+    "kind": {
+      "enum": ["fixture", "production"]
+    },
+    "episodeId": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "maxLength": 100
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "asOf": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "category": {
+      "enum": ["technology", "work_money", "science_society"]
+    },
+    "newsPeg": {
+      "$ref": "#/$defs/newsPeg"
+    },
+    "centralQuestion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "answer": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "episode.schema.json#/$defs/source"
+      },
+      "minItems": 1,
+      "maxItems": 20
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "$ref": "episode.schema.json#/$defs/claim"
+      },
+      "minItems": 1,
+      "maxItems": 80
+    },
+    "utterances": {
+      "type": "array",
+      "items": {
+        "$ref": "episode.schema.json#/$defs/utterance"
+      },
+      "minItems": 1,
+      "maxItems": 140
+    },
+    "learningPoints": {
+      "type": "array",
+      "items": {
+        "$ref": "episode.schema.json#/$defs/learningPoint"
+      },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "scenes": {
+      "type": "array",
+      "items": {
+        "$ref": "episode.schema.json#/$defs/scene"
+      },
+      "minItems": 3,
+      "maxItems": 25
+    },
+    "packaging": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "candidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "titleJa": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 48
+              },
+              "thumbnailJa": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 12
+              }
+            },
+            "required": ["titleJa", "thumbnailJa"]
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "selectedIndex": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2
+        }
+      },
+      "required": ["candidates", "selectedIndex"]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "kind",
+    "episodeId",
+    "revision",
+    "generatedAt",
+    "asOf",
+    "category",
+    "newsPeg",
+    "centralQuestion",
+    "answer",
+    "sources",
+    "claims",
+    "utterances",
+    "learningPoints",
+    "scenes",
+    "packaging"
+  ],
+  "$defs": {
+    "newsPeg": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "eventClaimId": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,63}$"
+        },
+        "eventDate": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "whyNow": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
+        }
+      },
+      "required": ["eventClaimId", "eventDate", "whyNow"]
+    }
+  }
+}
