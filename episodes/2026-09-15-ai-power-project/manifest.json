@@ -2,8 +2,8 @@
   "schemaVersion": "2.1.0",
   "kind": "production",
   "episodeId": "2026-09-15-ai-power-project",
-  "revision": 1,
-  "generatedAt": "2026-09-15T03:50:00Z",
+  "revision": 2,
+  "generatedAt": "2026-09-15T06:54:00Z",
   "asOf": "2026-09-15T03:45:00Z",
   "category": "technology",
   "newsPeg": {
@@ -172,18 +172,16 @@
     },
     {
       "id": "u-h2",
-      "text": "That sounds like an energy story, but it may actually be the next stage of the AI boom.",
+      "text": "So why are AI data centers starting to look like energy projects?",
       "chunks": [
-        "That sounds like an energy story,",
-        "but it may actually be the next stage of the AI boom."
+        "So why are AI data centers",
+        "starting to look like energy projects?"
       ],
-      "translationJa": "一見するとエネルギーの話ですが、実はAIブームの次の段階なのかもしれません。",
-      "claimIds": [
-        "c-inference"
-      ],
+      "translationJa": "ではなぜAIデータセンターは、エネルギー事業のようになり始めているのでしょうか？",
+      "claimIds": [],
       "translationJaChunks": [
-        "一見するとエネルギーの話ですが、",
-        "実はAIブームの次の段階なのかもしれません。"
+        "ではなぜAIデータセンターは、",
+        "エネルギー事業のようになり始めているのでしょうか？"
       ]
     },
     {
@@ -220,34 +218,34 @@
     },
     {
       "id": "u-s1-3",
-      "text": "Putting those projects in the same sentence tells us something important about modern AI infrastructure.",
+      "text": "Putting data centers and power generation in one financing plan points to a deeper shift in what can limit AI growth.",
       "chunks": [
-        "Putting those projects in the same sentence",
-        "tells us something important about modern AI infrastructure."
+        "Putting data centers and power generation in one financing plan",
+        "points to a deeper shift in what can limit AI growth."
       ],
-      "translationJa": "これらの事業が同じ文脈で語られていることは、現代のAIインフラについて重要なことを示します。",
+      "translationJa": "データセンターと発電が一つの資金調達計画に入ることは、AI成長の制約が変わりつつあることを示します。",
       "claimIds": [
         "c-inference"
       ],
       "translationJaChunks": [
-        "これらの事業が同じ文脈で語られていることは、",
-        "現代のAIインフラについて重要なことを示します。"
+        "データセンターと発電が一つの資金調達計画に入ることは、",
+        "AI成長の制約が変わりつつあることを示します。"
       ]
     },
     {
       "id": "u-s1-4",
-      "text": "Computing power is no longer the only resource that determines how fast an AI project can grow.",
+      "text": "Computing power is no longer the only constraint, and the next clue is hiding in electricity demand.",
       "chunks": [
-        "Computing power is no longer the only resource",
-        "that determines how fast an AI project can grow."
+        "Computing power is no longer the only constraint,",
+        "and the next clue is hiding in electricity demand."
       ],
-      "translationJa": "AI事業の成長速度を決める資源は、もはや計算能力だけではありません。",
+      "translationJa": "もはや計算能力だけが制約ではなく、次の手掛かりは電力需要にあります。",
       "claimIds": [
         "c-inference"
       ],
       "translationJaChunks": [
-        "AI事業の成長速度を決める資源は、",
-        "もはや計算能力だけではありません。"
+        "もはや計算能力だけが制約ではなく、",
+        "次の手掛かりは電力需要にあります。"
       ]
     },
     {
@@ -300,18 +298,19 @@
     },
     {
       "id": "u-s2-4",
-      "text": "For grid planners, a new AI campus can behave more like a large industrial project than an ordinary office.",
+      "text": "That makes an AI campus look more like an industrial project than an office, and the scale becomes clearer in the 2030 outlook.",
       "chunks": [
-        "For grid planners, a new AI campus can behave",
-        "more like a large industrial project than an ordinary office."
+        "That makes an AI campus look more like an industrial project than an office,",
+        "and the scale becomes clearer in the 2030 outlook."
       ],
-      "translationJa": "送電網の計画者にとって、新しいAIキャンパスは普通のオフィスより大規模工場に近い存在になり得ます。",
+      "translationJa": "そのためAIキャンパスはオフィスより大規模産業施設に近く見え、その規模は2030年予測でさらに明確になります。",
       "claimIds": [
-        "c-inference"
+        "c-inference",
+        "c-iea-outlook"
       ],
       "translationJaChunks": [
-        "送電網の計画者にとって、新しいAIキャンパスは",
-        "普通のオフィスより大規模工場に近い存在になり得ます。"
+        "そのためAIキャンパスはオフィスより大規模産業施設に近く見え、",
+        "その規模は2030年予測でさらに明確になります。"
       ]
     },
     {
@@ -364,19 +363,19 @@
     },
     {
       "id": "u-s3-4",
-      "text": "Three percent sounds small globally, but the local effect can be much larger where projects cluster.",
+      "text": "Three percent sounds small globally, but that is the first trap: projects cluster, so local effects can be much larger.",
       "chunks": [
-        "Three percent sounds small globally,",
-        "but the local effect can be much larger where projects cluster."
+        "Three percent sounds small globally, but that is the first trap:",
+        "projects cluster, so local effects can be much larger."
       ],
-      "translationJa": "世界全体では3パーセントは小さく見えますが、施設が集中する地域では影響がより大きくなります。",
+      "translationJa": "世界全体で3パーセントは小さく見えますが、そこが最初の落とし穴です。施設が集中すると地域への影響は大きくなります。",
       "claimIds": [
         "c-iea-outlook",
         "c-inference"
       ],
       "translationJaChunks": [
-        "世界全体では3パーセントは小さく見えますが、",
-        "施設が集中する地域では影響がより大きくなります。"
+        "世界全体で3パーセントは小さく見えますが、そこが最初の落とし穴です。",
+        "施設が集中すると地域への影響は大きくなります。"
       ]
     },
     {
@@ -457,18 +456,19 @@
     },
     {
       "id": "u-m1-4",
-      "text": "As the campus becomes larger, electricity stops being a utility bill and becomes a design constraint.",
+      "text": "As the campus grows, electricity stops being a utility bill and becomes a design constraint, but having power somewhere is still not enough.",
       "chunks": [
-        "As the campus becomes larger, electricity stops being a utility bill",
-        "and becomes a design constraint."
+        "As the campus grows, electricity stops being a utility bill and becomes a design constraint,",
+        "but having power somewhere is still not enough."
       ],
-      "translationJa": "施設が大きくなるほど、電力は単なる光熱費ではなく設計上の制約になります。",
+      "translationJa": "施設が大きくなると、電力は単なる光熱費ではなく設計上の制約になりますが、どこかに電気があるだけでは十分ではありません。",
       "claimIds": [
-        "c-inference"
+        "c-inference",
+        "c-bottleneck"
       ],
       "translationJaChunks": [
-        "施設が大きくなるほど、電力は単なる光熱費ではなく",
-        "設計上の制約になります。"
+        "施設が大きくなると、電力は単なる光熱費ではなく設計上の制約になりますが、",
+        "どこかに電気があるだけでは十分ではありません。"
       ]
     },
     {
@@ -586,18 +586,18 @@
     },
     {
       "id": "u-m3-4",
-      "text": "This turns energy planning into part of the schedule for building AI infrastructure.",
+      "text": "Energy planning therefore enters the AI construction schedule, but national averages can still hide where the real pressure lands.",
       "chunks": [
-        "This turns energy planning into part of the schedule",
-        "for building AI infrastructure."
+        "Energy planning therefore enters the AI construction schedule,",
+        "but national averages can still hide where the real pressure lands."
       ],
-      "translationJa": "こうしてエネルギー計画そのものがAIインフラ建設の工程表に組み込まれます。",
+      "translationJa": "そのためエネルギー計画はAI建設工程に入り込みますが、全国平均では実際に圧力がかかる場所を隠してしまうことがあります。",
       "claimIds": [
         "c-inference"
       ],
       "translationJaChunks": [
-        "こうしてエネルギー計画そのものが",
-        "AIインフラ建設の工程表に組み込まれます。"
+        "そのためエネルギー計画はAI建設工程に入り込みますが、",
+        "全国平均では実際に圧力がかかる場所を隠してしまうことがあります。"
       ]
     },
     {
@@ -649,18 +649,18 @@
     },
     {
       "id": "u-c1-4",
-      "text": "So the story is not unlimited growth; it is a race between digital demand and physical construction.",
+      "text": "So this is a race between digital demand and physical construction, and the pressure does not land evenly.",
       "chunks": [
-        "So the story is not unlimited growth;",
-        "it is a race between digital demand and physical construction."
+        "So this is a race between digital demand and physical construction,",
+        "and the pressure does not land evenly."
       ],
-      "translationJa": "つまり無制限な成長ではなく、デジタル需要と物理的な建設速度の競争なのです。",
+      "translationJa": "つまりこれはデジタル需要と物理的建設の競争であり、その圧力は均等には現れません。",
       "claimIds": [
         "c-inference"
       ],
       "translationJaChunks": [
-        "つまり無制限な成長ではなく、",
-        "デジタル需要と物理的な建設速度の競争なのです。"
+        "つまりこれはデジタル需要と物理的建設の競争であり、",
+        "その圧力は均等には現れません。"
       ]
     },
     {
@@ -809,18 +809,19 @@
     },
     {
       "id": "u-c3-4",
-      "text": "That local reality helps explain why developers increasingly discuss generation, storage, and grid access together.",
+      "text": "That local reality explains why developers discuss generation, storage, and grid access together, and now the opening financing story makes sense.",
       "chunks": [
-        "That local reality helps explain why developers",
-        "increasingly discuss generation, storage, and grid access together."
+        "That local reality explains why developers discuss generation, storage, and grid access together,",
+        "and now the opening financing story makes sense."
       ],
-      "translationJa": "この地域的な現実が、開発者が発電、蓄電、送電網接続をまとめて議論する理由を説明します。",
+      "translationJa": "この地域的な現実によって、開発者が発電・蓄電・送電網接続をまとめて議論する理由が分かり、冒頭の資金調達の話もつながります。",
       "claimIds": [
-        "c-inference"
+        "c-inference",
+        "c-news"
       ],
       "translationJaChunks": [
-        "この地域的な現実が、開発者が発電、蓄電、",
-        "送電網接続をまとめて議論する理由を説明します。"
+        "この地域的な現実によって、開発者が発電・蓄電・送電網接続をまとめて議論する理由が分かり、",
+        "冒頭の資金調達の話もつながります。"
       ]
     },
     {
@@ -939,34 +940,34 @@
     },
     {
       "id": "u-a2-4",
-      "text": "For investors and communities, the AI story increasingly includes transformers, substations, power contracts, and permits.",
+      "text": "For investors and communities, the AI story now includes transformers, substations, power contracts, and permits, not just chips.",
       "chunks": [
-        "For investors and communities, the AI story increasingly includes",
-        "transformers, substations, power contracts, and permits."
+        "For investors and communities, the AI story now includes transformers, substations, power contracts, and permits,",
+        "not just chips."
       ],
-      "translationJa": "投資家や地域社会にとって、AIの話には変圧器、変電所、電力契約、許認可も含まれるようになっています。",
+      "translationJa": "投資家や地域社会にとって、AIの話には半導体だけでなく、変圧器、変電所、電力契約、許認可も含まれるようになっています。",
       "claimIds": [
         "c-inference"
       ],
       "translationJaChunks": [
-        "投資家や地域社会にとって、AIの話には変圧器、変電所、",
-        "電力契約、許認可も含まれるようになっています。"
+        "投資家や地域社会にとって、AIの話には半導体だけでなく、変圧器、変電所、電力契約、許認可も",
+        "含まれるようになっています。"
       ]
     },
     {
       "id": "u-a3-1",
-      "text": "So when you see another giant AI investment announcement, watch the energy details as closely as the chips.",
+      "text": "Here is a simple test for the next giant AI investment headline: look past the money and check the power plan.",
       "chunks": [
-        "So when you see another giant AI investment announcement,",
-        "watch the energy details as closely as the chips."
+        "Here is a simple test for the next giant AI investment headline:",
+        "look past the money and check the power plan."
       ],
-      "translationJa": "次に巨額のAI投資のニュースを見たら、半導体と同じくらいエネルギー面にも注目してください。",
+      "translationJa": "次に巨額のAI投資見出しを見たときの簡単な見方があります。金額だけでなく電力計画を確認してください。",
       "claimIds": [
         "c-inference"
       ],
       "translationJaChunks": [
-        "次に巨額のAI投資のニュースを見たら、",
-        "半導体と同じくらいエネルギー面にも注目してください。"
+        "次に巨額のAI投資見出しを見たときの簡単な見方があります。",
+        "金額だけでなく電力計画を確認してください。"
       ]
     },
     {
@@ -1099,7 +1100,7 @@
       ],
       "visual": {
         "type": "card",
-        "headline": "AI needs more than chips",
+        "headline": "AI's next bottleneck?",
         "body": "Why data centers are becoming energy projects",
         "claimIds": [
           "c-news",
@@ -1120,8 +1121,8 @@
       ],
       "visual": {
         "type": "card",
-        "headline": "Today's news peg",
-        "body": "SB Energy's planned financing links data centers, power generation, and infrastructure.",
+        "headline": "Why this suddenly matters",
+        "body": "One financing plan now ties AI data centers directly to power generation.",
         "claimIds": [
           "c-news",
           "c-inference"
@@ -1534,7 +1535,7 @@
       ],
       "visual": {
         "type": "card",
-        "headline": "What to watch next",
+        "headline": "A better way to read AI headlines",
         "body": "Grid capacity • reliable power • connection timing • energy infrastructure",
         "claimIds": [
           "c-bottleneck",
@@ -1566,16 +1567,16 @@
   "packaging": {
     "candidates": [
       {
-        "titleJa": "AIデータセンターはなぜ「発電」まで必要なのか？",
+        "titleJa": "AIの次のボトルネックは「電気」？｜やさしい英語",
         "thumbnailJa": "AIは電気を食う"
       },
       {
-        "titleJa": "AIブームの本当のボトルネックは電力？",
+        "titleJa": "AIデータセンターはなぜ発電まで必要？｜やさしい英語",
         "thumbnailJa": "電気が足りない？"
       },
       {
-        "titleJa": "なぜAI企業は電力まで確保し始めたのか",
-        "thumbnailJa": "次は電力争奪戦"
+        "titleJa": "なぜAI企業は電力まで確保するのか｜やさしい英語",
+        "thumbnailJa": "次は電力"
       }
     ],
     "selectedIndex": 0
