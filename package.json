@@ -13,6 +13,7 @@
     "test": "vitest run",
     "validate": "tsx src/cli/validate.ts",
     "check-ready": "tsx src/cli/check-ready.ts",
+    "compile:edge": "tsx src/cli/compile-edge.ts",
     "studio": "remotion studio src/composition/index.ts",
     "render:demo": "remotion render src/composition/index.ts EpisodeVideo out/demo.mp4"
   },
