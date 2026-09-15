@@ -13,7 +13,7 @@ const brollForBeat=(assets:BrollAsset[],beat:StoryBeat|null):BrollAsset|undefine
   if(beat==="answer")return assets.find(item=>item.beat==="complication")??assets.find(item=>item.beat==="setup")??assets[0];
   return assets[0];
 };
-export const EpisodeVideo:React.FC<EpisodeVideoProps>=({manifest,resolved,imageAssets=[],brollAssets=[]})=><AbsoluteFill>
+export const EpisodeVideo:React.FC<EpisodeVideoProps>=({manifest,resolved,imageAssets=[],brollAssets=[]})=><AbsoluteFill style={{backgroundColor:"#F4F1E8"}}>
   <Html5Audio src={staticFile("generated/bgm.wav")} volume={0.055}/>
   {resolved.scenes.map(scene=>{const rs=resolved.scenes.find(i=>i.sceneId===scene.sceneId);const manifestScene=manifest.scenes.find(i=>i.id===scene.sceneId);if(!rs||!manifestScene)return null;const image=imageAssets.find(item=>item.sceneId===scene.sceneId);const broll=brollAssets.find(item=>item.sceneId===scene.sceneId)??(manifestScene.role==="story"?brollForBeat(brollAssets,manifestScene.beat):undefined);return <Sequence key={scene.sceneId} from={rs.startFrame} durationInFrames={rs.durationFrames}>{broll?<BrollLayer asset={broll}/>:null}{image?<EditorialImageLayer asset={image}/>:null}<SceneRenderer manifest={manifest} scene={manifestScene} resolved={rs}/></Sequence>;})}
   {resolved.scenes.flatMap(scene=>scene.audioEvents.map((event,index)=>{const clip=resolved.clips.find(item=>item.clipId===event.clipId);if(!clip)return null;const durationInFrames=Math.max(1,Math.ceil(clip.samples/clip.sampleRate*resolved.fps));return <Sequence key={`${scene.sceneId}-${event.clipId}-${index}`} from={event.startFrame} durationInFrames={durationInFrames}><Html5Audio src={staticFile(clip.path)}/></Sequence>;}))}
