@@ -91,29 +91,24 @@ jobs:
               sc['visual']['body']='The clue is electricity.'
           mp.write_text(json.dumps(m,ensure_ascii=False,indent=2)+'\n')
 
-          # 3) READY: Cloudflare -> Commons fallback; generate deterministic BGM after timing compile.
+          # 3) READY: generated image -> Commons fallback; deterministic BGM after timing compile.
           wp=Path('.github/workflows/ready-gate.yml')
           w=wp.read_text()
-          cf='''      - name: Generate optional editorial images with Cloudflare FLUX\n        env:\n          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}\n          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}\n        run: node scripts/generate_cloudflare_images.mjs public/generated/image-briefs.json public/generated/images\n'''
-          commons=cf+'''      - name: Fill missing editorial images from Wikimedia Commons\n        run: node scripts/fetch_commons_images.mjs public/generated/image-briefs.json public/generated/images\n'''
           if 'Fill missing editorial images from Wikimedia Commons' not in w:
-            if cf not in w: raise SystemExit('Cloudflare step pattern missing')
-            w=w.replace(cf,commons)
-          compile_step='''      - name: Compile resolved timing and review assets\n        env:\n          ALLOW_BROLL_FETCH: "true"\n        run: npm run compile:tts -- "${{ steps.ready.outputs.manifest }}" public/generated/tts-timing.json public/generated/render-props.json\n'''
-          compile_plus=compile_step+'''      - name: Generate subtle background music bed\n        run: python3 scripts/generate_bgm.py public/generated/render-props.json public/generated/bgm.wav\n'''
+            needle='        run: node scripts/generate_cloudflare_images.mjs public/generated/image-briefs.json public/generated/images\n'
+            if needle not in w: raise SystemExit('Cloudflare run line missing')
+            w=w.replace(needle,needle+'      - name: Fill missing editorial images from Wikimedia Commons\n        run: node scripts/fetch_commons_images.mjs public/generated/image-briefs.json public/generated/images\n')
           if 'Generate subtle background music bed' not in w:
-            if compile_step not in w: raise SystemExit('READY compile step pattern missing')
-            w=w.replace(compile_step,compile_plus)
+            w,n=re.subn(r'(      - name: Compile resolved timing and review assets\n        env:\n          ALLOW_BROLL_FETCH: "true"\n        run: npm run compile:tts -- .*?render-props\.json\n)',r'\1      - name: Generate subtle background music bed\n        run: python3 scripts/generate_bgm.py public/generated/render-props.json public/generated/bgm.wav\n',w,count=1)
+            if n!=1: raise SystemExit(f'READY compile patch count={n}')
           wp.write_text(w)
 
-          # 4) APPROVED: regenerate the same deterministic BGM from frozen timing.
+          # 4) APPROVED: same deterministic BGM from frozen timing.
           ap=Path('.github/workflows/approved-final.yml')
           a=ap.read_text()
-          approved_compile='''      - name: Compile resolved timing with frozen review assets\n        env:\n          ALLOW_BROLL_FETCH: "false"\n        run: npm run compile:tts -- "${{ steps.approval.outputs.manifest }}" public/generated/tts-timing.json public/generated/render-props.json\n'''
-          approved_plus=approved_compile+'''      - name: Generate reviewed background music bed\n        run: python3 scripts/generate_bgm.py public/generated/render-props.json public/generated/bgm.wav\n'''
           if 'Generate reviewed background music bed' not in a:
-            if approved_compile not in a: raise SystemExit('APPROVED compile step pattern missing')
-            a=a.replace(approved_compile,approved_plus)
+            a,n=re.subn(r'(      - name: Compile resolved timing with frozen review assets\n        env:\n          ALLOW_BROLL_FETCH: "false"\n        run: npm run compile:tts -- .*?render-props\.json\n)',r'\1      - name: Generate reviewed background music bed\n        run: python3 scripts/generate_bgm.py public/generated/render-props.json public/generated/bgm.wav\n',a,count=1)
+            if n!=1: raise SystemExit(f'APPROVED compile patch count={n}')
           ap.write_text(a)
           PY
       - name: Validate patch
