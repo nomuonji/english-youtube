@@ -139,6 +139,8 @@ jobs:
         run: |
           mkdir -p out
           npx remotion render src/composition/index.ts EpisodeVideo "out/${{ needs.synthesize.outputs.episode_id }}-preview-540p.mp4" --props=public/generated/render-props.json --scale=0.5 --codec=h264 --crf=23
+      - name: Normalize preview narration loudness
+        run: bash scripts/normalize_video_audio.sh "out/${{ needs.synthesize.outputs.episode_id }}-preview-540p.mp4"
       - name: Generate 3x3 contact sheet
         shell: bash
         run: |
@@ -168,5 +170,5 @@ jobs:
           retention-days: 7
       - name: Publication boundary
         run: |
-          echo "READY -> validate -> local TTS -> exact timing -> 540p render -> contact sheet passed."
+          echo "READY -> validate -> local TTS -> exact timing -> 540p render -> loudness normalization -> contact sheet passed."
           echo "Publishing is intentionally disabled. A separate APPROVED.json marker is required for a 1080p final render."
