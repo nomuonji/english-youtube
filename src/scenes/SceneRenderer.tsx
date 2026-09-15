@@ -87,22 +87,41 @@ const TopRail=({manifest,scene,resolved,frame}:{manifest:EpisodeManifest;scene:S
   </>;
 };
 
+const FOCUS_TERMS=[
+  "AI data centers","data centers","power generation","electricity demand","AI-focused data centers",
+  "grid access","grid connection","bottleneck","supply chains","reliable power","power availability",
+  "electricity consumption","financing","commercial and industrial demand","power density","infrastructure"
+] as const;
+const focusForCue=(m:EpisodeManifest,cue:Cue|undefined):{text:string;label:string}|undefined=>{
+  if(!cue)return undefined;
+  const lower=cue.text.toLowerCase();
+  const learning=m.learningPoints.find(p=>lower.includes(p.phrase.toLowerCase()));
+  if(learning)return {text:learning.phrase,label:"KEY PHRASE · ここに注目"};
+  const term=FOCUS_TERMS.find(t=>lower.includes(t.toLowerCase()));
+  return term?{text:term,label:"KEY WORD · ここに注目"}:undefined;
+};
 const BilingualCaption=({manifest,scene,resolved,globalFrame,phaseName}:{manifest:EpisodeManifest;scene:Scene;resolved:ResolvedScene;globalFrame:number;phaseName:string})=>{
   const hidden=scene.role==="retrieval"&&phaseName!=="reveal"&&phaseName!=="answer";
-  const cue=hidden?undefined:captionCueAt(globalFrame,resolved);
-  const {prev,current,next}=cueContext(cue,resolved);
-  const point=pointForCue(manifest,current);
-  const phrase=point&&current?.text.toLowerCase().includes(point.phrase.toLowerCase())?point.phrase:undefined;
-  const transition=current?interpolate(globalFrame,[current.startFrame,current.startFrame+9],[1,0],{extrapolateLeft:"clamp",extrapolateRight:"clamp"}):0;
-  const slide=transition*24;
-  return <div style={{width:"100%",height:278,border:`1px solid ${COLORS.line}`,borderRadius:28,background:"rgba(255,255,255,.965)",boxShadow:`0 16px 44px ${COLORS.shadow}`,padding:"14px 50px",display:"grid",gridTemplateRows:"38px 1fr 38px",overflow:"hidden",position:"relative"}}>
-    <div style={{fontSize:23,lineHeight:"32px",fontWeight:560,color:COLORS.muted,opacity:prev?.text?.trim()?0.28:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",transform:`translateY(${-slide*.45}px)`}}>{prev?.text??" "}</div>
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:7,transform:`translateY(${slide}px)`}}>
-      {phrase?<div style={{fontSize:14,fontWeight:950,letterSpacing:".12em",color:COLORS.accent}}>KEY PHRASE · ここに注目</div>:null}
-      <div style={{fontSize:46,lineHeight:1.18,fontWeight:710,letterSpacing:"-.012em",minHeight:54,opacity:current?1:.16}}>{current?highlightPhrase(current.text,phrase):" "}</div>
-      <div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:27,lineHeight:1.3,color:COLORS.muted,fontWeight:560,minHeight:35,opacity:current?1:.14}}>{current?.translationJa??" "}</div>
+  const cues=[...resolved.cues].sort((a,b)=>a.startFrame-b.startFrame);
+  const cue=hidden?undefined:(cueAt(globalFrame,resolved)??[...cues].filter(c=>c.startFrame<=globalFrame).at(-1));
+  const index=cue?cues.findIndex(c=>c===cue||c.startFrame===cue.startFrame&&c.text===cue.text):-1;
+  const prev=index>0?cues[index-1]:undefined;
+  const next=index>=0&&index<cues.length-1?cues[index+1]:undefined;
+  const focus=focusForCue(manifest,cue);
+  const enter=cue?interpolate(globalFrame,[cue.startFrame,cue.startFrame+9],[0,1],{extrapolateLeft:"clamp",extrapolateRight:"clamp"}):1;
+  const prevY=interpolate(enter,[0,1],[82,16]);
+  const currentY=interpolate(enter,[0,1],[188,72]);
+  const nextY=interpolate(enter,[0,1],[284,218]);
+  return <div style={{width:"100%",height:270,border:`1px solid ${COLORS.line}`,borderRadius:28,background:"rgba(255,255,255,.965)",boxShadow:`0 16px 44px ${COLORS.shadow}`,position:"relative",overflow:"hidden"}}>
+    <div style={{position:"absolute",left:52,right:52,top:0,transform:`translateY(${prevY}px)`,fontSize:24,lineHeight:1.2,fontWeight:560,color:COLORS.text,opacity:cue?interpolate(enter,[0,1],[.55,.20]):0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{prev?.text??" "}</div>
+    {focus?<div style={{position:"absolute",left:52,right:52,top:55,fontSize:14,fontWeight:950,letterSpacing:".12em",color:COLORS.accent,opacity:interpolate(enter,[0,1],[0,1])}}>{focus.label}</div>:null}
+    <div style={{position:"absolute",left:52,right:52,top:0,transform:`translateY(${currentY}px)`,opacity:cue?interpolate(enter,[0,1],[.35,1]):.12}}>
+      <div style={{fontSize:46,lineHeight:1.18,fontWeight:720,letterSpacing:"-.012em",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{cue?highlightPhrase(cue.text,focus?.text):" "}</div>
+      <div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:27,lineHeight:1.32,color:COLORS.muted,fontWeight:560,marginTop:10,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{cue?.translationJa??" "}</div>
     </div>
-    <div style={{fontSize:23,lineHeight:"32px",fontWeight:560,color:COLORS.muted,opacity:next?.text?.trim()?0.22:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",transform:`translateY(${slide*.3}px)`}}>{next?.text??" "}</div>
+    <div style={{position:"absolute",left:52,right:52,top:0,transform:`translateY(${nextY}px)`,fontSize:23,lineHeight:1.2,fontWeight:540,color:COLORS.text,opacity:next?.text?.18:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{next?.text??" "}</div>
+    <div style={{position:"absolute",left:0,right:0,top:0,height:34,background:"linear-gradient(180deg,rgba(255,255,255,.98),rgba(255,255,255,0))",pointerEvents:"none"}}/>
+    <div style={{position:"absolute",left:0,right:0,bottom:0,height:34,background:"linear-gradient(0deg,rgba(255,255,255,.98),rgba(255,255,255,0))",pointerEvents:"none"}}/>
   </div>;
 };
 const BilingualVisualLabel=({text,large=false}:{text:string;large?:boolean})=>{const ja=visualJa(text);return <div style={{textAlign:"center"}}><div style={{fontSize:large?42:28,fontWeight:820,lineHeight:1.15}}>{text}</div>{ja?<div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:large?23:18,color:"currentColor",opacity:.68,fontWeight:650,marginTop:7}}>{ja}</div>:null}</div>;};

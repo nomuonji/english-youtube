@@ -2,7 +2,7 @@
   "schemaVersion": "2.1.0",
   "kind": "production",
   "episodeId": "2026-09-15-ai-power-project",
-  "revision": 2,
+  "revision": 3,
   "generatedAt": "2026-09-15T06:54:00Z",
   "asOf": "2026-09-15T03:45:00Z",
   "category": "technology",
@@ -156,32 +156,36 @@
   "utterances": [
     {
       "id": "u-h1",
-      "text": "A company building AI data centers is also raising money for power generation.",
+      "text": "AI's next bottleneck may not be chips. It may be electricity.",
       "chunks": [
-        "A company building AI data centers",
-        "is also raising money for power generation."
+        "AI's next bottleneck may not be chips.",
+        "It may be electricity."
       ],
-      "translationJa": "AIデータセンターを建設する企業が、発電にも資金を集めています。",
+      "translationJa": "AIの次のボトルネックは、半導体ではなく電力かもしれません。",
       "claimIds": [
-        "c-news"
+        "c-bottleneck",
+        "c-inference"
       ],
       "translationJaChunks": [
-        "AIデータセンターを建設する企業が、",
-        "発電にも資金を集めています。"
+        "AIの次のボトルネックは、半導体ではなく",
+        "電力かもしれません。"
       ]
     },
     {
       "id": "u-h2",
-      "text": "So why are AI data centers starting to look like energy projects?",
+      "text": "One company is funding both AI data centers and power generation. Why are these becoming the same project?",
       "chunks": [
-        "So why are AI data centers",
-        "starting to look like energy projects?"
+        "One company is funding both AI data centers and power generation.",
+        "Why are these becoming the same project?"
       ],
-      "translationJa": "ではなぜAIデータセンターは、エネルギー事業のようになり始めているのでしょうか？",
-      "claimIds": [],
+      "translationJa": "ある企業はAIデータセンターと発電の両方に資金を集めています。なぜこの2つが同じプロジェクトになりつつあるのでしょうか？",
+      "claimIds": [
+        "c-news",
+        "c-inference"
+      ],
       "translationJaChunks": [
-        "ではなぜAIデータセンターは、",
-        "エネルギー事業のようになり始めているのでしょうか？"
+        "ある企業はAIデータセンターと発電の両方に資金を集めています。",
+        "なぜこの2つが同じプロジェクトになりつつあるのでしょうか？"
       ]
     },
     {
@@ -1101,7 +1105,7 @@
       "visual": {
         "type": "card",
         "headline": "AI's next bottleneck?",
-        "body": "Why data centers are becoming energy projects",
+        "body": "The clue is electricity.",
         "claimIds": [
           "c-news",
           "c-inference"
