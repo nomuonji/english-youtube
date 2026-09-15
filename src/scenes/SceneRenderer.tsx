@@ -23,13 +23,14 @@ const currentReveal=(g:number,r:ResolvedScene,ids:string[]):Set<string>=>{
   const max=Math.max(...eligible.map(x=>x.frame));
   return new Set(eligible.filter(x=>x.frame===max).map(x=>x.id));
 };
-const sceneLabel=(scene:Scene)=>scene.role==="story"?(scene.beat==="setup"?"SETUP":scene.beat==="mechanism"?"HOW IT WORKS":scene.beat==="complication"?"THE CATCH":"ANSWER"):scene.role==="retrieval"?"LISTENING CHECK":scene.role==="phrase"?"ENGLISH MOMENT":scene.role==="recap"?"RECAP":"HOOK";
+const sceneLabel=(scene:Scene)=>scene.role==="story"?(scene.beat==="setup"?"WHAT CHANGED":scene.beat==="mechanism"?"HOW IT WORKS":scene.beat==="complication"?"THE CATCH":"WHAT IT MEANS"):scene.role==="retrieval"?"LISTENING CHECK":scene.role==="phrase"?"USEFUL ENGLISH":scene.role==="recap"?"TAKEAWAYS":"THE QUESTION";
 const seedOf=(s:string)=>[...s].reduce((a,c)=>a+c.charCodeAt(0),0);
 const prettyCategory=(s:string)=>s.replace("_"," ").toUpperCase();
 
 const SIGNALS:Array<{re:RegExp;signal:Signal}>=[
   {re:/\bhowever\b/i,signal:{token:"however",label:"CONTRAST",ja:"対比"}},
   {re:/\bbut\b/i,signal:{token:"but",label:"CONTRAST",ja:"対比"}},
+  {re:/\bwhile\b/i,signal:{token:"while",label:"CONTRAST",ja:"対比"}},
   {re:/\bbecause\b/i,signal:{token:"because",label:"REASON",ja:"理由"}},
   {re:/\btherefore\b/i,signal:{token:"therefore",label:"RESULT",ja:"結果"}},
   {re:/\bso\b/i,signal:{token:"so",label:"RESULT",ja:"結果"}},
@@ -122,9 +123,12 @@ const LearningMoment=({manifest,scene,cue}:{manifest:EpisodeManifest;scene:Scene
 
 const focus=(on:boolean):React.CSSProperties=>({borderColor:on?COLORS.accent:COLORS.line,borderWidth:on?4:2,opacity:on?1:.52,fontWeight:on?760:560,transform:on?"scale(1.035)":"scale(1)",boxShadow:on?`0 16px 42px rgba(0,139,139,.16)`:"none"});
 const metricText=(value:string,p:number)=>{
-  if(!/^-?\d+(?:\.\d+)?$/.test(value))return value;
-  const n=Number(value),decimals=(value.split(".")[1]??"").length;
-  return (n*p).toFixed(decimals);
+  const match=value.match(/^([~]?)(-?\d+(?:\.\d+)?)$/);
+  if(!match)return value;
+  const prefix=match[1]??"";
+  const raw=match[2]??"0";
+  const n=Number(raw),decimals=(raw.split(".")[1]??"").length;
+  return `${prefix}${(n*p).toFixed(decimals)}`;
 };
 
 export const SceneRenderer:React.FC<Props>=({manifest,scene,resolved})=>{
@@ -144,10 +148,11 @@ export const SceneRenderer:React.FC<Props>=({manifest,scene,resolved})=>{
   if(scene.visual.type==="card"){
     const v=scene.visual;
     const isHook=scene.role==="hook";
+    const headline=/news peg/i.test(v.headline)?"Why this suddenly matters":v.headline;
     visual=<div style={{width:isHook?1570:1510,minHeight:isHook?410:360,border:`1px solid ${COLORS.line}`,borderRadius:38,padding:isHook?"52px 76px":"46px 68px",textAlign:"center",background:COLORS.panel,boxShadow:`0 24px 70px ${COLORS.shadow}`,transform:`scale(${.94+intro*.06}) rotate(${Math.sin((f+seed)/80)*.18}deg)`,position:"relative",overflow:"hidden"}}>
       <div style={{position:"absolute",left:-100,top:-160,width:420,height:420,borderRadius:"50%",background:"rgba(0,139,139,.08)"}}/>
       <div style={{fontSize:18,fontWeight:900,letterSpacing:".14em",color:COLORS.accent,marginBottom:18}}>{isHook?"ONE QUESTION CHANGES THE STORY":"WHY THIS MATTERS"}</div>
-      <div style={{fontSize:isHook?88:72,lineHeight:1.12,fontWeight:850,letterSpacing:"-.035em",position:"relative"}}>{v.headline}</div>
+      <div style={{fontSize:isHook?88:72,lineHeight:1.12,fontWeight:850,letterSpacing:"-.035em",position:"relative"}}>{headline}</div>
       {v.body?<div style={{fontSize:isHook?42:38,lineHeight:1.35,marginTop:30,color:COLORS.muted,fontWeight:520,opacity:interpolate(f,[8,24],[0,1],{extrapolateLeft:"clamp",extrapolateRight:"clamp"})}}>{v.body}</div>:null}
       {isHook?<div style={{margin:"34px auto 0",display:"inline-flex",padding:"13px 22px",borderRadius:999,background:COLORS.navy,color:COLORS.white,fontSize:28,fontWeight:750}}>{manifest.centralQuestion}</div>:null}
     </div>;
