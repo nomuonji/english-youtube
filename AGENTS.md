@@ -6,11 +6,11 @@ v2.1設計を実装中。実装・稼働状況はREADMEに記載する。設計�
 
 エンジニアリング依頼では文書・schema・コードを一緒に変更できる。通常の定期コンテンツ生成ではepisodes/とruns/だけを更新できる。React、CSS、schema、workflow、設計、予算、公開設定を日次処理で変更しない。
 
-v2.1の変更点は必ず `docs/V2_1_CHANGES.md` を先に読む。既存v2文書と衝突する場合はv2.1修正を優先する。視聴体験・学習体験については最新の `docs/EDITORIAL_SYSTEM.md` を正本とする。
+v2.1の変更点は必ず `docs/V2_1_CHANGES.md` を先に読む。既存v2文書と衝突する場合はv2.1修正を優先する。視聴体験・学習体験については `docs/EDITORIAL_SYSTEM.md` と `docs/RETENTION_AND_LEARNING.md` を合わせて正本とする。
 
 ## 作業開始時
 
-README、docs/V2_1_CHANGES.md、担当領域の仕様、docs/DATA_CONTRACT.md、docs/OPERATIONS.mdを読む。日次生成ではdocs/EDITORIAL_SYSTEM.mdも読む。
+README、docs/V2_1_CHANGES.md、担当領域の仕様、docs/DATA_CONTRACT.md、docs/OPERATIONS.mdを読む。日次生成ではdocs/EDITORIAL_SYSTEM.md、docs/RETENTION_AND_LEARNING.md、docs/AGENT_PIPELINE.mdも読む。
 
 ## 日次処理の必須順序
 
@@ -18,9 +18,9 @@ README、docs/V2_1_CHANGES.md、担当領域の仕様、docs/DATA_CONTRACT.md、
 2. 候補12件以下を探索し、重複・除外条件を適用する。
 3. 採点し、上位最大3件の出典を確認。基準未達ならskipped。
 4. 出典・claimと反証を先に作る。原稿から出典を後付けしない。
-5. `newsPeg`、中心の問い、答え、4つのstory beat、3表現を決める。
-6. 英語原稿、文の意味chunk、日本語chunk訳、シーンpayloadを作る。各beatにopen loop→micro payoff→forward pullを持たせる。
-7. schemaと意味検査、編集レビューを通す。修復は最大2回。
+5. `newsPeg`、中心の問い、答え、4つのstory beat、3表現を決める。各beatにopen loop / micro payoff / forward pullを設計する。
+6. 英語原稿、文の意味chunk、日本語chunk訳、シーンpayloadを作る。
+7. schemaと意味検査に加え `npm run review:retention -- <manifest>` 相当のretention review、編集レビューを通す。retention hard failure 0、score 80以上。修復は最大2回。
 8. manifestをfreezeする。
 9. runごとに `runs/YYYY-MM-DD/<runId>/READY.json` を最後のGit変更として新規作成する。READYには `runId / episodeId / revision / manifestHash / generatedAt` を入れ、後から上書きしない。
 10. READY pushを受けたActionsがreview previewを開始する。日次エージェントはworkflow_dispatchを直接呼べることを前提にしない。
@@ -41,7 +41,7 @@ READY push triggerがM0 probeで動作しない環境では、READYを残してb
 - learningPointsは正確に3つ。ただしこれは全学習内容ではなく、最後まで強く回収するアンカー表現。
 - 全story/hookのutteranceを1〜4個の意味chunkに分け、対応するtranslationJaChunksを作る。単なる文字数分割は禁止。
 - rendererは各chunkを英語先行で表示し、少し遅れて日本語を答え合わせとして表示する。日次エージェントはこの表示ロジックをpayloadで上書きしない。
-- `but / however / because / so / therefore / although / even though / instead / if` などの論理語はrendererが自動で機能ラベルを出せるため、不自然に避けない。
+- `but / however / because / so / therefore / although / even though / while / instead / if` などの論理語はrendererが自動で機能ラベルを出せるため、不自然に避けない。
 - retrievalは正確に1回。
 - recapは正確に1回。
 - 専用phrase sceneは1〜2回。
@@ -50,12 +50,14 @@ READY push triggerがM0 probeで動作しない環境では、READYを残してb
 
 ## 長尺視聴の構造
 
-- 最初の25秒で、具体的な違和感・stakes・centralQuestionを出す。挨拶やチャンネル説明から始めない。
-- 各story beatは open loop → evidence → micro payoff → forward pull の順を基本とする。
+- 最初の2utteranceで具体的な違和感・意外性を出し、centralQuestionを音声でも疑問文として言う。挨拶、`Today we will...`、`In this video...`から始めない。
+- 各story beatは open loop → evidence/example → micro payoff → forward pull の順を基本とする。
+- 30〜60秒ごとに小さな答えを返す。答えを最後まで全部保留しない。
 - 20〜40秒ごとに、意味のあるpattern breakを最低1回作る。数字のreveal、比較の反転、chainの進行、beat切替、learning moment、retrievalなど内容に結びついた変化を使う。
 - `news peg`、`setup`、`mechanism` のような内部編集用語をviewer-facingな見出しに使わない。
 - factsを4文並べただけのsceneを作らない。同じ事実でも「なぜ意外か」「何が変わるか」「次に何を見るべきか」のいずれかで前後をつなぐ。
-- visual payloadはナレーションの進行に合わせて段階的に意味が増えるものを優先し、長い静止スライドを避ける。
+- story sceneの少なくとも半数は終端にcontrast / consequence / unresolved question / scale shift / exceptionのいずれかを持たせる。
+- visual payloadはナレーションの進行に合わせて段階的に意味が増えるものを優先し、長い静止スライドを避ける。同じstory visualを3scene連続させない。
 
 ## 必須事項
 
