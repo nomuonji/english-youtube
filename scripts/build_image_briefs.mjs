@@ -27,7 +27,7 @@ const searchQuery=(purpose)=>{
   if(energy){
     if(purpose==="hook")return "data center server room";
     if(purpose==="analogy")return "high voltage electricity transmission grid";
-    return "power plant electricity infrastructure";
+    return "electricity transmission construction power lines substation";
   }
   const category=String(manifest.category??"technology").replaceAll("_"," ");
   return purpose==="hook"?`${category} technology`:purpose==="analogy"?`${category} infrastructure`:`${category} system`;
