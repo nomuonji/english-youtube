@@ -1,0 +1,60 @@
+name: One-off v7 renderer UX
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/oneoff-v7-renderer.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Patch learner renderer
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/scenes/SceneRenderer.tsx')
+          s=p.read_text()
+          s=s.replace('import {base,COLORS,headerStyle,mainArea,subtitleArea} from "./styles";','import {base,COLORS,headerStyle,mainArea,subtitleArea} from "./styles";\nimport {ChapterCall} from "./ChapterCall";\nimport {chapterForBeat} from "../chapters";\nimport {visualJa} from "./visualJa";')
+          s=s.replace('const cueAt=(g:number,r:ResolvedScene)=>r.cues.find(c=>c.startFrame<=g&&g<c.endFrame);','const cueAt=(g:number,r:ResolvedScene)=>r.cues.find(c=>c.startFrame<=g&&g<c.endFrame);\nconst captionCueAt=(g:number,r:ResolvedScene)=>cueAt(g,r)??[...r.cues].filter(c=>c.startFrame<=g).sort((a,b)=>b.startFrame-a.startFrame)[0];')
+          s=s.replace('return <>{text.slice(0,i)}<span style={{color:COLORS.accent,fontWeight:820}}>{text.slice(i,i+phrase.length)}</span>{text.slice(i+phrase.length)}</>;','return <>{text.slice(0,i)}<span style={{color:COLORS.navy,fontWeight:900,background:COLORS.accentSoft,borderBottom:`6px solid ${COLORS.accent}`,borderRadius:8,padding:"0 .08em",boxDecorationBreak:"clone",WebkitBoxDecorationBreak:"clone"}}>{text.slice(i,i+phrase.length)}</span>{text.slice(i+phrase.length)}</>;')
+          s=s.replace('background:`radial-gradient(circle at ${x}% ${y}%, rgba(0,139,139,.08), transparent 34%), ${COLORS.background}`','background:`radial-gradient(circle at ${x}% ${y}%, rgba(0,139,139,.08), transparent 34%), rgba(244,241,232,.82)`')
+          old='''const chapterFor=(scene:Scene):{step:string;label:string}=>{\n  if(scene.role==="story"){\n    if(scene.beat==="setup")return {step:"1 / 4",label:"WHAT CHANGED"};\n    if(scene.beat==="mechanism")return {step:"2 / 4",label:"HOW IT WORKS"};\n    if(scene.beat==="complication")return {step:"3 / 4",label:"THE CATCH"};\n    return {step:"4 / 4",label:"WHAT IT MEANS"};\n  }\n  if(scene.role==="hook")return {step:"START",label:"THE QUESTION"};\n  if(scene.role==="phrase"||scene.role==="retrieval")return {step:"PAUSE",label:"PRACTICE"};\n  if(scene.role==="recap")return {step:"END",label:"TAKEAWAYS"};\n  return {step:"",label:sceneLabel(scene)};\n};'''
+          new='''const chapterFor=(scene:Scene):{step:string;label:string;labelJa:string}=>{\n  if(scene.role==="story"){const c=chapterForBeat(scene.beat);if(c)return {step:`${c.index} / 4`,label:c.labelEn,labelJa:c.labelJa};}\n  if(scene.role==="hook")return {step:"START",label:"THE QUESTION",labelJa:"今日の問い"};\n  if(scene.role==="phrase")return {step:"PAUSE",label:"KEY PHRASE",labelJa:"重要表現"};\n  if(scene.role==="retrieval")return {step:"PAUSE",label:"LISTENING CHECK",labelJa:"リスニング確認"};\n  if(scene.role==="recap")return {step:"END",label:"TAKEAWAYS",labelJa:"まとめ"};\n  return {step:"",label:sceneLabel(scene),labelJa:""};\n};\nconst cornerFor=(scene:Scene)=>scene.role==="story"?{en:"STORY",ja:"解説"}:scene.role==="phrase"?{en:"KEY PHRASE",ja:"重要表現"}:scene.role==="retrieval"?{en:"CHECK",ja:"確認"}:scene.role==="recap"?{en:"RECAP",ja:"まとめ"}:{en:"HOOK",ja:"導入"};\nconst topicFor=(scene:Scene)=>scene.visual.type==="card"?scene.visual.headline:scene.visual.type==="metric"?scene.visual.label:scene.visual.type==="chain"?"Cause and effect":scene.visual.type==="compare"?`${scene.visual.leftTitle} vs ${scene.visual.rightTitle}`:scene.visual.type==="timeline"?"How the story develops":scene.visual.type==="phrase"?"Use it in context":scene.visual.type==="retrieval"?"Listen and check":"Three phrases to keep";'''
+          if old not in s: raise SystemExit('chapterFor block not found')
+          s=s.replace(old,new)
+          old='''const TopRail=({manifest,scene,resolved,frame}:{manifest:EpisodeManifest;scene:Scene;resolved:ResolvedScene;frame:number})=>{\n  const index=Math.max(0,manifest.scenes.findIndex(s=>s.id===scene.id));\n  const whole=clamp((index+frame/Math.max(1,resolved.durationFrames-1))/Math.max(1,manifest.scenes.length));\n  const chapter=chapterFor(scene);\n  return <>\n    <div style={{position:"absolute",left:0,top:0,width:"100%",height:6,background:"rgba(16,42,54,.08)"}}><div style={{height:"100%",width:`${whole*100}%`,background:COLORS.accent}}/></div>\n    <div style={{...headerStyle,justifyContent:"flex-start"}}>\n      <div style={{display:"flex",alignItems:"center",gap:18}}>\n        <span style={{fontSize:18,fontWeight:900,color:COLORS.accent,letterSpacing:".04em"}}>{chapter.step}</span>\n        <span style={{fontSize:24,fontWeight:900,color:COLORS.text,letterSpacing:".02em"}}>{chapter.label}</span>\n      </div>\n    </div>\n  </>;\n};'''
+          new='''const TopRail=({manifest,scene,resolved,frame}:{manifest:EpisodeManifest;scene:Scene;resolved:ResolvedScene;frame:number})=>{\n  const index=Math.max(0,manifest.scenes.findIndex(s=>s.id===scene.id));\n  const whole=clamp((index+frame/Math.max(1,resolved.durationFrames-1))/Math.max(1,manifest.scenes.length));\n  const chapter=chapterFor(scene);const corner=cornerFor(scene);const topic=topicFor(scene);\n  return <>\n    <div style={{position:"absolute",left:0,top:0,width:"100%",height:6,background:"rgba(16,42,54,.08)"}}><div style={{height:"100%",width:`${whole*100}%`,background:COLORS.accent}}/></div>\n    <div style={{...headerStyle}}>\n      <div style={{display:"flex",alignItems:"center",gap:16}}>\n        <span style={{fontSize:18,fontWeight:900,color:COLORS.accent}}>{chapter.step}</span>\n        <div><div style={{fontSize:24,fontWeight:900,color:COLORS.text}}>{chapter.label}</div><div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:16,fontWeight:650,color:COLORS.muted,marginTop:1}}>{chapter.labelJa}</div></div>\n      </div>\n      <div style={{display:"flex",alignItems:"center",gap:16,maxWidth:820}}>\n        <div style={{padding:"8px 13px",borderRadius:999,background:COLORS.navy,color:COLORS.white,textAlign:"center",minWidth:116}}><div style={{fontSize:15,fontWeight:900,letterSpacing:".08em"}}>{corner.en}</div><div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:13,opacity:.8}}>{corner.ja}</div></div>\n        <div style={{fontSize:22,fontWeight:760,color:COLORS.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{topic}</div>\n      </div>\n    </div>\n  </>;\n};'''
+          if old not in s: raise SystemExit('TopRail block not found')
+          s=s.replace(old,new)
+          old='''const BilingualCaption=({manifest,scene,resolved,globalFrame,phaseName}:{manifest:EpisodeManifest;scene:Scene;resolved:ResolvedScene;globalFrame:number;phaseName:string})=>{\n  const cue=cueAt(globalFrame,resolved);\n  if(scene.role==="retrieval"&&phaseName!=="reveal"&&phaseName!=="answer")return null;\n  if(!cue)return null;\n  const point=pointForCue(manifest,cue);\n  const phrase=point&&cue.text.toLowerCase().includes(point.phrase.toLowerCase())?point.phrase:undefined;\n  return <div style={{width:"100%",minHeight:220,border:`1px solid ${COLORS.line}`,borderRadius:28,background:"rgba(255,255,255,.96)",boxShadow:`0 16px 44px ${COLORS.shadow}`,padding:"28px 52px",display:"flex",flexDirection:"column",justifyContent:"center",gap:14}}>\n    <div style={{fontSize:50,lineHeight:1.24,fontWeight:690,letterSpacing:"-.012em"}}>{highlightPhrase(cue.text,phrase)}</div>\n    <div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:30,lineHeight:1.4,color:COLORS.muted,fontWeight:560}}>{cue.translationJa}</div>\n  </div>;\n};'''
+          new='''const BilingualCaption=({manifest,scene,resolved,globalFrame,phaseName}:{manifest:EpisodeManifest;scene:Scene;resolved:ResolvedScene;globalFrame:number;phaseName:string})=>{\n  const hidden=scene.role==="retrieval"&&phaseName!=="reveal"&&phaseName!=="answer";\n  const cue=hidden?undefined:captionCueAt(globalFrame,resolved);\n  const point=pointForCue(manifest,cue);\n  const phrase=point&&cue?.text.toLowerCase().includes(point.phrase.toLowerCase())?point.phrase:undefined;\n  return <div style={{width:"100%",height:224,border:`1px solid ${COLORS.line}`,borderRadius:28,background:"rgba(255,255,255,.965)",boxShadow:`0 16px 44px ${COLORS.shadow}`,padding:"24px 52px",display:"flex",flexDirection:"column",justifyContent:"center",gap:10,overflow:"hidden"}}>\n    {phrase?<div style={{fontSize:15,fontWeight:950,letterSpacing:".12em",color:COLORS.accent}}>KEY PHRASE · ここに注目</div>:null}\n    <div style={{fontSize:48,lineHeight:1.22,fontWeight:700,letterSpacing:"-.012em",minHeight:59,opacity:cue?1:.16}}>{cue?highlightPhrase(cue.text,phrase):" "}</div>\n    <div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:29,lineHeight:1.35,color:COLORS.muted,fontWeight:560,minHeight:39,opacity:cue?1:.14}}>{cue?.translationJa??" "}</div>\n  </div>;\n};\nconst BilingualVisualLabel=({text,large=false}:{text:string;large?:boolean})=>{const ja=visualJa(text);return <div style={{textAlign:"center"}}><div style={{fontSize:large?42:28,fontWeight:820,lineHeight:1.15}}>{text}</div>{ja?<div style={{fontFamily:"'Noto Sans JP','Noto Sans CJK JP',sans-serif",fontSize:large?23:18,color:COLORS.muted,fontWeight:650,marginTop:7}}>{ja}</div>:null}</div>;};'''
+          if old not in s: raise SystemExit('caption block not found')
+          s=s.replace(old,new)
+          s=s.replace('<div style={{fontSize:45,fontWeight:800,marginTop:28}}>{v.label}</div>','<div style={{marginTop:28}}><BilingualVisualLabel text={v.label} large/></div>')
+          s=s.replace('>{n.label}</div>','><BilingualVisualLabel text={n.label}/></div>')
+          s=s.replace('<div>{v.leftTitle}</div><div>{v.rightTitle}</div>','<BilingualVisualLabel text={v.leftTitle}/><BilingualVisualLabel text={v.rightTitle}/>')
+          s=s.replace('<div style={{fontWeight:820}}>{r.aspect}</div><div>{r.left}</div><div>{r.right}</div>','<div style={{fontWeight:820}}><BilingualVisualLabel text={r.aspect}/></div><BilingualVisualLabel text={r.left}/><BilingualVisualLabel text={r.right}/>')
+          s=s.replace('<div style={{fontSize:30,lineHeight:1.28,fontWeight:active?820:650}}>{e.label}</div>','<div style={{fontSize:30,lineHeight:1.28,fontWeight:active?820:650}}><BilingualVisualLabel text={e.label}/></div>')
+          needle='''  let visual:React.ReactNode=null;\n\n  if(scene.visual.type==="card"){'''
+          repl='''  let visual:React.ReactNode=null;\n  const activeChapter=scene.role==="story"?chapterForBeat(scene.beat):undefined;\n  if(activeChapter&&(resolved.chapterCallFrames??0)>0&&f<(resolved.chapterCallFrames??0))return <ChapterCall chapter={activeChapter}/>;\n\n  if(scene.visual.type==="card"){'''
+          if needle not in s: raise SystemExit('renderer insertion point not found')
+          s=s.replace(needle,repl)
+          p.write_text(s)
+          PY
+      - name: Commit patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/scenes/SceneRenderer.tsx
+          git diff --cached --quiet && exit 0
+          git commit -m "ux: add chapter calls persistent captions and bilingual visuals"
+          git push origin HEAD:main
