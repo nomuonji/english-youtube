@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "validate": "tsx src/cli/validate.ts",
+    "review:retention": "tsx src/cli/review-retention.ts",
     "check-ready": "tsx src/cli/check-ready.ts",
     "check-approval": "tsx src/cli/check-approval.ts",
     "compile:tts": "tsx src/cli/compile-tts.ts",
