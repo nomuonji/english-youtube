@@ -58,6 +58,8 @@ jobs:
         run: npm run check-ready -- "${{ steps.ready.outputs.path }}"
       - name: Retention review production manifest
         run: npm run review:retention -- "${{ steps.ready.outputs.manifest }}"
+      - name: Cognitive-load review production manifest
+        run: npm run review:cognitive -- "${{ steps.ready.outputs.manifest }}"
       - name: Install local Kokoro TTS runtime
         run: |
           sudo apt-get update -qq
@@ -177,7 +179,7 @@ jobs:
           retention-days: 30
       - name: Publication boundary
         run: |
-          echo "READY -> validate -> retention review -> local TTS -> exact timing -> 540p render -> loudness normalization -> contact sheet passed."
+          echo "READY -> validate -> retention/cognitive review -> local TTS -> exact timing -> 540p render -> loudness normalization -> contact sheet passed."
           echo "Publishing is intentionally disabled. A separate APPROVED.json marker is required for a 1080p final render."
 
   deploy_review:
