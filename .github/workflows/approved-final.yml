@@ -140,7 +140,21 @@ jobs:
             public/generated/broll/manifest.json
             ${{ steps.approval.outputs.path }}
           retention-days: 14
+      - name: Publish approved final directly to YouTube
+        id: youtube
+        env:
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: node scripts/upload_youtube.mjs "out/${{ steps.approval.outputs.episode_id }}-final-1080p.mp4" "${{ steps.approval.outputs.manifest }}"
+      - name: Preserve YouTube publish result
+        if: always() && hashFiles('youtube-publish-result.json') != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: youtube-publish-result-${{ steps.approval.outputs.episode_id }}-${{ github.sha }}
+          path: youtube-publish-result.json
+          retention-days: 30
       - name: Publishing boundary
         run: |
-          echo "Explicit approval -> retention/cognitive review -> reviewed image/B-roll restore -> deterministic BGM/SFX -> 1080p final render -> loudness normalization passed."
-          echo "YouTube upload remains disabled until the publishing adapter is implemented and separately gated."
+          echo "Explicit approval -> retention/cognitive review -> reviewed image/B-roll restore -> deterministic BGM/SFX -> 1080p final render -> loudness normalization -> direct YouTube publish passed."
+          echo "Published video: ${{ steps.youtube.outputs.video_url }}"
