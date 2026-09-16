@@ -1,10 +1,10 @@
 {
-  "version": "3.0.0",
+  "version": "3.1.0",
   "episodeId": "2026-09-15-ai-power-project",
-  "title": "AIの次の壁は半導体ではない。電力だ",
-  "voice": "ja-JP-KeitaNeural",
-  "rate": "+12%",
-  "pitch": "-2Hz",
+  "title": "AI's Next Bottleneck May Be Electricity",
+  "voice": "en-US-GuyNeural",
+  "rate": "+5%",
+  "pitch": "-1Hz",
   "sources": [
     {
       "label": "Reuters · 2026-09-15",
@@ -20,146 +20,191 @@
   "scenes": [
     {
       "id": "v3-01",
-      "section": "hook",
-      "narrationJa": "AIの次の壁は、半導体ではなく電力かもしれません。",
-      "headline": "AIの次の壁は「電気」",
-      "subline": "チップの次に来る物理ボトルネック",
+      "section": "HOOK",
+      "narrationEn": "AI's next bottleneck may not be chips. It may be electricity.",
+      "translationJa": "AIの次のボトルネックは、半導体ではなく電力かもしれません。",
+      "headline": "AI'S NEXT WALL: POWER",
+      "subline": "半導体の次に来る物理ボトルネック",
       "visual": {"type": "broll", "query": "data center server room", "accent": "danger"}
     },
     {
       "id": "v3-02",
-      "section": "hook",
-      "narrationJa": "AIデータセンターは、巨大な電力インフラ事業になりつつあります。",
-      "headline": "AI = 巨大な電力消費産業",
+      "section": "WHY NOW",
+      "narrationEn": "AI data centers are starting to look less like software projects and more like energy infrastructure.",
+      "translationJa": "AIデータセンターは、ソフトウェア事業というより電力インフラ事業に近づいています。",
+      "headline": "AI IS BECOMING AN ENERGY BUSINESS",
       "subline": "計算能力だけでは動かない",
       "visual": {"type": "broll", "query": "high voltage power lines", "accent": "electric"}
     },
     {
       "id": "v3-03",
-      "section": "news",
-      "narrationJa": "ロイターは九月十五日、SB Energyが米IPOに向け最大五億ドルを日本投資家へ販売する計画だと報じました。",
-      "headline": "SB Energy、米IPOへ",
+      "section": "REAL NEWS",
+      "narrationEn": "Reuters reported that SB Energy plans to sell up to five hundred million dollars in shares to Japanese investors as part of a U.S. IPO.",
+      "translationJa": "Reutersは、SB Energyが米国IPOの一環として日本の投資家に最大5億ドル分の株式を販売する計画だと報じました。",
+      "headline": "SB ENERGY MOVES TOWARD A U.S. IPO",
       "subline": "最大5億ドルを日本投資家向けに販売計画",
       "visual": {"type": "source", "sourceIndex": 0, "query": "solar farm electricity"}
     },
     {
       "id": "v3-04",
-      "section": "news",
-      "narrationJa": "資金用途には、データセンターだけでなく発電と関連インフラも含まれます。",
-      "headline": "AI投資と発電投資が一体化",
-      "subline": "Data center + Power generation",
+      "section": "REAL NEWS",
+      "narrationEn": "The key detail is where the money can go: data centers, power generation, and related infrastructure.",
+      "translationJa": "重要なのは資金用途です。データセンターだけでなく、発電や関連インフラも含まれます。",
+      "headline": "DATA CENTERS + POWER GENERATION",
+      "subline": "AI投資と発電投資が一体化",
       "visual": {"type": "broll", "query": "power plant electricity infrastructure", "accent": "electric"}
     },
     {
       "id": "v3-05",
-      "section": "scale",
-      "narrationJa": "背景にあるのは、データセンターの電力需要急増です。",
-      "headline": "電力需要が急拡大",
+      "section": "SCALE",
+      "narrationEn": "That makes sense when you look at how quickly electricity demand from data centers is growing.",
+      "translationJa": "背景にあるのは、データセンターの電力需要が急速に増えていることです。",
+      "headline": "ELECTRICITY DEMAND IS SURGING",
       "subline": "IEA central projection",
       "visual": {"type": "broll", "query": "data center server room", "accent": "electric"}
     },
     {
       "id": "v3-06",
-      "section": "scale",
-      "narrationJa": "IEA予測では、四百八十五テラワット時から九百五十へ。二〇三〇年までにほぼ倍増します。",
+      "section": "DATA",
+      "narrationEn": "The IEA projects global data-center electricity use rising from four hundred eighty-five terawatt-hours in 2025 to nine hundred fifty in 2030.",
+      "translationJa": "IEAは、世界のデータセンター電力消費が2025年の485TWhから2030年の950TWhへ増えると予測しています。",
       "headline": "485 → 950 TWh",
-      "subline": "2025                              2030",
-      "visual": {"type": "metric", "from": 485, "to": 950, "unit": "TWh", "label": "世界のデータセンター電力消費"}
+      "subline": "2025 → 2030、ほぼ2倍",
+      "visual": {"type": "metric", "from": 485, "to": 950, "unit": "TWh", "label": "GLOBAL DATA-CENTER ELECTRICITY USE"}
     },
     {
       "id": "v3-07",
-      "section": "scale",
-      "narrationJa": "二〇三〇年には、世界の電力需要のおよそ三パーセントを占める見通しです。",
-      "headline": "世界需要の約3%",
-      "subline": "一部地域への集中が問題を大きくする",
-      "visual": {"type": "metric", "from": 0, "to": 3, "unit": "%", "label": "2030年の世界電力需要に占める比率"}
+      "section": "DATA",
+      "narrationEn": "By 2030, data centers could account for roughly three percent of global electricity demand.",
+      "translationJa": "2030年には、データセンターが世界の電力需要のおよそ3%を占める可能性があります。",
+      "headline": "ABOUT 3% OF GLOBAL DEMAND",
+      "subline": "問題は負荷が特定地域に集中すること",
+      "visual": {"type": "metric", "from": 0, "to": 3, "unit": "%", "label": "SHARE OF GLOBAL ELECTRICITY DEMAND IN 2030"}
     },
     {
       "id": "v3-08",
-      "section": "scale",
-      "narrationJa": "AI向けデータセンターの電力使用は、二〇二五年だけで五〇パーセント増えました。",
-      "headline": "AI向けは1年で +50%",
-      "subline": "電力負荷が特定地域へ集中",
+      "section": "DATA",
+      "narrationEn": "And electricity use at AI-focused data centers grew fifty percent in 2025 alone.",
+      "translationJa": "AI向けデータセンターの電力使用量は、2025年だけで50%増えました。",
+      "headline": "AI-FOCUSED DATA CENTERS: +50%",
+      "subline": "2025年の電力使用量の伸び",
       "visual": {"type": "broll", "query": "data center server room", "accent": "danger"}
     },
     {
       "id": "v3-09",
-      "section": "mismatch",
-      "narrationJa": "問題は、デジタルと物理の速度差です。ソフトウェアは一瞬で拡張できます。",
-      "headline": "ソフトウェアは一瞬で拡張",
-      "subline": "Digital scale: fast",
-      "visual": {"type": "compare", "left": "AI SOFTWARE", "leftValue": "秒〜月", "right": "POWER GRID", "rightValue": "年単位", "focus": "left"}
+      "section": "THE MISMATCH",
+      "narrationEn": "Here is the problem: software can scale almost instantly, but physical infrastructure cannot.",
+      "translationJa": "問題は速度差です。ソフトウェアはほぼ瞬時に拡張できますが、物理インフラはそうはいきません。",
+      "headline": "DIGITAL SPEED ≠ PHYSICAL SPEED",
+      "subline": "ソフトウェアと電力インフラの速度差",
+      "visual": {"type": "compare", "left": "AI SOFTWARE", "leftValue": "seconds → months", "right": "POWER GRID", "rightValue": "years", "focus": "left"}
     },
     {
       "id": "v3-10",
-      "section": "mismatch",
-      "narrationJa": "一方、送電線や変電所、系統接続には数年かかります。",
-      "headline": "送電インフラは年単位",
+      "section": "THE MISMATCH",
+      "narrationEn": "Transmission lines, substations, permits, and grid connections can take years to build and approve.",
+      "translationJa": "送電線、変電所、許認可、系統接続には、建設・承認まで何年もかかることがあります。",
+      "headline": "THE GRID MOVES IN YEARS",
       "subline": "Permits · Construction · Grid connection",
       "visual": {"type": "broll", "query": "electricity substation", "accent": "electric"}
     },
     {
       "id": "v3-11",
-      "section": "mismatch",
-      "narrationJa": "GPUがあっても、必要な場所へ電気を運べなければ動かせません。",
-      "headline": "GPUがあっても、電線がなければ動かない",
+      "section": "THE BOTTLENECK",
+      "narrationEn": "So even if you have the latest GPUs, they are useless if enough electricity cannot reach the site.",
+      "translationJa": "最新GPUを確保しても、必要な電力を現地へ届けられなければ十分に動かせません。",
+      "headline": "GPUs ARE NOT ENOUGH",
       "subline": "Compute capacity ≠ usable capacity",
-      "visual": {"type": "compare", "left": "GPU", "leftValue": "確保", "right": "GRID", "rightValue": "未接続", "focus": "right"}
+      "visual": {"type": "compare", "left": "GPU", "leftValue": "secured", "right": "GRID", "rightValue": "not ready", "focus": "right"}
     },
     {
       "id": "v3-12",
-      "section": "bottleneck",
-      "narrationJa": "IEAは、送電網、機器、供給網、系統接続のボトルネックを指摘しています。",
-      "headline": "物理ボトルネックは4つ",
-      "subline": "GRID · EQUIPMENT · SUPPLY CHAIN · CONNECTION",
-      "visual": {"type": "chain", "items": ["送電網", "電力機器", "供給網", "系統接続"]}
+      "section": "THE BOTTLENECK",
+      "narrationEn": "The IEA points to bottlenecks in grids, equipment, supply chains, and grid connections.",
+      "translationJa": "IEAは、送電網、電力機器、サプライチェーン、系統接続のボトルネックを指摘しています。",
+      "headline": "FOUR PHYSICAL BOTTLENECKS",
+      "subline": "電力はAI成長の物理制約になっている",
+      "visual": {"type": "chain", "items": ["GRID", "EQUIPMENT", "SUPPLY CHAIN", "CONNECTION"]}
     },
     {
       "id": "v3-13",
-      "section": "bottleneck",
-      "narrationJa": "これは電気代ではなく、立地、完成時期、資金調達を左右する制約です。",
-      "headline": "電力はコストではなく事業条件",
+      "section": "WHY IT MATTERS",
+      "narrationEn": "This is not just about electricity prices. Power availability can constrain location, construction schedules, and financing.",
+      "translationJa": "これは電気代だけの問題ではありません。電力確保は立地、建設時期、資金調達まで制約します。",
+      "headline": "POWER IS A BUSINESS CONSTRAINT",
       "subline": "Location · Schedule · Financing",
       "visual": {"type": "broll", "query": "electricity substation", "accent": "danger"}
     },
     {
       "id": "v3-14",
-      "section": "takeaway",
-      "narrationJa": "だからAI投資は、GPUやモデル性能だけ見ても足りません。",
-      "headline": "AI投資の見方を変える",
-      "subline": "GPUだけでは不十分",
+      "section": "TAKEAWAY",
+      "narrationEn": "That changes how we should evaluate the next wave of AI investment.",
+      "translationJa": "これは、次のAI投資を見る視点そのものを変えます。",
+      "headline": "CHANGE THE AI INVESTMENT CHECKLIST",
+      "subline": "GPUやモデル性能だけでは不十分",
       "visual": {"type": "broll", "query": "semiconductor chip", "accent": "electric"}
     },
     {
       "id": "v3-15",
-      "section": "takeaway",
-      "narrationJa": "送電容量、電力契約、接続時期、発電計画を見る必要があります。",
-      "headline": "次に見るべき4項目",
-      "subline": "送電容量 / 電力契約 / 接続時期 / 発電計画",
-      "visual": {"type": "checklist", "items": ["送電容量", "電力契約", "系統接続の時期", "発電計画"]}
+      "section": "TAKEAWAY",
+      "narrationEn": "Look at transmission capacity, power contracts, grid-connection timing, and whether the generation plan is realistic.",
+      "translationJa": "送電容量、電力契約、系統接続の時期、そして発電計画の現実性を見る必要があります。",
+      "headline": "WHAT TO WATCH NEXT",
+      "subline": "AI投資の裏側にある電力計画を見る",
+      "visual": {"type": "checklist", "items": ["TRANSMISSION", "POWER CONTRACTS", "GRID TIMING", "GENERATION PLAN"]}
     },
     {
       "id": "v3-16",
-      "section": "takeaway",
-      "narrationJa": "SB Energyの動きは、AIとエネルギー投資の一体化を象徴しています。",
+      "section": "CONCLUSION",
+      "narrationEn": "SB Energy is one sign that AI and energy are becoming part of the same infrastructure story.",
+      "translationJa": "SB Energyの動きは、AIとエネルギーが同じインフラ投資の物語になりつつある一例です。",
       "headline": "AI × ENERGY",
-      "subline": "ひとつのインフラ投資へ",
+      "subline": "別々の投資テーマではなくなりつつある",
       "visual": {"type": "broll", "query": "power plant electricity infrastructure", "accent": "electric"}
     },
     {
       "id": "v3-17",
-      "section": "takeaway",
-      "narrationJa": "勝者を決めるのは、必要な場所で必要な電気を確保できるかです。",
-      "headline": "AIの未来は「電力インフラ」でも決まる",
-      "subline": "The physical layer matters",
+      "section": "CONCLUSION",
+      "narrationEn": "The next AI winner may be the company that can secure power where and when it is needed.",
+      "translationJa": "次のAI勝者は、必要な場所と時期に電力を確保できる企業かもしれません。",
+      "headline": "THE PHYSICAL LAYER MATTERS",
+      "subline": "AIの未来は電力インフラでも決まる",
       "visual": {"type": "broll", "query": "high voltage power lines", "accent": "danger"}
     },
     {
       "id": "v3-18",
-      "section": "outro",
-      "narrationJa": "次のAI投資は、チップだけでなく電力計画まで見てください。",
-      "headline": "次のAI投資は「電力計画」を見る",
-      "subline": "TECH × ECONOMY × INFRASTRUCTURE",
+      "section": "ENGLISH REPLAY",
+      "narrationEn": "Power availability can constrain location, construction schedules, and financing.",
+      "translationJa": "power availability = 電力を確保できる状況 / constrain = 制約する",
+      "headline": "POWER AVAILABILITY CAN CONSTRAIN ...",
+      "subline": "ニュース・ビジネス英語で使える表現",
+      "visual": {"type": "broll", "query": "electricity substation", "accent": "electric"}
+    },
+    {
+      "id": "v3-19",
+      "section": "ENGLISH REPLAY",
+      "narrationEn": "Data centers could account for roughly three percent of global electricity demand.",
+      "translationJa": "account for = ～を占める",
+      "headline": "ACCOUNT FOR ROUGHLY 3%",
+      "subline": "割合・市場シェアの説明にそのまま使える",
+      "visual": {"type": "broll", "query": "data center server room", "accent": "electric"}
+    },
+    {
+      "id": "v3-20",
+      "section": "ENGLISH REPLAY",
+      "narrationEn": "AI and energy are becoming part of the same infrastructure story.",
+      "translationJa": "become part of the same ... = 同じ～の一部になっていく",
+      "headline": "BECOME PART OF THE SAME ...",
+      "subline": "構造変化を説明するときに使いやすい",
+      "visual": {"type": "broll", "query": "power plant electricity infrastructure", "accent": "electric"}
+    },
+    {
+      "id": "v3-21",
+      "section": "OUTRO",
+      "narrationEn": "Next time you look at a major AI project, look beyond the chips and check the power plan.",
+      "translationJa": "次に大型AI投資を見るときは、チップの先にある電力計画まで見てください。",
+      "headline": "LOOK BEYOND THE CHIPS",
+      "subline": "TECH × BUSINESS × ENGLISH",
       "visual": {"type": "outro"}
     }
   ]
