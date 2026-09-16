@@ -1,0 +1,97 @@
+name: V3 Japanese tech explainer preview
+
+on:
+  pull_request:
+    paths:
+      - "episodes/2026-09-15-ai-power-project/v3.json"
+      - "src/v3/**"
+      - "src/composition/Root.tsx"
+      - "scripts/synthesize_v3_edge.py"
+      - "scripts/fetch_v3_broll.mjs"
+      - "scripts/build_v3_props.mjs"
+      - "scripts/generate_v3_audio_bed.py"
+      - "requirements-v3.txt"
+      - ".github/workflows/v3-preview.yml"
+  push:
+    branches: [main]
+    paths:
+      - "episodes/2026-09-15-ai-power-project/v3.json"
+      - "src/v3/**"
+      - "src/composition/Root.tsx"
+      - "scripts/synthesize_v3_edge.py"
+      - "scripts/fetch_v3_broll.mjs"
+      - "scripts/build_v3_props.mjs"
+      - "scripts/generate_v3_audio_bed.py"
+      - "requirements-v3.txt"
+      - ".github/workflows/v3-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install Node dependencies
+        run: npm ci --ignore-scripts
+      - name: Install Japanese TTS and render tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-noto-cjk
+          python3 -m pip install --disable-pip-version-check -r requirements-v3.txt
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Synthesize Japanese narration
+        run: |
+          mkdir -p public/generated/v3/audio out
+          python3 scripts/synthesize_v3_edge.py episodes/2026-09-15-ai-power-project/v3.json public/generated/v3/audio public/generated/v3/timing.json
+      - name: Enforce target duration
+        run: |
+          python3 - <<'PY'
+          import json
+          p=json.load(open('public/generated/v3/timing.json',encoding='utf-8'))
+          d=float(p['durationSeconds'])
+          print(f'v3 duration: {d:.2f}s')
+          if not 90 <= d <= 120:
+              raise SystemExit(f'v3 duration must be 90-120 seconds, got {d:.2f}')
+          PY
+      - name: Fetch licensed factual B-roll
+        run: node scripts/fetch_v3_broll.mjs episodes/2026-09-15-ai-power-project/v3.json public/generated/v3/broll
+      - name: Build deterministic render props
+        run: node scripts/build_v3_props.mjs episodes/2026-09-15-ai-power-project/v3.json public/generated/v3/timing.json public/generated/v3/broll/manifest.json public/generated/v3/render-props.json
+      - name: Generate tech BGM and SFX
+        run: python3 scripts/generate_v3_audio_bed.py public/generated/v3/render-props.json public/generated/v3
+      - name: Render 540p v3 preview
+        run: npx remotion render src/composition/index.ts TechExplainerV3 out/ai-power-v3-preview-540p.mp4 --props=public/generated/v3/render-props.json --scale=0.5 --codec=h264 --crf=21
+      - name: Normalize final preview mix
+        run: bash scripts/normalize_video_audio.sh out/ai-power-v3-preview-540p.mp4
+      - name: Generate contact sheet
+        run: |
+          duration="$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 out/ai-power-v3-preview-540p.mp4)"
+          interval="$(python3 - <<'PY' "$duration"
+          import sys
+          d=max(float(sys.argv[1]),1.0)
+          print(max(d/12.0,.25))
+          PY
+          )"
+          ffmpeg -hide_banner -loglevel error -y -i out/ai-power-v3-preview-540p.mp4 -vf "fps=1/${interval},scale=320:-1,tile=4x3:padding=5:margin=5" -frames:v 1 -q:v 2 out/ai-power-v3-contact-sheet.jpg
+      - name: Upload v3 review artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ai-power-v3-preview-${{ github.sha }}
+          path: |
+            out/ai-power-v3-preview-540p.mp4
+            out/ai-power-v3-contact-sheet.jpg
+            public/generated/v3/timing.json
+            public/generated/v3/render-props.json
+            public/generated/v3/broll/manifest.json
+          retention-days: 14
