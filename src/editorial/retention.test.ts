@@ -33,9 +33,13 @@ describe("retention review",()=>{
     expect(review.hardFailures.some(issue=>issue.code==="R_HOOK_QUESTION")).toBe(true);
   });
 
-  it("rejects the old mid-story learning interruptions under news-first",()=>{
+  it("rejects a real mid-story learning interruption under news-first",()=>{
     const doc=clone();
     doc.formatProfile="news-first";
+    const phrase=doc.scenes.find(scene=>scene.role==="phrase");
+    if(!phrase)throw new Error("fixture phrase scene missing");
+    const withoutPhrase=doc.scenes.filter(scene=>scene!==phrase);
+    doc.scenes=[...withoutPhrase.slice(0,2),phrase,...withoutPhrase.slice(2)];
     const review=reviewRetention(doc);
     expect(review.metrics.learningInterruptions).toBeGreaterThan(0);
     expect(review.hardFailures.some(issue=>issue.code==="R_LEARNING_INTERRUPTION")).toBe(true);
