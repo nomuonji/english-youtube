@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import {copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync} from "node:fs";
+import {copyFileSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync} from "node:fs";
 import {basename, join} from "node:path";
 
 const [inputDir, outputDir] = process.argv.slice(2);
@@ -24,11 +24,20 @@ if (!video || !sheet || !propsFile) {
 
 const props = JSON.parse(readFileSync(propsFile, "utf8"));
 const manifest = props.manifest ?? {};
-const episodeId = String(manifest.episodeId ?? "unknown-episode");
-const revision = String(manifest.revision ?? "?");
-const question = String(manifest.centralQuestion ?? episodeId);
+const spec = props.spec ?? {};
+const isV3 = Boolean(props.spec && !props.manifest);
+const episodeId = String(manifest.episodeId ?? spec.episodeId ?? "unknown-episode");
+const revision = String(manifest.revision ?? spec.version ?? "?");
+const question = String(manifest.centralQuestion ?? spec.title ?? episodeId);
 const generatedAt = String(manifest.generatedAt ?? "");
 const manifestHash = String(props.resolved?.manifestHash ?? props.manifestHash ?? "");
+const eyebrow = isV3 ? "V3 PR REVIEW" : "LATEST READY REVIEW";
+const revisionLabel = isV3 ? "Version" : "Revision";
+const fourthLabel = isV3 ? "Profile" : "Manifest";
+const fourthValue = isV3 ? "English news-learning" : (manifestHash ? manifestHash.slice(0, 16) + "…" : "validated");
+const note = isV3
+  ? "このページはPR用v3レビューです。mainのproduction /review/ とは独立しており、ここでの確認だけではAPPROVED / YouTube公開には進みません。"
+  : "このページは最新のREADYレビュー用です。READYが成功するたびに動画が置き換わります。APPROVED / YouTube公開とは別の工程です。";
 
 mkdirSync(outputDir, {recursive: true});
 copyFileSync(video, join(outputDir, "video.mp4"));
@@ -46,7 +55,7 @@ const html = `<!doctype html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>READY Review — ${esc(episodeId)}</title>
+  <title>${esc(eyebrow)} — ${esc(episodeId)}</title>
   <style>
     :root{color-scheme:dark;background:#0b0d10;color:#f4f6f8;font-family:Inter,"Noto Sans JP",system-ui,sans-serif}
     *{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at 50% -20%,#202a37 0,#0b0d10 42%);min-height:100vh}
@@ -61,8 +70,8 @@ const html = `<!doctype html>
 <body>
 <main>
   <div class="top">
-    <div><div class="eyebrow">LATEST READY REVIEW</div><h1 class="question">${esc(question)}</h1></div>
-    <div class="badge">Revision ${esc(revision)}</div>
+    <div><div class="eyebrow">${esc(eyebrow)}</div><h1 class="question">${esc(question)}</h1></div>
+    <div class="badge">${esc(revisionLabel)} ${esc(revision)}</div>
   </div>
   <section class="player">
     <video id="video" controls playsinline preload="metadata" src="./video.mp4"></video>
@@ -73,12 +82,12 @@ const html = `<!doctype html>
   </section>
   <section class="meta">
     <div><b>Episode</b><span>${esc(episodeId)}</span></div>
-    <div><b>Revision</b><span>${esc(revision)}</span></div>
+    <div><b>${esc(revisionLabel)}</b><span>${esc(revision)}</span></div>
     <div><b>Generated</b><span>${esc(generatedAt || "—")}</span></div>
-    <div><b>Manifest</b><span>${esc(manifestHash ? manifestHash.slice(0,16) + "…" : "validated")}</span></div>
+    <div><b>${esc(fourthLabel)}</b><span>${esc(fourthValue)}</span></div>
   </section>
   <details><summary>3×3 Contact Sheet</summary><img class="sheet" src="./contact-sheet.jpg" alt="Review contact sheet" /></details>
-  <p class="note">このページは最新のREADYレビュー用です。READYが成功するたびに動画が置き換わります。APPROVED / YouTube公開とは別の工程です。</p>
+  <p class="note">${esc(note)}</p>
 </main>
 <script>
   const video=document.getElementById('video');
@@ -89,4 +98,4 @@ const html = `<!doctype html>
 </html>`;
 
 writeFileSync(join(outputDir, "index.html"), html, "utf8");
-console.log(JSON.stringify({ok:true,episodeId,revision,videoBytes:statSync(video).size,output:join(outputDir,"index.html")}));
+console.log(JSON.stringify({ok:true,episodeId,revision,isV3,videoBytes:statSync(video).size,output:join(outputDir,"index.html")}));
