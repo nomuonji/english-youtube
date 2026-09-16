@@ -8,6 +8,7 @@ const revealIds=(visual:Visual):string[]=>visual.type==="chain"?visual.nodes.map
 
 export const semanticValidate=(doc:EpisodeManifest):ValidationIssue[]=>{
   const issues:ValidationIssue[]=[];
+  const newsFirst=doc.formatProfile==="news-first";
   const makeMap=<T extends {id:string}>(items:T[],group:string):Map<string,T>=>{const map=new Map<string,T>();for(const item of items){if(map.has(item.id))issues.push(issue("E_DUPLICATE_ID",item.id,`duplicate ${group} id`));map.set(item.id,item);}return map;};
   const sources=makeMap(doc.sources,"source");
   const claims=makeMap(doc.claims,"claim");
@@ -44,10 +45,23 @@ export const semanticValidate=(doc:EpisodeManifest):ValidationIssue[]=>{
   if(ownershipOrder.length!==utteranceOrder.length||ownershipOrder.some((id,i)=>id!==utteranceOrder[i]))issues.push(issue("E_ORDER","utterances","scene ownership order must exactly match utterances array"));
 
   const phraseScenes=doc.scenes.filter(s=>s.role==="phrase");
-  if(phraseScenes.length<1||phraseScenes.length>2)issues.push(issue("E_STRUCTURE","scenes","v2.1 requires one or two phrase scenes"));
+  const retrievalScenes=doc.scenes.filter(s=>s.role==="retrieval");
+  const recapScenes=doc.scenes.filter(s=>s.role==="recap");
   if(doc.scenes[0]?.role!=="hook"||doc.scenes.at(-1)?.role!=="recap")issues.push(issue("E_STRUCTURE","scenes","hook must be first and recap must be last"));
-  if(doc.scenes.filter(s=>s.role==="retrieval").length!==1)issues.push(issue("E_STRUCTURE","scenes","exactly one retrieval scene is required"));
-  if(doc.scenes.filter(s=>s.role==="recap").length!==1)issues.push(issue("E_STRUCTURE","scenes","exactly one recap scene is required"));
+  if(recapScenes.length!==1)issues.push(issue("E_STRUCTURE","scenes","exactly one recap scene is required"));
+
+  if(newsFirst){
+    if(phraseScenes.length<1||phraseScenes.length>3)issues.push(issue("E_STRUCTURE","scenes","news-first requires one to three phrase scenes in the final learning block"));
+    if(retrievalScenes.length!==0)issues.push(issue("E_STRUCTURE","scenes","news-first production does not use retrieval scenes; keep the story uninterrupted and move deliberate practice to the final replay block"));
+    const storyIndexes=doc.scenes.map((s,i)=>s.role==="story"?i:-1).filter(i=>i>=0);
+    const lastStoryIndex=storyIndexes.at(-1)??-1;
+    const firstContent=doc.scenes.find((_,i)=>i>0);
+    if(firstContent&&firstContent.role!=="story")issues.push(issue("E_STRUCTURE",firstContent.id,"news-first must enter the story immediately after the hook"));
+    for(const scene of phraseScenes){const index=doc.scenes.indexOf(scene);if(index<=lastStoryIndex)issues.push(issue("E_STRUCTURE",scene.id,"news-first phrase scenes must be grouped after the final story scene"));}
+  }else{
+    if(phraseScenes.length<1||phraseScenes.length>2)issues.push(issue("E_STRUCTURE","scenes","legacy v2.1 requires one or two phrase scenes"));
+    if(retrievalScenes.length!==1)issues.push(issue("E_STRUCTURE","scenes","legacy v2.1 requires exactly one retrieval scene"));
+  }
 
   const phrasePointIds=new Set<string>();
   for(const scene of phraseScenes){if(scene.visual.type!=="phrase")continue;if(!points.has(scene.visual.learningPointId))issues.push(issue("E_REFERENCE",scene.id,`unknown learning point ${scene.visual.learningPointId}`));if(phrasePointIds.has(scene.visual.learningPointId))issues.push(issue("E_LEARNING",scene.id,"phrase scenes must use different learning points"));phrasePointIds.add(scene.visual.learningPointId);}
@@ -62,9 +76,8 @@ export const semanticValidate=(doc:EpisodeManifest):ValidationIssue[]=>{
     for(const scene of phraseScenes)if(scene.visual.type==="phrase"&&scene.visual.learningPointId===point.id&&doc.scenes.indexOf(scene)<=sourceSceneIndex)issues.push(issue("E_LEARNING",point.id,"phrase scene must come after source story scene"));
   }
 
-  const retrievalScenes=doc.scenes.filter(s=>s.role==="retrieval");
   for(const scene of retrievalScenes){if(scene.visual.type!=="retrieval")continue;const sourceIndex=owner.get(scene.visual.sourceUtteranceId);const retrievalIndex=doc.scenes.indexOf(scene);if(sourceIndex===undefined||sourceIndex>=retrievalIndex||doc.scenes[sourceIndex]?.role!=="story")issues.push(issue("E_RETRIEVAL",scene.id,"retrieval must reuse a prior story utterance"));}
-  const recap=doc.scenes.find(s=>s.role==="recap");
+  const recap=recapScenes[0];
   if(recap?.visual.type==="recap"){const expected=[...points.keys()].sort().join("|");const actual=[...recap.visual.learningPointIds].sort().join("|");if(expected!==actual)issues.push(issue("E_LEARNING",recap.id,"recap must include all three learning points exactly once"));}
 
   if(doc.kind==="production"){
@@ -74,16 +87,23 @@ export const semanticValidate=(doc:EpisodeManifest):ValidationIssue[]=>{
     const generated=Date.parse(doc.generatedAt),asOf=Date.parse(doc.asOf);
     if(asOf>generated||generated-asOf>86400000)issues.push(issue("E_FRESHNESS","asOf","production asOf must be no later than generatedAt and within 24 hours"));
     for(const source of doc.sources)if(Date.parse(source.retrievedAt)>generated)issues.push(issue("E_FRESHNESS",source.id,"retrievedAt cannot be after generatedAt"));
+
     const storyScenes=doc.scenes.filter(s=>s.role==="story");
-    if(storyScenes.length<8||storyScenes.length>20)issues.push(issue("E_STRUCTURE","scenes","production requires 8 to 20 story scenes"));
+    const minStories=8,maxStories=newsFirst?16:20;
+    if(storyScenes.length<minStories||storyScenes.length>maxStories)issues.push(issue("E_STRUCTURE","scenes",`production requires ${minStories} to ${maxStories} story scenes${newsFirst?" for news-first":""}`));
     type Beat="setup"|"mechanism"|"complication"|"answer";const beatOrder:Beat[]=["setup","mechanism","complication","answer"];let previous=-1;
-    for(const beat of beatOrder){const count=storyScenes.filter(s=>s.beat===beat).length;if(count<2||count>5)issues.push(issue("E_BEAT",beat,"each story beat must have 2 to 5 scenes"));}
+    for(const beat of beatOrder){const count=storyScenes.filter(s=>s.beat===beat).length;const maxPerBeat=newsFirst?4:5;if(count<2||count>maxPerBeat)issues.push(issue("E_BEAT",beat,`each story beat must have 2 to ${maxPerBeat} scenes`));}
     for(const scene of storyScenes){const current=beatOrder.indexOf(scene.beat as Beat);if(current<previous)issues.push(issue("E_BEAT",scene.id,"story beats must be in order"));previous=current;}
     if(new Set(doc.scenes.map(s=>s.visual.type)).size<4)issues.push(issue("E_STRUCTURE","scenes","production requires at least four visual types"));
+
     const storyText=storyScenes.flatMap(s=>s.utteranceIds).map(id=>utterances.get(id)?.text??"").join("\n").toLocaleLowerCase("en-US");
     for(const point of doc.learningPoints){const matches=storyText.split(point.phrase.toLocaleLowerCase("en-US")).length-1;if(matches<2)issues.push(issue("E_LEARNING",point.id,"each learning point must occur at least twice in story narration"));}
-    const spokenTexts=doc.utterances.map(i=>i.text);for(const scene of retrievalScenes)if(scene.visual.type==="retrieval"){const source=utterances.get(scene.visual.sourceUtteranceId);if(source)spokenTexts.push(source.text,source.text);}
-    const count=spokenTexts.reduce((sum,text)=>sum+words(text).length,0);if(count<760||count>980)issues.push(issue("E_WORDS","utterances",`spoken word count ${count} is outside 760-980`));
+
+    const spokenTexts=doc.utterances.map(i=>i.text);
+    if(!newsFirst)for(const scene of retrievalScenes)if(scene.visual.type==="retrieval"){const source=utterances.get(scene.visual.sourceUtteranceId);if(source)spokenTexts.push(source.text,source.text);}
+    const count=spokenTexts.reduce((sum,text)=>sum+words(text).length,0);
+    const minWords=newsFirst?650:760,maxWords=newsFirst?850:980;
+    if(count<minWords||count>maxWords)issues.push(issue("E_WORDS","utterances",`spoken word count ${count} is outside ${minWords}-${maxWords}`));
   }
   return issues;
 };
