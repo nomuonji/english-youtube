@@ -1,19 +1,10 @@
-name: V3 English news-learning preview
+name: V3 visual pilot preview
 
+# Historical/visual-reference workflow for the accepted 2026-09-15 AI power pilot.
+# IMPORTANT: its 90-120s duration is pilot-only. Production news-first episodes
+# remain 5-6.5 minutes and are rendered through READY gate.
 on:
   pull_request:
-    paths:
-      - "episodes/2026-09-15-ai-power-project/v3.json"
-      - "src/v3/**"
-      - "src/composition/Root.tsx"
-      - "scripts/synthesize_v3_edge.py"
-      - "scripts/fetch_v3_broll.mjs"
-      - "scripts/build_v3_props.mjs"
-      - "scripts/generate_v3_audio_bed.py"
-      - "requirements-v3.txt"
-      - ".github/workflows/v3-preview.yml"
-  push:
-    branches: [main]
     paths:
       - "episodes/2026-09-15-ai-power-project/v3.json"
       - "src/v3/**"
@@ -54,15 +45,16 @@ jobs:
         run: |
           mkdir -p public/generated/v3/audio out
           python3 scripts/synthesize_v3_edge.py episodes/2026-09-15-ai-power-project/v3.json public/generated/v3/audio public/generated/v3/timing.json
-      - name: Enforce target duration
+      - name: Enforce visual-pilot duration
         run: |
           python3 - <<'PY'
           import json
           p=json.load(open('public/generated/v3/timing.json',encoding='utf-8'))
           d=float(p['durationSeconds'])
-          print(f'v3 duration: {d:.2f}s')
+          print(f'v3 visual pilot duration: {d:.2f}s')
           if not 90 <= d <= 120:
-              raise SystemExit(f'v3 duration must be 90-120 seconds, got {d:.2f}')
+              raise SystemExit(f'accepted visual pilot must remain 90-120 seconds, got {d:.2f}')
+          print('NOTE: production news-first target is 300-390 seconds; do not reuse this pilot duration.')
           PY
       - name: Fetch curated factual B-roll
         run: node scripts/fetch_v3_broll.mjs episodes/2026-09-15-ai-power-project/v3.json public/generated/v3/broll
@@ -70,7 +62,7 @@ jobs:
         run: node scripts/build_v3_props.mjs episodes/2026-09-15-ai-power-project/v3.json public/generated/v3/timing.json public/generated/v3/broll/manifest.json public/generated/v3/render-props.json
       - name: Generate tech BGM and SFX
         run: python3 scripts/generate_v3_audio_bed.py public/generated/v3/render-props.json public/generated/v3
-      - name: Render 540p v3 preview
+      - name: Render 540p v3 visual pilot
         run: npx remotion render src/composition/index.ts TechExplainerV3 out/ai-power-v3-preview-540p.mp4 --props=public/generated/v3/render-props.json --scale=0.5 --codec=h264 --crf=21
       - name: Normalize final preview mix
         run: bash scripts/normalize_video_audio.sh out/ai-power-v3-preview-540p.mp4
@@ -84,7 +76,7 @@ jobs:
           PY
           )"
           ffmpeg -hide_banner -loglevel error -y -i out/ai-power-v3-preview-540p.mp4 -vf "fps=1/${interval},scale=320:-1,tile=4x3:padding=5:margin=5" -frames:v 1 -q:v 2 out/ai-power-v3-contact-sheet.jpg
-      - name: Upload v3 review artifact
+      - name: Upload v3 visual reference artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ai-power-v3-english-preview-${{ github.sha }}
