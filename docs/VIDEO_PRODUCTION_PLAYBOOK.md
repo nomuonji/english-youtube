@@ -1,394 +1,186 @@
-# 暫定動画制作プレイブック
+# 動画制作プレイブック — news-first
 
-> Status: provisional / 2026-09-16
+> Status: current viewer-facing production guide / 2026-09-16
 >
-> これは現在の視聴レビューを踏まえた、動画生成・renderer・編集レビュー共通の実務ガイドである。完成版の不変仕様ではない。実際の視聴結果を優先して更新する。
->
-> **viewer-facing な画面設計・字幕・演出・素材利用について本書と古いドキュメントが衝突する場合は、本書を優先する。**
+> 新規productionでは `docs/NEWS_FIRST_FORMAT.md` と本書を最優先する。旧episodeの再現にはlegacy仕様を使う。
 
 ## 1. 北極星
 
-目指すのは「英語教材をニュースっぽく見せた動画」ではない。
+**面白い海外ニュース解説を見ていたら、自然に実践英語も身についていた。**
 
-**面白い解説動画を見ていたら、自然に英語も学べていた**という体験を作る。
+画面・音・学習UIは全てstoryを強くするために使う。英語教材であることを毎分説明しない。
 
-したがって、常に次の順番で判断する。
+判断順:
 
-1. 今何の話をしているか一瞬で分かるか
-2. 今どこを見ればいいか迷わないか
-3. 内容そのものに続きが気になる理由があるか
-4. 英語学習上の注目点が自然に目に入るか
-5. 画面を読む作業がナレーション理解を邪魔していないか
+1. 内容そのものに次を見たい理由があるか
+2. 何が起きているか直感的に分かるか
+3. どこを見るべきか迷わないか
+4. 現実の出来事を感じるvisualがあるか
+5. 英語支援がstory理解を邪魔していないか
 
-情報量を増やすことを品質向上とみなさない。画像・図・字幕・語彙解説・UIが競合するなら減らす。
+## 2. Cold hook
 
----
+最初の5〜10秒が最重要。
 
-## 2. 冒頭フック
+- title cardから始めない
+- unexpected fact / contradiction / stakesを即座に出す
+- B-roll / strong editorial image / large kinetic key textのいずれかを使う
+- 15秒程度までにcentral question
+- 挨拶・学習目標・`Today we will...`禁止
 
-冒頭は説明開始ではなく、**視聴理由を作る区間**。
+hookで結論を全部言わない。根拠のない「崩壊」「危機」「絶対」も使わない。
 
-### 必須
+## 3. News story first
 
-- 最初の5〜10秒で違和感、驚き、対比、意外な事実のいずれかを置く
-- 15秒以内に central question を視聴者が理解できる状態にする
-- 「なぜ今それを見る価値があるか」が感覚的に分かる
-- 冒頭から強い visual を使う。図表だけで始めない
-- 挨拶、チャンネル説明、長い前置きは禁止
+hook後はstoryへ直行する。
 
-### 良い構造
+```text
+WHAT CHANGED
+HOW IT WORKS
+THE CATCH
+WHAT IT MEANS
+```
 
-`unexpected visual / claim → stakes → question`
+story中に単語講義、選択式quiz、同一英文replayを挟まない。
 
-例:
+各beatは:
 
-- 巨大データセンターと発電設備の映像
-- 「AI企業が、いま発電会社のようなことまで始めている」
-- 「なぜAIデータセンターは電力事業のようになっているのか？」
+`open loop -> evidence/example -> micro payoff -> forward pull`
 
-hookは「これから説明します」ではなく、**答えを知りたくさせる未解決状態**を作る。
+を基本にし、30〜60秒程度ごとに小さな答えを返す。
 
----
+## 4. Visual rhythm
 
-## 3. チャプターと現在地
+映像素材の豪華さではなく、**意味と同期した変化の密度**で勝つ。
 
-長尺動画では視聴者を迷子にしない。
+3〜8秒程度を目安に次のどれかが進む状態を作る。
 
-### 基本4章
+- B-roll cut / pan / crop
+- editorial still
+- kinetic keyword
+- metric count-up / bar
+- chain node reveal
+- compare row focus
+- timeline progression
+- chapter transition
 
-1. `WHAT CHANGED / 何が変わったのか`
-2. `HOW IT WORKS / 仕組みを理解する`
-3. `THE CATCH / どこに問題があるのか`
-4. `WHAT IT MEANS / 結局どういうことか`
+時間だけを理由にランダムなzoom/flashを入れない。
 
-### チャプターコール
+## 5. B-roll / image
 
-各章の開始時には通常sceneと明確に違う**2〜4秒のchapter call**を入れる。
+優先順位:
 
-- ナレーションを一度止める
-- 英語章名 + 日本語章名
-- その章で答える問いを短く出す
-- subtle whoosh / transition hit を1回
-- 背景visualも切り替え、章が変わったことを体感させる
+1. appropriately licensed factual B-roll
+2. factual/public-domain still
+3. editorial / AI image
+4. diagram
 
-ただしテンポを殺す長いタイトル演出にはしない。
+B-rollは何が映っているか認識できる強度で見せる。旧実装のように白いoverlayを80〜97%被せて素材を消さない。
 
-### 通常sceneの現在地表示
+同じbeatで同じclipを使い続けず、scene textから `data center / transmission / substation / power generation / finance / construction` 等の具体的contextを拾って素材を変える。
 
-常設ヘッダーでは次を明示する。
+AI/editorial imageを実際の人物・企業・出来事の記録映像として見せない。
 
-- 現在のchapter
-- `STORY / KEY PHRASE / CHECK / RECAP` 等のコーナー種別
-- 今扱っている話題を短い見出しで表示
-- 可能なら日本語補助も付ける
+## 6. Text UI
 
-scene番号 `03/17` のような制作都合の情報より、**意味上の現在地**を優先する。
+Text UIは差別化要素だが、スライド資料に見せない。
 
----
+### 通常caption
 
-## 4. 字幕は「固定UI + 縦に流れる文章」
+compact lower-third:
 
-字幕ボックス自体を文ごとに消したり出したりしない。視線位置を固定する。
+- current English chunk: primary
+- Japanese: smaller support
+- optional BUSINESS ENGLISH annotation: max 1
 
-### 3段構成
+previous/current/next全文を常時3段表示しない。巨大な白字幕カードで画面下1/3を固定しない。
 
-字幕領域は次のように扱う。
+### Visual hierarchy
 
-- 上: **直前の英文**を薄く表示
-- 中央: **現在の英文**を最も強く表示 + 日本語訳
-- 下: **次の英文**をさらに薄く表示
+1瞬間1主役。
 
-目的は、読み損ねた人が直前文を一瞬確認でき、先の文も視野の端で予測できること。
+- metricが主役なら数字を大きく
+- B-rollが主役ならカードを減らす
+- diagramが主役なら現在nodeだけ強く
+- phraseが主役なのは最後のEnglish Replayだけ
 
-### 切替エフェクトの方向
+## 7. Metric / diagram
 
-文章は**下から上へ流れる**。
+metricは静止数値ではなくcount-upやbarでrevealする。
 
-新しい文へ進むとき:
+chain / compare / timelineは全項目を最初から同じ強度で見せず、発話に合わせて段階的に出す。
 
-1. 現在文が中央から上へ移動して薄くなる
-2. 次文が下から中央へ上がって主役になる
-3. 新しい次文が下に現れる
+図中文字は短くする。説明文はナレーションへ置く。
 
-つまり、直前文が上側へ押し出される。逆向きに動かさない。
+## 8. English support
 
-### 日本語
+対象はB2前後〜C1。
 
-- 現在文の英語と日本語は同時表示
-- 日本語を意図的に遅らせない
-- 前後文は原則英語だけでよい
-- retrieval の first listen など、明確な学習意図がある場面だけ字幕を隠す
+story中:
 
-### Safe area
+- reusable collocationを字幕内で短くhighlight
+- topic vocabularyは必要時だけ意味補助
+- 専用lesson画面へ切り替えない
 
-字幕領域は最優先の予約領域。
+English Replayはstory後に1〜3表現。
 
-**画像、B-roll、図解、AI画像、装飾、カードは字幕領域へ侵入させない。**
+`listen once -> notice the chunk -> shadow once`
 
-字幕の上端より下にvisualを重ねない。特に画像レイヤーはrendererレベルでsafe-areaを強制する。
+初級一般表現の説明、同一英文3連続、長いカウントダウンは使わない。
 
----
+## 9. Audio
 
-## 5. 学習ポイントは「3アンカー + 多数の軽い注目点」
+### Narration
 
-`learningPoints` の3表現だけを動画中の学習要素にしない。
+voiceが常に最優先。ただし「教材らしい遅さ」を作らない。
 
-### Anchor expressions
-
-動画終了時に必ず持ち帰らせる強いアンカーは3つ。
-
-- story内で複数回登場
-- 字幕内で強くハイライト
-- 専用phrase / recapで回収
-
-### Micro learning targets
-
-それ以外にも、7分前後の動画なら**6〜12個程度の軽い注目ポイント**を置くことを目安にする。
-
-対象例:
-
-- 汎用句動詞
-- 頻出コロケーション
-- 文脈上重要なB1〜B2語彙
-- 因果・対比を読むための表現
-- ニュース英語で再利用しやすい言い回し
-
-ただし全てに意味カードを出さない。
-
-通常storyでは:
-
-- 字幕内の色
-- 太字
-- underline / highlight
-- 一瞬の `KEY PHRASE / ここに注目`
-
-程度で気づかせる。
-
-**学習ポイントを増やす = 画面カードを増やす、ではない。**
-
----
-
-## 6. Visual hierarchy — 1瞬間1主役
-
-同時に強く読ませるものは1つ。
-
-### 原則
-
-- 主役が図なら字幕以外の説明カードを増やさない
-- 主役が画像なら図を重ねない
-- 主役がphraseなら背景を静かにする
-- 補助要素は最大1つ程度
-- 長文を図の中へ詰め込まない
-
-### 図解
-
-図解は「読む図」ではなく「見れば関係が分かる図」にする。
-
-- 1scene 1 message
-- 現在説明中のnodeだけ強調
-- 英語ラベルを主、日本語ラベルを補助で併記
-- 日本語話者が英語ラベルの意味を推測し続けなくてよい状態にする
-- 専門語は初出で必ず日本語補助
-
----
-
-## 7. 画像・B-roll・AI画像
-
-画面を図解だけで埋めない。視覚的な「現実感」と「息抜き」を入れる。
-
-### 推奨優先順位
-
-1. 実写B-roll / public-domain or appropriately licensed footage
-2. 報道内容や概念を補う静止画像
-3. 説明を短くできるAI画像
-4. 図解
-
-図解は強いが、7分間ずっと図解だと視覚的に固い。
-
-### B-roll
-
-- 章ごとに意味の近い素材を薄く流す
-- 低コントラスト / 暗幕 / blurなどで字幕・図の可読性を守る
-- 同じ素材を長時間そのまま見せず、crop / slow pan / zoom / scene cutで変化をつける
-- 素材そのものを読ませようとしない
-
-### 静止画
-
-AI画像生成が使えない場合でも画像を諦めない。
-
-fallback:
-
-`AI generated image → Commons/public-domain still → B-roll frame/still → diagram`
-
-毎回AI画像だけを前提にしない。
-
-### AI画像
-
-AI画像は「飾り」ではなく、**文章説明を減らせる場合のみ**使う。
-
-向いている場所:
-
-- hook
-- 比喩
-- 巨大な仕組みを一枚で直感化するscene
-- chapter call
-
-### 絶対条件
-
-- 字幕safe areaへ被せない
-- 人物・企業・出来事の事実画像として誤認させない
-- editorial image と factual footage の区別が必要な場合は画面上で明確にする
-
----
-
-## 8. 音 — BGMとSFX
-
-無音声ナレーションだけの7分動画にしない。
+- chunk間pauseは短く
+- sentence間も自然な呼吸程度
+- question / contrast / important numberが単調に聞こえない原稿句読点を使う
 
 ### BGM
 
-基本は**薄いBGM bedを継続**させる。
+low-density tech/electronic bedを継続。
 
-- ナレーションの邪魔をしない
-- chapterごとに質感をわずかに変えてもよい
-- phrase / retrievalではさらに薄くする、または一時的に落とす
-- chapter callでは少し持ち上げて区切りを作る
-- hookでは緊張感・好奇心を作るが、ニュース速報風に煽りすぎない
-
-音量は音声理解を最優先し、voice duckingを前提にする。
+- 知覚できる
+- narrationをmaskしない
+- 同じ無変化padだけで眠くしない
 
 ### SFX
 
-SFXは意味のあるイベントだけ。
+意味イベントだけ:
 
-- chapter transition: whoosh
-- key phrase: subtle ping
-- retrieval / answer reveal: cue / confirm
-- number reveal: light hit
+- hook impact
+- chapter whoosh
+- metric reveal hit
+- English Replay cue
 
-毎文・毎字幕に音を付けない。
+毎文には付けない。
 
----
+## 10. End block
 
-## 9. 「惹きつける」は編集構造で作る
+story終了後:
 
-エフェクトを増やすだけではretentionは上がらない。
+1. English Replay 1〜3件
+2. Story Takeaway + 3 expressions recap
 
-### 20〜35秒ごとに意味のある変化
+の順。
 
-以下のいずれかを入れる。
+Outroで長くチャンネル登録を読み上げない。必要なら短い次回hook/CTAに留める。
 
-- 新しい問い
-- 意外な数字
-- visual primitive切替
-- B-roll → diagram / image → comparison
-- chapter call
-- phrase moment
-- retrieval
-- comparison reversal
-- micro payoff
+## 11. READY review checklist
 
-### 各beat
+人間はpreviewを実時間で見て確認する。
 
-`open loop → evidence → micro payoff → forward pull`
+- 0〜5秒: 視聴理由がある
+- 0〜30秒: 静的スライド動画に見えない
+- story: 教材sceneで中断されない
+- visual: B-roll/imageが実際に認識できる
+- visual: 数字・図の変化が発話と同期
+- caption: 読む量が多すぎない
+- learning: anchorがB2〜C1として有用
+- audio: BGM/SEを感じるがvoiceを邪魔しない
+- replay: 短く、一度ずつ練習できる
+- ending: storyの答えを持ち帰れる
 
-を基本とする。
-
-「次はXを説明します」は弱い。代わりに:
-
-- しかし、ここに問題がある
-- では、電気さえ増やせば解決するのか？
-- 全国平均を見ると見落とすものがある
-
-のように、**次を見る理由**を作る。
-
-### 視聴者の注意をリセットする
-
-長尺では、同じ画面構成・同じ声のリズム・同じ図解を連続させない。
-
-ただし変化のための変化は禁止。意味と一致したpattern breakを使う。
-
----
-
-## 10. テンポ
-
-速いことをテンポが良いとみなさない。
-
-理想は:
-
-`聞く → 意味を取る → 画面で確認する → 次へ`
-
-が無理なく回る速度。
-
-- 文間には理解のための小さな呼吸を入れる
-- chapter callで認知をリセットする
-- 数字・図解・重要phraseでは通常より長く見せる
-- 読む量が増えたsceneは音声を詰め込まない
-
-視聴者が上の図、日本語、英語を全部読み終わる前に次へ行くなら失敗。
-
----
-
-## 11. QAチェックリスト
-
-READY前に少なくとも以下を実動画で確認する。
-
-### Hook
-
-- 10秒以内に「続きを見たい理由」があるか
-- 強いvisualがあるか
-- central questionが15秒以内に分かるか
-
-### Orientation
-
-- 任意の30秒地点から再生しても、今のchapter / corner / topicが分かるか
-- chapter callが明確に区切りとして機能しているか
-
-### Captions
-
-- 字幕箱の位置が固定か
-- 前文が上、現在文が中央、次文が下か
-- 切替時は下→上へスクロールしているか
-- 日本語が現在英文と同時表示か
-- visualが字幕safe areaを侵食していないか
-
-### Learning
-
-- 3アンカーが十分目立つか
-- アンカー以外にも軽い学習注目点があるか
-- 学習UIがstory理解を邪魔していないか
-
-### Visuals
-
-- 30秒以上、実質同じ見た目が続いていないか
-- B-roll / image / diagramの使い分けがあるか
-- 日本語話者が図解を即理解できるか
-- 画像がただの装飾になっていないか
-
-### Audio
-
-- BGMがあるか
-- ナレーションをマスクしていないか
-- SFXが意味のある箇所だけにあるか
-- chapter transitionが耳でも分かるか
-
-### Overall
-
-- 7分間「教材を処理している」感覚ではなく、「続きが気になる説明を見ている」感覚になっているか
-
----
-
-## 12. 現時点の既知課題
-
-次の改善テーマとして明示しておく。
-
-- hookをさらに強くする
-- BGM bedを正式導入する
-- micro learning targetsを増やす
-- 3段字幕のスクロール方向・速度を最終調整する
-- image layerのcaption safe-area侵入をrendererで物理的に禁止する
-- Cloudflare画像生成の資格情報が無い場合にも静止画像fallbackを自動取得する
-- AI画像 / still / B-roll / diagramの素材選択をscene briefから自動決定する
-- 公開後の30秒Intro、Top moments、Spikes、Dipsを次の脚本・演出へフィードバックする
-
-このリストは実装完了に応じて削除・更新する。
+このチェックを満たさない場合、schemaがvalidでもREADY/APPROVEDへ進めない。

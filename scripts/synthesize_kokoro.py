@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate exact sample-timed scene speech with local Kokoro ONNX.
 
-Each pedagogical chunk is synthesized separately, then concatenated into one
+Each semantic chunk is synthesized separately, then concatenated into one
 scene-level WAV. Chunk boundaries therefore come from actual generated sample
 positions, never word-count or fixed-duration estimates. Synthesized chunks are
 cached by text + Kokoro configuration so READY retries and APPROVED renders do
@@ -22,15 +22,16 @@ import soundfile as sf
 from kokoro_onnx import Kokoro
 
 VOICE = os.environ.get("KOKORO_VOICE", "af_sarah")
-SPEED = float(os.environ.get("KOKORO_SPEED", "0.95"))
+SPEED = float(os.environ.get("KOKORO_SPEED", "1.00"))
 LANG = os.environ.get("KOKORO_LANG", "en-us")
 MODEL_PATH = Path(os.environ.get("KOKORO_MODEL_PATH", ".cache/kokoro/kokoro-v1.0.int8.onnx"))
 VOICES_PATH = Path(os.environ.get("KOKORO_VOICES_PATH", ".cache/kokoro/voices-v1.0.bin"))
 CHUNK_CACHE_DIR = Path(os.environ.get("KOKORO_CHUNK_CACHE_DIR", ".cache/kokoro-chunks"))
-# Learner-facing pacing: chunks stay connected, while sentence boundaries give
-# enough time to finish reading the Japanese line and return attention to the visual.
-CHUNK_PAUSE_MS = int(os.environ.get("KOKORO_CHUNK_PAUSE_MS", "120"))
-UTTERANCE_PAUSE_MS = int(os.environ.get("KOKORO_UTTERANCE_PAUSE_MS", "360"))
+# News-first pacing: preserve real semantic boundaries without creating the
+# stop-start rhythm of a drill video. Future content should also prefer fewer,
+# meaningful chunks rather than splitting a sentence only for timing.
+CHUNK_PAUSE_MS = int(os.environ.get("KOKORO_CHUNK_PAUSE_MS", "70"))
+UTTERANCE_PAUSE_MS = int(os.environ.get("KOKORO_UTTERANCE_PAUSE_MS", "220"))
 
 
 def sha256_file(path: Path) -> str:
@@ -66,11 +67,7 @@ def chunk_cache_path(text: str, provider_version: str) -> Path:
     return CHUNK_CACHE_DIR / f"{hashlib.sha256(payload).hexdigest()}.wav"
 
 
-def synthesize_chunk(
-    kokoro: Kokoro,
-    text: str,
-    provider_version: str,
-) -> tuple[np.ndarray, int, bool]:
+def synthesize_chunk(kokoro: Kokoro, text: str, provider_version: str) -> tuple[np.ndarray, int, bool]:
     cache_path = chunk_cache_path(text, provider_version)
     if cache_path.exists():
         audio, sample_rate = sf.read(cache_path, dtype="float32", always_2d=False)
@@ -132,10 +129,8 @@ def main() -> None:
 
             for chunk_index, chunk in enumerate(utterance["chunks"]):
                 audio, sample_rate, cache_hit = synthesize_chunk(kokoro, chunk, provider_version)
-                if cache_hit:
-                    cache_hits += 1
-                else:
-                    cache_misses += 1
+                cache_hits += int(cache_hit)
+                cache_misses += int(not cache_hit)
                 if audio.size == 0:
                     raise RuntimeError(f"Kokoro returned empty audio for {utterance_id}:{chunk_index}")
                 if bundle_sample_rate is None:
@@ -160,14 +155,13 @@ def main() -> None:
                     pieces.append(gap)
                     cursor += int(gap.size)
 
-            timed = {
+            timed_utterances.append({
                 "utteranceId": utterance_id,
                 "startSample": utterance_start,
                 "endSample": chunk_ends[-1],
                 "chunkBoundariesSamples": chunk_starts,
                 "chunkEndSamples": chunk_ends,
-            }
-            timed_utterances.append(timed)
+            })
 
         if bundle_sample_rate is None:
             raise RuntimeError("Kokoro produced no audio")
@@ -189,6 +183,7 @@ def main() -> None:
     if bundle_sample_rate is None:
         raise RuntimeError("No speech clips generated")
 
+    # Legacy v2.1 compatibility only. News-first manifests contain no retrieval scenes.
     for scene in manifest["scenes"]:
         if scene["role"] != "retrieval" or scene["visual"]["type"] != "retrieval":
             continue

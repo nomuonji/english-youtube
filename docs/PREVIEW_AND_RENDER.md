@@ -1,91 +1,148 @@
-# クラウド確認・レンダリング v2.1
+# クラウド確認・レンダリング v2.1 / news-first
 
-## 1. 現状と決定
+## 1. 現在の実装
 
-2026-09-15時点でrepoはpublic、Pagesが稼働済みとは扱わない。M3でPagesのbuild source=GitHub Actionsを設定し、実際のdeploy結果URLを記録する。
+現在のproduction pathはGitHub Actionsで完結する。
 
-ブラウザ確認はVite＋Remotion Player。PlayerはUI/scene確認用であり、encoded MP4と同一とはみなさない。全編preview MP4と最終MP4の検査を別に行う。
+```text
+manifest freeze
+-> READY.json
+-> validate / retention / cognitive review
+-> local Kokoro TTS
+-> editorial image + reviewed B-roll
+-> measured timing
+-> BGM / SFX
+-> 540p preview + contact sheet
+-> GitHub Pages /review/
+-> explicit user approval
+-> APPROVED.json
+-> 1080p final
+-> loudness normalization
+-> direct YouTube upload
+```
 
-## 2. workflow契約
+新規productionは `formatProfile: "news-first"`。legacy v2.1 episodeは再現性のため旧retrieval等を保持できる。
 
-全workflowはubuntu-24.04、Node22の固定patch、npm ci。Remotion ChromiumとFFmpegの採用版を固定しprovenanceへ記録する。Actionは実装時の公式releaseを確認して完全commit SHAへ固定する。
+## 2. READY
 
-| workflow | trigger | 入力 | 権限 | timeout |
-|---|---|---|---|---|
-| ci.yml | push / pull_request | checkout SHA | contents:read | 15分 |
-| preview-pages.yml | main push（code/fixtures/config変更）、dispatch | approved fixture list | build contents:read、deploy pages:write/id-token:write | 15分 |
-| prepare-preview.yml | **main pushで `runs/**/READY.json` が追加**、fallbackでworkflow_dispatch | READY / episodeId / revision / manifestHash / commit SHA | contents:read、必要なOIDCのみ | 30分 |
-| production-render.yml | workflow_dispatch | prepare runId、artifactId、bundleHash、engineCommit | render contents:read、archive jobのみid-token:write | 45分 |
-| publish.yml | workflow_dispatch | bundleHash、final artifactId、mode | contents:read、公開environment secrets | 15分 |
+日次Agentはfreeze後、最後のGit変更として:
 
-通常のepisode manifest更新だけではprepareを起動しない。日次エージェントはfreeze後、最後のGit変更として `runs/YYYY-MM-DD/<runId>/READY.json` を新規作成する。
+```text
+runs/YYYY-MM-DD/<runId>/READY.json
+```
 
-prepare-previewはREADYを信用せず、checkout後に次を再検査する。
+を新規作成する。
 
-- READYのepisodeId / revisionがmanifestと一致
-- READYのmanifestHashがcanonical manifest hashと一致
-- workflow対象commitがREADYを含むcommitと一致
-- kind=production/fixtureの扱いがpolicyと一致
-- 同一READYがすでにprepared済みならidempotentにskip
+最低限:
 
-hash/参照不一致はblocked。最新manifestを推測して使わない。
+- runId
+- episodeId
+- revision
+- manifestHash
+- generatedAt
 
-M0で、実際に定期エージェントが使うGitHub接続からREADYをcommitし、push workflowが発火するかprobeする。発火しない環境ではREADYを残し、manual workflow_dispatchをfallbackにする。別schedulerや別hostingを自動追加しない。
+READYはimmutable。manifestを変更した場合はrevision/new run/new READY。
 
-Actions自身がGITHUB_TOKENでcommitした結果のworkflow連鎖には依存しない。
+READY workflowはcheckoutしたcommit上でREADYとmanifest/hashを再検査し、最新manifestを推測して使わない。
 
-CI：schema/semantic検査→typecheck→unit tests→offline fixture prepare→全scene静止画→Vite build。live TTSはPRで呼ばない。長尺production renderは通常CIで自動実行しない。
+## 3. Review preparation
 
-prepare-preview：READY検証→指定SHA checkout→TTS speech group生成/compile→freeze bundle→全編540p render→QA→bundleとレビュー用成果物upload。concurrencyはepisodeId/revision。cancel-in-progress=false。同revision/hashの二重prepareは再利用。
+READYから:
 
-production-render：指定prepare artifactを取得し、repo、workflow、成功状態、head SHA、checksumsを確認→同じengineCommit checkout→1080p全編render→final QA→archive。latest artifactや同名別runを拾わない。新しいTTSは作らない。
+1. schema / semantic validation
+2. retention review
+3. cognitive review
+4. local Kokoro speech synthesis
+5. measured chunk/sample timing
+6. editorial image briefs
+7. optional generated images + Commons fallback
+8. scene-aware licensed B-roll
+9. deterministic BGM / SFX
+10. 540p H.264 preview
+11. loudness normalization
+12. contact sheet
+13. review artifact
+14. Pages `/review/` deploy
 
-publishは独立workflow。通常renderへYouTube tokenを渡さない。初期publishMode=disabled。
+を行う。
 
-## 3. Playerレビュー画面
+reviewで見るのは静止画の正しさだけではない。冒頭30秒、visual rhythm、B-roll visibility、audio presence、story continuity、English Replayを実時間で確認する。
 
-1440px以上では左320pxにscene一覧、右に最大1120px幅のPlayer。狭い幅はPlayer→一覧の縦並び。
+## 4. Viewer-facing review criteria
 
-必須機能：play/pause、seek、sceneジャンプ、current time/duration、volume、0.75/1/1.25倍、episodeId/revision/engineCommit/bundleHash表示。既定は停止・速度1。自動再生しない。
+news-firstでは特に:
 
-QA overlay、manifest read-only表示、失敗一覧を用意する。bundle/音声未取得は再生disabledと理由を表示。フォントや音声ロード中はbuffer状態。
+- 0〜5秒にhookがある
+- 15秒程度までにcentral questionが分かる
+- hook後すぐstoryへ入る
+- story中にphrase/retrieval dedicated sceneが割り込まない
+- current-captionがvisualを占領しない
+- B-roll/imageが実際に認識できる
+- metric / chain / compare / timelineが発話に同期して動く
+- BGM/SEが知覚できるがnarrationを邪魔しない
+- English Replayは最後に短くまとまる
+- 最後にstory answerを回収する
 
-Vite base=/english-youtube/。asset URLはBASE_URL経由。深いpath直アクセス404を避けるためHashRouterまたはqueryを使う。
+## 5. Render profile
 
-## 4. Pagesに置くもの
-
-config/preview-allowlist.jsonのfixtureId / bundleHashだけをbuildへ入れる。episodes/とruns/をglobコピーしない。TTS済みfixture assetsはprivate GCSからbuild時に取得し、公開可能なものだけdistへコピー。記事全文・秘密値・内部レビューは含めない。
-
-Pagesはmainの最新許可bundle1セットのみ。PRごとの永続URLは作らない。PR確認はartifactのpreview-site.zipまたはpreview.mp4を使う。
-
-## 5. render profile
-
-| 項目 | preview | production |
+| 項目 | review | final |
 |---|---|---|
-| 論理解像度 | 1920×1080 | 1920×1080 |
-| 出力 | 960×540（scale=.5） | 1920×1080 |
+| logical size | 1920×1080 | 1920×1080 |
+| output | 960×540 | 1920×1080 |
 | fps | 30 | 30 |
-| codec | H.264 / yuv420p | H.264 / yuv420p |
+| codec | H.264 | H.264 |
 | CRF | 23 | 18 |
-| 音声 | AAC 192kbps / 48kHz | AAC 192kbps / 48kHz |
-| 範囲 | 全編 | 全編 |
-| render concurrency | 2 | 2 |
-| artifacts保持 | 14日 | 30日 |
+| range | full episode | full episode |
 
-UI調整用partial renderは `--scene <id>` を許可するが、公開合否には使わない。公開前previewは全編必須。faststart MP4。FFmpegでformat/duration/audio stream/解像度を再確認。
+news-firstの標準尺は5〜6.5分程度を目安とし、内容が短ければ無理に水増ししない。旧episodeの6〜8分基準をhard requirementとして扱わない。
 
-artifact名はpreview-<episodeId>-r<revision>-<bundleHash先頭12文字>、finalも同規則。manifest/bundle、MP4、thumbnail、contact sheet、qa、render-reportを同梱。archiveはGCS。
+## 6. APPROVED
 
-## 6. contact sheetとcurrent focus
+通常AgentはAPPROVEDを作らない。ユーザーがreviewを見て**公開まで明示的に承認**した場合だけ:
 
-全sceneの開始+8frame、中央、終了-1frame、全reveal+8frame、**current focus変更直後**、retrieval各phaseを静止画化する。これによりtext overflowだけでなく、同じレイアウトの停滞やfocus同期のずれも確認する。
+```text
+runs/YYYY-MM-DD/<runId>/APPROVED.json
+```
 
-## 7. 合格条件
+を作る。
 
-音声presence、音画差1frame以内、全体360〜480秒、黒画面・欠落assetなし、overflowなし、-16±1 LUFS、peak≤-1dBTP。listen/thinkの意図的無字幕・無音は異常扱いしない。retrieval固定無音とrecap末尾3秒以外の予期しない連続無音1.2秒超は失敗。
+READYと `runId / episodeId / revision / manifestHash` を一致させる。
 
-speech group内のutterance/chunk markとcaption開始時刻を照合する。retrievalはsource utteranceのsample範囲と切り出しWAVが一致し、listen/revealのasset hashが同一であることを検査する。
+現在のproduction workflowではAPPROVED pushが:
 
-Player frameとMP4 decoded frameの比較では圧縮差を許容するが、字幕内容・矩形・current focus対象は一致させる。
+1. validation / editorial review再確認
+2. reviewed assets restore
+3. same revision/hashからTTS/timing再構成
+4. 1080p final render
+5. loudness normalization
+6. final artifact保存
+7. `english-youtube` repository secretsのYouTube OAuth credentialで直接upload
+8. publish result artifact保存
 
-最終MP4は冒頭30秒、全学習scene、結論・recapを実視聴。最初の3本は全編視聴。自動検査passを内容レビューと混同しない。
+まで実行する。
+
+APPROVEDは単なるレンダリング許可ではなく、現在は**公開gate**でもある。
+
+## 7. Idempotency / publish safety
+
+YouTube uploadは外部副作用なので、不明な結果を安易に新規uploadで再実行しない。
+
+- publish resultをartifactへ保存
+- 同一revision/hashを識別可能にする
+- network timeout後はYouTube側/結果台帳を確認してから再試行
+- legacy cross-repository Error English bridgeは新規productionでは使わない
+
+## 8. QA
+
+最低限:
+
+- video/audio streamあり
+- expected resolution/fps
+- black/missing assetなし
+- caption overflowなし
+- narration intelligibility優先
+- loudness normalization pass
+- preview/finalが同一manifest revision/hash
+- reviewed B-roll manifestをfinalで再利用
+
+自動検査passを内容レビューと同一視しない。最初のnews-first数本は全編を実視聴し、実際のretention上の違和感をプレイブックへ戻す。

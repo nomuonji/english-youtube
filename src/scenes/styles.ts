@@ -13,8 +13,8 @@ export const COLORS={
   lineStrong:"#93A5A2",
   white:"#FFFFFF",
   navy:"#0B2531",
-  panel:"rgba(255,255,255,.86)",
-  shadow:"rgba(16,42,54,.12)",
+  panel:"rgba(255,255,255,.88)",
+  shadow:"rgba(16,42,54,.16)",
 } as const;
 
 export const base:CSSProperties={
@@ -25,10 +25,10 @@ export const base:CSSProperties={
 
 export const mainArea:CSSProperties={
   position:"absolute",
-  left:92,
-  top:146,
-  width:1736,
-  height:516,
+  left:72,
+  top:132,
+  width:1776,
+  height:620,
   display:"flex",
   alignItems:"center",
   justifyContent:"center",
@@ -37,9 +37,9 @@ export const mainArea:CSSProperties={
 export const subtitleArea:CSSProperties={
   position:"absolute",
   left:116,
-  top:700,
+  top:810,
   width:1688,
-  height:292,
+  height:190,
   display:"flex",
   alignItems:"center",
   justifyContent:"center",
@@ -49,9 +49,9 @@ export const subtitleArea:CSSProperties={
 export const headerStyle:CSSProperties={
   position:"absolute",
   left:92,
-  top:34,
+  top:28,
   width:1736,
-  height:82,
+  height:78,
   display:"flex",
   alignItems:"center",
   justifyContent:"space-between",

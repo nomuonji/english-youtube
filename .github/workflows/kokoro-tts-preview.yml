@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "scripts/synthesize_kokoro.py"
+      - "scripts/generate_bgm.py"
+      - "scripts/generate_sfx.py"
       - "requirements-tts.txt"
       - "src/compiler/measuredTiming.ts"
       - "src/cli/compile-tts.ts"
@@ -63,8 +65,10 @@ jobs:
         run: |
           mkdir -p public/generated out
           python3 scripts/synthesize_kokoro.py fixtures/v2.1-demo.json public/generated generated
-      - name: Compile resolved timing
+      - name: Compile resolved timing and SFX
         run: npm run compile:tts -- fixtures/v2.1-demo.json public/generated/tts-timing.json public/generated/render-props.json
+      - name: Generate background music bed
+        run: python3 scripts/generate_bgm.py public/generated/render-props.json public/generated/bgm.wav
       - name: Render 540p preview
         run: npx remotion render src/composition/index.ts EpisodeVideo out/kokoro-preview.mp4 --props=public/generated/render-props.json --scale=0.5 --codec=h264 --crf=23
       - name: Upload preview artifact
