@@ -34,16 +34,16 @@ async def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     timing_path.parent.mkdir(parents=True, exist_ok=True)
 
-    voice = spec.get("voice", "ja-JP-KeitaNeural")
-    rate = spec.get("rate", "+8%")
-    pitch = spec.get("pitch", "-2Hz")
+    voice = spec.get("voice", "en-US-GuyNeural")
+    rate = spec.get("rate", "+5%")
+    pitch = spec.get("pitch", "-1Hz")
     cursor = 0
     resolved = []
 
     for scene in spec["scenes"]:
         path = out_dir / f"{scene['id']}.mp3"
         communicate = edge_tts.Communicate(
-            scene["narrationJa"],
+            scene["narrationEn"],
             voice=voice,
             rate=rate,
             pitch=pitch,
@@ -51,9 +51,10 @@ async def main() -> None:
         )
         await communicate.save(str(path))
         seconds = duration_seconds(path)
-        # A small tail lets a visual land without leaving dead air. Never infer
-        # speech timing from text length: duration comes from the encoded audio.
-        frames = max(105, math.ceil((seconds + 0.42) * FPS))
+        # Timing is always measured from the encoded narration. Keep only a
+        # short visual tail so the news pacing stays tight rather than feeling
+        # like a language exercise.
+        frames = max(96, math.ceil((seconds + 0.30) * FPS))
         resolved.append({
             "id": scene["id"],
             "startFrame": cursor,
@@ -64,8 +65,9 @@ async def main() -> None:
         cursor += frames
 
     payload = {
-        "version": "3.0.0",
+        "version": spec.get("version", "3.1.0"),
         "provider": "edge-tts",
+        "language": "en-US",
         "voice": voice,
         "rate": rate,
         "pitch": pitch,
