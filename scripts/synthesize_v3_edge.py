@@ -51,10 +51,10 @@ async def main() -> None:
         )
         await communicate.save(str(path))
         seconds = duration_seconds(path)
-        # Timing is always measured from the encoded narration. Keep only a
-        # short visual tail so the news pacing stays tight rather than feeling
-        # like a language exercise.
-        frames = max(96, math.ceil((seconds + 0.30) * FPS))
+        # Timing comes from encoded speech, never text length. V3 keeps only a
+        # small landing tail and allows short 2.6s visual beats, preserving a
+        # natural English voice while avoiding dead-air lesson pacing.
+        frames = max(78, math.ceil((seconds + 0.18) * FPS))
         resolved.append({
             "id": scene["id"],
             "startFrame": cursor,
