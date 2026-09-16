@@ -12,8 +12,9 @@ const broll=fs.existsSync(brollPath)?JSON.parse(fs.readFileSync(brollPath,"utf8"
 const ids=new Set(spec.scenes.map(s=>s.id));
 for(const item of timing.scenes){if(!ids.has(item.id))throw new Error(`timing references unknown scene ${item.id}`);}
 if(timing.scenes.length!==spec.scenes.length)throw new Error(`scene count mismatch spec=${spec.scenes.length} timing=${timing.scenes.length}`);
-const missingBroll=[...new Set(spec.scenes.flatMap(s=>typeof s.visual?.query==="string"?[s.visual.query]:[]))].filter(q=>!broll.generated.some(a=>a.query===q));
-if(missingBroll.length)console.warn(`[v3] missing optional B-roll: ${missingBroll.join(", ")}`);
+const requiredBroll=[...new Set(spec.scenes.flatMap(s=>typeof s.visual?.query==="string"?[s.visual.query]:[]))];
+const missingBroll=requiredBroll.filter(q=>!broll.generated.some(a=>a.query===q));
+if(missingBroll.length)throw new Error(`required curated B-roll missing: ${missingBroll.join(", ")}`);
 fs.mkdirSync(path.dirname(outPath),{recursive:true});
 fs.writeFileSync(outPath,JSON.stringify({spec,timing,brollAssets:broll.generated},null,2)+"\n");
-console.log(JSON.stringify({ok:true,outPath,durationSeconds:timing.durationSeconds,brollAssets:broll.generated.length,missingBroll}));
+console.log(JSON.stringify({ok:true,outPath,durationSeconds:timing.durationSeconds,brollAssets:broll.generated.length,requiredBroll:requiredBroll.length}));
