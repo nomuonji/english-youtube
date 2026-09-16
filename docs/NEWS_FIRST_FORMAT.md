@@ -4,6 +4,8 @@ Status: current production default (2026-09-16)
 
 `formatProfile: "news-first"` は今後の production episode の標準。旧v2.1 manifestは再現性のため互換維持するが、新規制作では使用しない。
 
+visualの具体基準は `docs/V3_ENGLISH_NEWS_EXPLAINER.md` を参照する。現在のproduction `EpisodeVideo` は `formatProfile: "news-first"` を検出するとaccepted v3 visual baselineへ自動ルーティングする。
+
 ## North star
 
 **面白い海外ニュース解説を英語で見ていたら、結果的に実践英語も身につく。**
@@ -20,7 +22,9 @@ Status: current production default (2026-09-16)
 
 ## Episode shape
 
-目安は5〜6.5分。水増ししない。
+目安は **5〜6.5分（300〜390秒）**、spoken wordsは概ね650〜850語。水増ししない。
+
+`episodes/2026-09-15-ai-power-project/v3.json` の90〜120秒版はvisual approval用のpilotであり、productionの尺基準ではない。
 
 ```text
 0:00  COLD HOOK
@@ -49,6 +53,7 @@ Status: current production default (2026-09-16)
 - dedicated `phrase` sceneは1〜3件、すべて最後のstoryより後にまとめる。
 - recapは最後に1件。
 - 既出英文を途中で複数回再生してテンポを止めない。
+- 5〜6.5分を埋めるためだけの言い換え・反復をしない。十分なsource-backed substanceがないテーマは採用しない。
 
 ## Hook
 
@@ -113,6 +118,17 @@ story中の学習UIは短く、同時に1つだけ。
 
 Text UIだけを見せ続けない。映像美そのもので競争するのではなく、**意味構造がすぐ分かるvisual rhythm**を作る。
 
+accepted v3 baseline:
+
+- dark cinematic canvas
+- full-bleed factual B-roll / editorial image
+- strong English headline + smaller Japanese comprehension support
+- cyan/electric accent、risk/tensionのみred
+- animated metric / chain / compare / timeline
+- current chunk中心のpersistent bilingual lower-third
+- scene境界でfade-to-blackを反復しない
+- BGMは知覚できるがvoice-first、SFXは意味イベントだけ
+
 使うもの:
 
 - factual / licensed B-roll
@@ -134,6 +150,7 @@ B-rollを白い幕で消さない。字幕・図の可読性を守れる範囲�
 - Japanese support: smaller
 - optional anchor annotation: one
 - previous/next全文を常時表示しない
+- lower-third背景は常設し、cue変更ごとに巨大box全体をmount/unmountしない
 
 字幕はvisualを隠す巨大な白カードにしない。
 
