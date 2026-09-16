@@ -11,13 +11,14 @@ describe("retention review",()=>{
     expect(hasGenericIntro("What if electricity becomes the AI bottleneck?")).toBe(false);
   });
 
-  it("returns bounded metrics for a valid manifest",()=>{
+  it("returns bounded metrics for a valid legacy manifest",()=>{
     const review=reviewRetention(clone());
     expect(review.score).toBeGreaterThanOrEqual(0);
     expect(review.score).toBeLessThanOrEqual(100);
     expect(review.metrics.storyScenes).toBeGreaterThan(0);
     expect(review.metrics.learningAnchorSpread).toBeGreaterThanOrEqual(0);
     expect(review.metrics.learningAnchorSpread).toBeLessThanOrEqual(1);
+    expect(review.metrics.hookWords).toBeGreaterThan(0);
   });
 
   it("hard-fails a narrated hook that never asks the central question",()=>{
@@ -30,5 +31,23 @@ describe("retention review",()=>{
     }
     const review=reviewRetention(doc);
     expect(review.hardFailures.some(issue=>issue.code==="R_HOOK_QUESTION")).toBe(true);
+  });
+
+  it("rejects the old mid-story learning interruptions under news-first",()=>{
+    const doc=clone();
+    doc.formatProfile="news-first";
+    const review=reviewRetention(doc);
+    expect(review.metrics.learningInterruptions).toBeGreaterThan(0);
+    expect(review.hardFailures.some(issue=>issue.code==="R_LEARNING_INTERRUPTION")).toBe(true);
+    expect(review.hardFailures.some(issue=>issue.code==="R_RETRIEVAL")).toBe(true);
+  });
+
+  it("flags low-yield beginner anchor phrases for news-first",()=>{
+    const doc=clone();
+    doc.formatProfile="news-first";
+    doc.learningPoints[0].phrase="is expected to";
+    const review=reviewRetention(doc);
+    expect(review.metrics.lowYieldLearningPoints).toBeGreaterThan(0);
+    expect(review.warnings.some(issue=>issue.code==="R_LOW_YIELD_ENGLISH")).toBe(true);
   });
 });
