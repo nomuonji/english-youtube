@@ -59,7 +59,7 @@ jobs:
       - name: Synthesize local scene speech with exact chunk samples
         env:
           KOKORO_VOICE: af_sarah
-          KOKORO_SPEED: "1.00"
+          KOKORO_SPEED: "0.95"
           KOKORO_MODEL_PATH: .cache/kokoro/kokoro-v1.0.int8.onnx
           KOKORO_VOICES_PATH: .cache/kokoro/voices-v1.0.bin
         run: |
