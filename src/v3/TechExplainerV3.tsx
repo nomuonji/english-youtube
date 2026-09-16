@@ -41,11 +41,6 @@ const COLORS={
 const enFont='Inter,"Noto Sans",Arial,sans-serif';
 const jpFont='"Noto Sans CJK JP","Noto Sans JP","Yu Gothic",Meiryo,sans-serif';
 const ease=(v:number)=>1-Math.pow(1-v,3);
-const sceneFade=(frame:number,duration:number)=>{
-  const a=interpolate(frame,[0,6],[0,1],{extrapolateLeft:"clamp",extrapolateRight:"clamp"});
-  const b=interpolate(frame,[Math.max(0,duration-6),duration-1],[1,0],{extrapolateLeft:"clamp",extrapolateRight:"clamp"});
-  return Math.min(a,b);
-};
 const findBroll=(assets:V3BrollAsset[],query:string)=>assets.find(a=>a.query===query);
 
 const Noise:React.FC=()=> <AbsoluteFill style={{opacity:.07,backgroundImage:"radial-gradient(rgba(255,255,255,.34) .7px,transparent .7px)",backgroundSize:"5px 5px",mixBlendMode:"soft-light",pointerEvents:"none"}}/>;
@@ -170,16 +165,14 @@ const OutroScene:React.FC<{scene:V3Scene}>=({scene})=>{
   </AbsoluteFill>;
 };
 
-const SceneView:React.FC<{scene:V3Scene;spec:V3Spec;assets:V3BrollAsset[];durationFrames:number}>=({scene,spec,assets,durationFrames})=>{
-  const f=useCurrentFrame();const opacity=sceneFade(f,durationFrames);let body:React.ReactNode;
-  if(scene.visual.type==="broll")body=<BrollScene scene={scene} asset={findBroll(assets,scene.visual.query)}/>;
-  else if(scene.visual.type==="source")body=<SourceScene scene={scene} spec={spec} asset={findBroll(assets,scene.visual.query)}/>;
-  else if(scene.visual.type==="metric")body=<MetricScene scene={scene}/>;
-  else if(scene.visual.type==="compare")body=<CompareScene scene={scene}/>;
-  else if(scene.visual.type==="chain")body=<ChainScene scene={scene}/>;
-  else if(scene.visual.type==="checklist")body=<ChecklistScene scene={scene}/>;
-  else body=<OutroScene scene={scene}/>;
-  return <AbsoluteFill style={{opacity}}>{body}</AbsoluteFill>;
+const SceneView:React.FC<{scene:V3Scene;spec:V3Spec;assets:V3BrollAsset[]}>=({scene,spec,assets})=>{
+  if(scene.visual.type==="broll")return <BrollScene scene={scene} asset={findBroll(assets,scene.visual.query)}/>;
+  if(scene.visual.type==="source")return <SourceScene scene={scene} spec={spec} asset={findBroll(assets,scene.visual.query)}/>;
+  if(scene.visual.type==="metric")return <MetricScene scene={scene}/>;
+  if(scene.visual.type==="compare")return <CompareScene scene={scene}/>;
+  if(scene.visual.type==="chain")return <ChainScene scene={scene}/>;
+  if(scene.visual.type==="checklist")return <ChecklistScene scene={scene}/>;
+  return <OutroScene scene={scene}/>;
 };
 
 const CaptionBed:React.FC=()=> <div style={{position:"absolute",left:0,right:0,bottom:0,height:220,background:"linear-gradient(180deg,rgba(5,10,16,0),rgba(5,10,16,.78) 36%,rgba(5,10,16,.96))",pointerEvents:"none"}}/>;
@@ -199,7 +192,7 @@ export const TechExplainerV3:React.FC<TechExplainerV3Props>=({spec,timing,brollA
     {timing.scenes.map((t,index)=>{
       const scene=spec.scenes.find(s=>s.id===t.id);if(!scene)return null;
       return <Sequence key={t.id} from={t.startFrame} durationInFrames={t.durationFrames}>
-        <SceneView scene={scene} spec={spec} assets={brollAssets} durationFrames={t.durationFrames}/>
+        <SceneView scene={scene} spec={spec} assets={brollAssets}/>
         <Html5Audio src={staticFile(t.audioPath)} volume={1}/>
         {index===0?<Html5Audio src={staticFile("generated/v3/sfx/impact.wav")} volume={.38}/>:null}
         {scene.visual.type==="metric"?<Html5Audio src={staticFile("generated/v3/sfx/data-rise.wav")} volume={.20}/>:null}
