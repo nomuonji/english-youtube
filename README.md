@@ -1,78 +1,116 @@
 # english-youtube — World in Clear English
 
-日本人の中級英語学習者が、世界の一つの出来事を英語で理解する、6〜8分のニュース背景解説。
+海外のテクノロジー・仕事・経済ニュースを英語で理解しながら、実際に使われるbusiness/news Englishも身につける自動動画制作基盤。
 
-**視聴者への約束：一つの「なぜ」を追っている間ずっと英語を処理し、最後にはその説明を英語で以前より理解できる。**
+**視聴者への約束：面白いニュース解説を見終えたとき、世界の出来事を一つ理解し、再利用できる英語表現も3つ持ち帰れる。**
 
-## 状態
+## 現在のproduction標準
 
-2026-09-15時点でv2.1のMVP制作経路は実装済み。
+2026-09-16から、新規productionは `formatProfile: "news-first"` を標準とする。
 
-- v2.1 manifest schema / semantic validation
-- production episode生成用の閉じたデータ契約
-- scene speech group単位のKokoro ONNX TTS
-- 実測sample境界からの英語chunk timing
-- 既出音声を切り出して再利用するretrieval
-- Remotion 1080p composition / 540p review preview
-- READY push → GitHub Actions preview render
-- contact sheet / review artifact
-- chunk-first学習UI、遅延日本語、論理語ヒント、learning-point強調
-- metric / chain / compare / timelineの発話同期アニメーション
-- retention review CLIと制作エージェント向けretention-first工程
+旧v2.1 episodeは再現性のため互換維持するが、新しい動画は次の流れで作る。
 
-YouTube自動公開は初期設定で無効。READYはreview previewを作るだけで、公開許可ではない。
+```text
+COLD HOOK
+  -> uninterrupted NEWS STORY
+     WHAT CHANGED
+     HOW IT WORKS
+     THE CATCH
+     WHAT IT MEANS
+  -> short ENGLISH REPLAY
+  -> STORY TAKEAWAY + 3 expressions
+```
 
-v2.1の基本変更は[v2.1設計修正](docs/V2_1_CHANGES.md)、現在の長尺視聴・全編学習方針は[Retention-first 学習・演出仕様](docs/RETENTION_AND_LEARNING.md)を参照。
+ターゲットは日本語話者の **B2前後〜C1**。初心者向け文法解説と専門ニュースを混ぜるのではなく、ニュースそのものを主役にし、学習支援を画面内へ薄く埋め込む。
+
+詳細は [News-first format](docs/NEWS_FIRST_FORMAT.md) を参照。
 
 ## プロダクト方針
 
-これは「ニュース動画の最後に単語帳を付ける」プロダクトではない。
+これは「英語教材の途中にニュースを挟む」プロダクトでも、「ニュース動画の最後に単語帳を付ける」プロダクトでもない。
 
 ```text
-interesting question
-  -> simple-English story
-  -> chunk-by-chunk comprehension
-  -> micro payoff
-  -> useful-English discovery
-  -> next question
+interesting current event
+  -> strong question
+  -> evidence / mechanism / consequence
+  -> reusable English noticed in context
+  -> answer
+  -> brief replay
 ```
 
-learningPoints 3件は動画内の全学習内容ではなく、最後まで強く回収するアンカー表現。story/hookの各英文そのものが学習対象で、英語chunkを先に処理した後に対応日本語を答え合わせとして出す。
+learningPointsは正確に3件。ただしstoryを学習表現に合わせて書かない。**storyを先に完成させ、その実際の原稿からB2〜C1の再利用価値が高い表現を選ぶ。**
 
-長尺では、各beatを `open loop -> evidence/example -> micro payoff -> forward pull` で構成し、20〜40秒程度を目安に内容と同期したpattern breakを作る。詳細は[RETENTION_AND_LEARNING.md](docs/RETENTION_AND_LEARNING.md)。
+## Viewer-facing design
 
-## 決定済みの仕様
+- 最初の5〜10秒でvisual/claim/stakesを置く。長いタイトル画面なし。
+- hook直後からstoryへ入り、途中の専用クイズ・単語講義で止めない。
+- 通常字幕はcurrent English chunk + 小さな日本語補助のcompact lower-third。
+- B-roll / editorial image / animated metric / chain / compare / timelineを発話に同期させる。
+- B-rollは背景に存在するだけでなく、素材そのものが認識できる強度で見せる。
+- BGMはvoice-firstのtech pulse、SEはhook/chapter/metric/replayなど意味イベントだけ。
+- English Replayは最後に1〜3表現、`listen once -> notice -> shadow once`。
 
-| 項目 | v2.1 |
-|---|---|
-| 視聴者 | 日本語話者・B1中心。英文を読めば分かるがニュース音声には追いつけない成人 |
-| 題材 | テクノロジーと生活、仕事とお金の仕組み、科学と社会。必ずnews pegを持ち、時事を入口に背景を説明 |
-| 長さ | 360〜480秒。8分への水増しなし |
-| 言語 | 英語音声、意味単位の英語chunk。日本語は遅延答え合わせ＋任意CC |
-| 学習 | 全編chunk学習＋論理語ヒント。3アンカー表現、phrase 1〜2回、既出音声retrieval 1回、最後に3表現回収 |
-| 画面 | 1920×1080 / 30fps。card / metric / chain / compare / timeline / phrase / retrieval / recap＋current focus |
-| 制作 | 日次探索、火・木・土20:00 JSTを公開枠とする週3本上限。品質未達なら欠番 |
-| 品質 | schema/semantic → retention review → editorial review → freeze |
-| 自動化 | エージェントは内容JSONを生成。freeze後にREADYをcommitし、Actionsがreview previewを開始 |
-| 音声 | scene speech group単位のKokoro ONNX。実測sample境界でcaption / retrievalを同期 |
-| レンダリング | GitHub Actions + Remotion。review artifactにpreview / contact sheetを含める |
+## 制作・公開パイプライン
+
+1. Agentが候補探索・source/claim確認・story生成を行う。
+2. schema / semantic / retention / cognitive reviewを通す。
+3. manifestをfreezeし `READY.json` をcommit。
+4. GitHub ActionsでTTS、画像/B-roll、540p preview、contact sheetを生成。
+5. GitHub Pages `/review/` で人間が確認。
+6. 明示的な公開承認後に `APPROVED.json` をcommit。
+7. Actionsが同一revision/hashから1080p finalをrenderし、音量正規化後、設定済みYouTube credentialで直接公開する。
+
+READYは公開許可ではない。APPROVEDは現在のproduction workflowでは最終render + YouTube公開のgate。
+
+## 現在の技術基盤
+
+- EpisodeManifest v2.1 + optional `formatProfile: "news-first"`
+- source / claim / evidence contract
+- Kokoro ONNX local TTS + exact sample-based chunk timing
+- Remotion 1920×1080 composition / 540p review preview
+- editorial images + Wikimedia Commons licensed B-roll
+- animated metric / chain / compare / timeline
+- deterministic BGM / SFX
+- retention / cognitive-load review CLI
+- READY / APPROVED immutable gate
+- GitHub Actions render
+- GitHub Pages review UI
+- direct YouTube resumable upload
+
+## 品質ゲート
+
+production READY前:
+
+- schema / semantic validation: pass
+- retention review: hard failure 0, score >= 80
+- cognitive review: hard failure 0, score >= 75
+- evidence/freshness requirements: pass
+- human-facing editorial review
+
+news-firstでは特に次を機械検査する。
+
+- story中にdedicated learning sceneが割り込まない
+- retrieval scene 0件
+- replayは最後のstoryより後
+- hookが長すぎない
+- basic/general phraseをanchorにしすぎない
+- story shareが低すぎない
 
 ## 読む順番
 
-1. [v2.1設計修正](docs/V2_1_CHANGES.md)
-2. [Retention-first 学習・演出仕様](docs/RETENTION_AND_LEARNING.md)
-3. [編集・学習仕様](docs/EDITORIAL_SYSTEM.md)
-4. [編集エージェント工程](docs/AGENT_PIPELINE.md)
-5. [画面・シーン仕様](docs/VISUAL_SYSTEM.md)
-6. [データ契約](docs/DATA_CONTRACT.md)
-7. [アーキテクチャ](docs/ARCHITECTURE.md)
-8. [クラウド確認・レンダリング](docs/PREVIEW_AND_RENDER.md)
-9. [定期運用](docs/OPERATIONS.md)
-10. [受け入れ・実装順](docs/IMPLEMENTATION_PLAN.md)
-11. [パイロットと評価](docs/PILOT_AND_MEASUREMENT.md)
-12. [出典](docs/SOURCES.md)
+1. [News-first format](docs/NEWS_FIRST_FORMAT.md)
+2. [動画制作プレイブック](docs/VIDEO_PRODUCTION_PLAYBOOK.md)
+3. [Retention / learning](docs/RETENTION_AND_LEARNING.md)
+4. [編集・学習仕様](docs/EDITORIAL_SYSTEM.md)
+5. [編集エージェント工程](docs/AGENT_PIPELINE.md)
+6. [画面・シーン仕様](docs/VISUAL_SYSTEM.md)
+7. [データ契約](docs/DATA_CONTRACT.md)
+8. [アーキテクチャ](docs/ARCHITECTURE.md)
+9. [クラウド確認・レンダリング](docs/PREVIEW_AND_RENDER.md)
+10. [定期運用](docs/OPERATIONS.md)
+11. [v2.1 legacy changes](docs/V2_1_CHANGES.md)
 
-[AGENTS.md](AGENTS.md)は担当エージェント向けの入口。構造正本は[schema v2.1](schemas/episode-v2.1.schema.json)。
+[AGENTS.md](AGENTS.md) は制作Agent向けの入口。schema正本は [episode-v2.1.schema.json](schemas/episode-v2.1.schema.json)。
 
 ## 主なコマンド
 
@@ -83,19 +121,18 @@ npm test
 npm run validate -- fixtures/v2.1-demo.json
 npm run validate -- episodes/2026-09-15-ai-power-project/manifest.json
 npm run review:retention -- episodes/2026-09-15-ai-power-project/manifest.json
+npm run review:cognitive -- episodes/2026-09-15-ai-power-project/manifest.json
 npm run build
 ```
 
-`review:retention` はschema検査とは別の編集QA。正しいJSONでも、弱いhook、forward-pull不足、画面型の単調さ、学習アンカーの偏りなどを検出する。初期基準はhard failure 0、score 80以上。
-
 ## READY / preview
 
-freeze後に以下を新規作成する。
+freeze後に:
 
 ```text
 runs/YYYY-MM-DD/<runId>/READY.json
 ```
 
-READY pushを受けたActionsがmanifest hashを再検証し、TTS → measured timing → 540p preview → loudness normalization → contact sheet → review artifactまで作る。
+を新規作成する。READY pushを受けたActionsがmanifest hashを再検証し、TTS → measured timing → assets → 540p preview → loudness normalization → contact sheet → review artifactまで作る。
 
-manifestを修正した場合は旧READYを再利用せずrevisionを上げ、新run / new READYでreviewからやり直す。
+manifestを直したらrevisionを上げ、新run / new READYでreviewからやり直す。
