@@ -2,17 +2,18 @@
 
 ## 現在の制作標準
 
-今後の新規productionは **news-first**。最初に `docs/NEWS_FIRST_FORMAT.md` を読み、`formatProfile: "news-first"` を必ず付ける。
+今後の新規productionは **news-first**。最初に `docs/NEWS_FIRST_FORMAT.md` と `docs/V3_ENGLISH_NEWS_EXPLAINER.md` を読み、`formatProfile: "news-first"` を必ず付ける。
 
 旧v2.1 episodeは再現性のため互換維持する。旧manifestが存在することを理由に新規制作を旧 `phrase / retrieval` 構造へ戻さない。
 
 視聴体験の優先順位は次の通り。
 
 1. `docs/NEWS_FIRST_FORMAT.md`
-2. `docs/VIDEO_PRODUCTION_PLAYBOOK.md`
-3. `docs/RETENTION_AND_LEARNING.md`
-4. `docs/EDITORIAL_SYSTEM.md`
-5. `docs/V2_1_CHANGES.md`（legacy設計・互換性の参照）
+2. `docs/V3_ENGLISH_NEWS_EXPLAINER.md`（現在のvisual baseline）
+3. `docs/VIDEO_PRODUCTION_PLAYBOOK.md`
+4. `docs/RETENTION_AND_LEARNING.md`
+5. `docs/EDITORIAL_SYSTEM.md`
+6. `docs/V2_1_CHANGES.md`（legacy設計・互換性の参照）
 
 エンジニアリング依頼ではdocs/schema/code/workflowを一緒に変更できる。通常の定期コンテンツ生成ではepisodes/とruns/だけを更新し、React/CSS/schema/workflowを変更しない。
 
@@ -49,7 +50,8 @@
 - `retrieval` sceneは0件。
 - dedicated `phrase` sceneは1〜3件で、すべて最後のstoryの後に連続したEnglish Replay blockとして置く。
 - recapは最後に1件。
-- 目安650〜850 spoken words、5〜6.5分。尺のために繰り返さない。
+- **目安650〜850 spoken words、5〜6.5分（300〜390秒）。** 尺のために繰り返さない。
+- `episodes/2026-09-15-ai-power-project/v3.json` の90〜120秒はvisual pilotだけ。production尺の前例として使わない。
 
 ## Learning points
 
@@ -65,14 +67,20 @@ English Replayは各表現について `listen once -> notice the chunk -> shado
 
 ## Captions / visuals
 
-- 通常字幕はcurrent chunk中心のcompact lower-third。
+`formatProfile: "news-first"` は現在、production `EpisodeVideo` 内でdark v3 visual baselineへ自動ルーティングされる。通常の制作で別のlight/white-card rendererを作らない。
+
+- dark cinematic canvasを基本とする。
+- factual B-roll / editorial imageは可能な限りfull-bleedで使う。
+- 通常字幕はcurrent chunk中心の**常設compact lower-third**。字幕内容が変わっても背景box全体をmount/unmountしない。
 - current Englishを主、日本語を小さな補助として同時表示。
 - previous/current/next全文を常時並べない。
 - 1瞬間1主役。図/画像/B-roll/字幕/annotationを同じ強度で競合させない。
 - B-rollは実際に素材が認識できるコントラストを残す。白幕でほぼ消さない。
 - 3〜8秒程度を目安に、発話内容に同期したvisual changeを作る。ランダムな装飾変更は禁止。
 - metricはcount-up/bar、chain/compare/timelineは現在説明箇所を段階revealする。
+- scene境界で反復的なfade-to-blackや黒フラッシュを入れない。
 - factual footageとeditorial/AI imageを事実画像として混同させない。
+- accepted visual referenceは `docs/V3_ENGLISH_NEWS_EXPLAINER.md` と `TechExplainerV3`。具体コードは今後改善可能だが、方向転換には明示的な承認が必要。
 
 ## Audio
 
