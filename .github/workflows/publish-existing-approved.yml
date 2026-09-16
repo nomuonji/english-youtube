@@ -1,0 +1,75 @@
+name: Publish existing approved artifact
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "publish-recovery/*.json"
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+      - name: Read recovery request
+        id: request
+        shell: bash
+        run: |
+          set -euo pipefail
+          request="$(git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA" | grep -E '^publish-recovery/[A-Za-z0-9._-]+\.json$' | head -n 1 || true)"
+          if [ -z "$request" ]; then
+            echo "No publish recovery request found" >&2
+            exit 2
+          fi
+          run_id="$(node -e 'const fs=require("fs");const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(String(r.runId))' "$request")"
+          artifact_name="$(node -e 'const fs=require("fs");const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(r.artifactName)' "$request")"
+          episode_id="$(node -e 'const fs=require("fs");const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(r.episodeId)' "$request")"
+          if ! [[ "$run_id" =~ ^[0-9]+$ ]]; then echo "Invalid runId" >&2; exit 2; fi
+          if ! [[ "$artifact_name" =~ ^approved-final-[A-Za-z0-9._-]+-[0-9a-f]{40}$ ]]; then echo "Invalid artifactName" >&2; exit 2; fi
+          if ! [[ "$episode_id" =~ ^[A-Za-z0-9._-]+$ ]]; then echo "Invalid episodeId" >&2; exit 2; fi
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=$artifact_name" >> "$GITHUB_OUTPUT"
+          echo "episode_id=$episode_id" >> "$GITHUB_OUTPUT"
+      - name: Download approved artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ steps.request.outputs.run_id }}
+          ARTIFACT_NAME: ${{ steps.request.outputs.artifact_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$ARTIFACT_NAME" --dir dist
+          video="$(find dist -type f -name '*-final-1080p.mp4' -print -quit)"
+          if [ -z "$video" ]; then
+            echo "Approved final MP4 not found" >&2
+            exit 2
+          fi
+          test -s "$video"
+          echo "VIDEO_PATH=$video" >> "$GITHUB_ENV"
+      - name: Publish approved artifact directly to YouTube
+        id: youtube
+        env:
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: node scripts/upload_youtube.mjs "$VIDEO_PATH" "episodes/${{ steps.request.outputs.episode_id }}/manifest.json"
+      - name: Preserve YouTube publish result
+        if: always() && hashFiles('youtube-publish-result.json') != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: youtube-recovery-result-${{ steps.request.outputs.episode_id }}-${{ github.sha }}
+          path: youtube-publish-result.json
+          retention-days: 30
