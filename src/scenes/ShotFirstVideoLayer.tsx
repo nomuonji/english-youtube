@@ -30,7 +30,7 @@ const Caption:React.FC<{cue?:Cue;shot:ShotPlanShot}>=({cue,shot})=>{
   if(!cue||shot.captionMode==="none")return null;
   return <div style={{position:"absolute",left:0,right:0,bottom:0,zIndex:30,padding:"72px 112px 34px",background:"linear-gradient(180deg,transparent 0%,rgba(2,7,11,.42) 34%,rgba(2,7,11,.94) 100%)"}}>
     <div style={{fontFamily:enFont,fontSize:38,fontWeight:820,lineHeight:1.14,letterSpacing:"-.015em",color:C.ink,textShadow:"0 4px 24px rgba(0,0,0,.92)",maxWidth:1560}}>{cue.text}</div>
-    {shot.captionMode==="en-ja"?<div style={{fontFamily:jpFont,fontSize:20,fontWeight:650,lineHeight:1.35,color:"rgba(247,250,252,.72)",marginTop:7,textShadow:"0 3px 18px rgba(0,0,0,.9)",maxWidth:1510}}>{shot.japaneseAnchor??cue.translationJa}</div>:null}
+    {shot.captionMode==="en-ja"?<div style={{fontFamily:jpFont,fontSize:20,fontWeight:650,lineHeight:1.35,color:"rgba(247,250,252,.72)",marginTop:7,textShadow:"0 3px 18px rgba(0,0,0,.9)",maxWidth:1510}}>{cue.translationJa}</div>:null}
   </div>;
 };
 
