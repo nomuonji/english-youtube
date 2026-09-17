@@ -8,13 +8,15 @@ const manifest=(experienceVersion?:EpisodeManifest["experienceVersion"]):Episode
 });
 
 describe("experience versions",()=>{
-  it("keeps v3.0 as the stable default while v4 is only a candidate",()=>{
+  it("keeps v3.0 stable, v4 retired, and v5 candidate",()=>{
     expect(STABLE_EXPERIENCE_VERSION).toBe("news-first-v3.0");
     expect(EXPERIENCE_VERSIONS["news-first-v3.0"].status).toBe("stable");
-    expect(EXPERIENCE_VERSIONS["news-first-v4.0-candidate"].status).toBe("candidate");
+    expect(EXPERIENCE_VERSIONS["news-first-v4.0-candidate"].status).toBe("retired");
+    expect(EXPERIENCE_VERSIONS["news-first-v5.0-candidate"].status).toBe("candidate");
   });
-  it("resolves an explicitly pinned v4 candidate without promoting it",()=>{
+  it("resolves explicit historical and candidate pins without promoting them",()=>{
     expect(resolveExperienceVersion(manifest("news-first-v4.0-candidate"))).toBe("news-first-v4.0-candidate");
+    expect(resolveExperienceVersion(manifest("news-first-v5.0-candidate"))).toBe("news-first-v5.0-candidate");
     expect(resolveExperienceVersion(manifest())).toBe("news-first-v3.0");
   });
 });

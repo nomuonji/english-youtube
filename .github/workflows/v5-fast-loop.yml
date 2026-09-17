@@ -1,0 +1,193 @@
+name: V5 fast loop
+
+on:
+  pull_request:
+    paths:
+      - "src/scenes/ShotFirstVideoLayer.tsx"
+      - "src/shotplan/**"
+      - "src/composition/EpisodeVideo.tsx"
+      - "src/experience/**"
+      - "src/contracts/**"
+      - "schemas/**"
+      - "scripts/build_v5_*.mjs"
+      - "scripts/fetch_v5_*.mjs"
+      - "scripts/attach_v5_*.mjs"
+      - "scripts/check_v5_*.mjs"
+      - "scripts/generate_bgm.py"
+      - ".github/workflows/v5-fast-loop.yml"
+      - "episodes/2026-09-15-ai-power-project/manifest.json"
+  push:
+    branches: [main]
+    paths:
+      - "src/scenes/ShotFirstVideoLayer.tsx"
+      - "src/shotplan/**"
+      - "src/composition/EpisodeVideo.tsx"
+      - "src/experience/**"
+      - "src/contracts/**"
+      - "schemas/**"
+      - "scripts/build_v5_*.mjs"
+      - "scripts/fetch_v5_*.mjs"
+      - "scripts/attach_v5_*.mjs"
+      - "scripts/check_v5_*.mjs"
+      - "scripts/generate_bgm.py"
+      - ".github/workflows/v5-fast-loop.yml"
+  workflow_dispatch:
+    inputs:
+      preview_seconds:
+        description: "Opening seconds to render for the fast review"
+        required: false
+        default: "36"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v5-fast-loop-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  V5_PREVIEW_SECONDS: ${{ github.event.inputs.preview_seconds || '36' }}
+  V5_MAX_SHOT_ASSETS: "12"
+
+jobs:
+  roughcut:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install planning and TTS dependencies
+        run: |
+          npm ci --ignore-scripts
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq espeak-ng
+          python3 -m pip install --disable-pip-version-check -r requirements-tts.txt
+      - name: Build V5 candidate manifest
+        run: node scripts/build_v5_candidate_manifest.mjs episodes/2026-09-15-ai-power-project/manifest.json public/generated/v5-candidate
+      - name: Validate candidate
+        run: |
+          npm run validate -- public/generated/v5-candidate/candidate-v5.json
+          npm run review:retention -- public/generated/v5-candidate/candidate-v5.json
+          npm run review:cognitive -- public/generated/v5-candidate/candidate-v5.json
+      - name: Cache Kokoro model
+        id: kokoro-model-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/kokoro
+          key: kokoro-model-v1.1-int8-${{ runner.os }}
+      - name: Download Kokoro model
+        if: steps.kokoro-model-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p .cache/kokoro
+          curl -fL --retry 3 --retry-delay 2 -o .cache/kokoro/kokoro-v1.0.int8.onnx https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/kokoro-v1.0.int8.onnx
+          curl -fL --retry 3 --retry-delay 2 -o .cache/kokoro/voices-v1.0.bin https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/voices-v1.0.bin
+      - name: Restore Kokoro chunk cache
+        id: tts-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/kokoro-chunks
+          key: kokoro-chunks-v2-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            kokoro-chunks-v2-${{ runner.os }}-
+            kokoro-chunks-v1-${{ runner.os }}-
+      - name: Synthesize measured narration
+        env:
+          KOKORO_VOICE: af_sarah
+          KOKORO_SPEED: "0.95"
+          KOKORO_MODEL_PATH: .cache/kokoro/kokoro-v1.0.int8.onnx
+          KOKORO_VOICES_PATH: .cache/kokoro/voices-v1.0.bin
+          KOKORO_CHUNK_CACHE_DIR: .cache/kokoro-chunks
+        run: python3 scripts/synthesize_kokoro.py public/generated/v5-candidate/candidate-v5.json public/generated generated
+      - name: Save expanded Kokoro chunk cache
+        if: steps.tts-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/kokoro-chunks
+          key: kokoro-chunks-v2-${{ runner.os }}-${{ github.sha }}
+      - name: Compile measured base props
+        env:
+          ALLOW_BROLL_FETCH: "false"
+        run: npm run compile:tts -- public/generated/v5-candidate/candidate-v5.json public/generated/tts-timing.json public/generated/v5-base-render-props.json
+      - name: Build shot-first edit plan
+        run: node scripts/build_v5_shot_plan.mjs public/generated/v5-base-render-props.json public/generated/v5-shot-plan.json public/generated/v5-render-props.no-assets.json
+      - name: Restore reviewed V5 media cache
+        id: v5-media-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/v5-commons
+          key: v5-commons-v1-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            v5-commons-v1-${{ runner.os }}-
+      - name: Fetch per-shot editorial images
+        env:
+          V5_COMMONS_CACHE_DIR: .cache/v5-commons
+        run: node scripts/fetch_v5_shot_images.mjs public/generated/v5-shot-plan.json public/generated/v5-shot-images
+      - name: Save expanded V5 media cache
+        if: steps.v5-media-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/v5-commons
+          key: v5-commons-v1-${{ runner.os }}-${{ github.sha }}
+      - name: Attach shot assets
+        run: node scripts/attach_v5_shot_assets.mjs public/generated/v5-render-props.no-assets.json public/generated/v5-shot-images/manifest.json public/generated/v5-render-props.json
+      - name: Fail fast on static-slide regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/check_v5_fast_loop.mjs public/generated/v5-shot-plan.json public/generated/v5-shot-images/manifest.json | tee public/generated/fast-loop-report.json
+      - name: Install render-only dependencies
+        run: sudo apt-get install -y -qq fonts-noto-cjk ffmpeg
+      - name: Generate preview audio bed
+        env:
+          BGM_DURATION_SECONDS: ${{ env.V5_PREVIEW_SECONDS }}
+        run: python3 scripts/generate_bgm.py public/generated/v5-render-props.json public/generated/bgm.wav
+      - name: Render opening rough cut only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          end_frame="$(python3 - <<'PY'
+          import os
+          seconds=float(os.environ.get('V5_PREVIEW_SECONDS','36'))
+          print(max(0,round(seconds*30)-1))
+          PY
+          )"
+          npx remotion render src/composition/index.ts EpisodeVideo out/v5-roughcut.mp4 --props=public/generated/v5-render-props.json --frames="0-${end_frame}" --scale=0.5 --codec=h264 --crf=25
+      - name: Normalize preview audio
+        run: bash scripts/normalize_video_audio.sh out/v5-roughcut.mp4
+      - name: Build contact sheet
+        shell: bash
+        run: |
+          set -euo pipefail
+          duration="$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 out/v5-roughcut.mp4)"
+          interval="$(python3 - <<'PY' "$duration"
+          import sys
+          d=max(float(sys.argv[1]),1.0)
+          print(max(d/9.0,0.25))
+          PY
+          )"
+          ffmpeg -hide_banner -loglevel error -y -i out/v5-roughcut.mp4 -vf "fps=1/${interval},scale=320:-1,tile=3x3:padding=6:margin=6" -frames:v 1 -q:v 2 out/v5-contact-sheet.jpg
+      - name: Stage fast-review artifact
+        run: |
+          mkdir -p v5-fast-artifact
+          cp out/v5-roughcut.mp4 v5-fast-artifact/
+          cp out/v5-contact-sheet.jpg v5-fast-artifact/
+          cp public/generated/fast-loop-report.json v5-fast-artifact/
+          cp public/generated/v5-shot-plan.json v5-fast-artifact/
+          cp public/generated/v5-shot-images/manifest.json v5-fast-artifact/v5-shot-assets.json
+      - name: Build review page smoke test
+        run: |
+          node scripts/build_v5_fast_review_page.mjs v5-fast-artifact out/review-v5
+          test -s out/review-v5/index.html
+          test -s out/review-v5/v5-roughcut.mp4
+      - name: Upload V5 fast-review artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: v5-fast-review-${{ github.sha }}
+          path: v5-fast-artifact/
+          retention-days: 14

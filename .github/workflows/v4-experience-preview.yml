@@ -1,28 +1,7 @@
 name: V4 experience preview
 
+# Retired experiment. Kept manual-only for historical reproduction.
 on:
-  pull_request:
-    paths:
-      - "src/scenes/DocumentarySceneRenderer.tsx"
-      - "src/composition/EpisodeVideo.tsx"
-      - "src/experience/**"
-      - "src/contracts/**"
-      - "schemas/**"
-      - "scripts/build_experience_ab_manifests.mjs"
-      - "scripts/build_experience_compare_page.mjs"
-      - ".github/workflows/v4-experience-preview.yml"
-      - "episodes/2026-09-15-ai-power-project/manifest.json"
-  push:
-    branches: [main]
-    paths:
-      - "src/scenes/DocumentarySceneRenderer.tsx"
-      - "src/composition/EpisodeVideo.tsx"
-      - "src/experience/**"
-      - "src/contracts/**"
-      - "schemas/**"
-      - "scripts/build_experience_ab_manifests.mjs"
-      - "scripts/build_experience_compare_page.mjs"
-      - ".github/workflows/v4-experience-preview.yml"
   workflow_dispatch:
 
 permissions:

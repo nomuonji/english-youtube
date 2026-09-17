@@ -17,6 +17,13 @@ export const EXPERIENCE_VERSIONS={
     durationSeconds:[300,390] as const,
     description:"Rejected after direct A/B review: the documentary-first candidate remained too static, template-like, and visually weak. Preserved only for comparison/history.",
   },
+  "news-first-v5.0-candidate":{
+    status:"candidate",
+    formatProfile:"news-first",
+    renderer:"ShotFirstVideoLayer",
+    durationSeconds:[300,390] as const,
+    description:"Shot-first editing candidate. The episode is decomposed into short editorial shots with per-shot media, framing, camera motion and caption behavior instead of one reusable layout per scene.",
+  },
 } as const satisfies Record<ExperienceVersion,{
   status:"stable"|"candidate"|"retired";
   formatProfile:"news-first";

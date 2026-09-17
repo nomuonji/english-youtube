@@ -2,7 +2,7 @@ export type Category = "technology" | "work_money" | "science_society";
 export type SceneRole = "hook" | "story" | "phrase" | "retrieval" | "recap";
 export type StoryBeat = "setup" | "mechanism" | "complication" | "answer";
 export type FormatProfile = "news-first";
-export type ExperienceVersion = "news-first-v3.0" | "news-first-v4.0-candidate";
+export type ExperienceVersion = "news-first-v3.0" | "news-first-v4.0-candidate" | "news-first-v5.0-candidate";
 
 export type Source = {id:string; title:string; publisher:string; url:string; publishedDate:string|null; retrievedAt:string; independenceGroup:string; isPrimary:boolean};
 export type Claim = {id:string; text:string; certainty:"confirmed"|"reported"|"estimate"|"forecast"|"disputed"|"inference"; asOf:string; evidence:Array<{sourceId:string; locator:string; supportNote:string}>};

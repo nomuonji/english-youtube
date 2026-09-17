@@ -1,7 +1,8 @@
 name: Preview Pages
 
 # Deploys the Remotion Player, production READY review at /review/,
-# the historical v3 visual pilot at /review-v3/, and the current v3-v4 A/B at /review-v4/.
+# the historical v3 pilot at /review-v3/, retired v4 comparison at /review-v4/,
+# and the current shot-first fast loop at /review-v5/.
 on:
   push:
     branches: [main]
@@ -11,17 +12,19 @@ on:
       - "src/composition/**"
       - "src/fixtures/**"
       - "src/experience/**"
+      - "src/shotplan/**"
       - "fixtures/**"
       - "config/**"
       - "scripts/build_review_page.mjs"
       - "scripts/build_experience_compare_page.mjs"
+      - "scripts/build_v5_fast_review_page.mjs"
       - "package.json"
       - "package-lock.json"
       - "vite.config.ts"
       - "index.html"
       - ".github/workflows/preview-pages.yml"
   workflow_run:
-    workflows: ["V4 experience preview"]
+    workflows: ["V4 experience preview", "V5 fast loop"]
     types: [completed]
   workflow_dispatch:
 
@@ -103,26 +106,37 @@ jobs:
           mkdir -p v3-review-artifact
           gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name "$artifact_name" --dir v3-review-artifact
           node scripts/build_review_page.mjs v3-review-artifact dist/review-v3
-      - name: Include latest v3-v4 experience comparison when available
+      - name: Include retired v3-v4 comparison when available
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           run_id="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/v4-experience-preview.yml/runs?branch=main&status=success&per_page=10" --jq '.workflow_runs[0].id // empty' 2>/dev/null || true)"
-          if [ -z "$run_id" ]; then
-            echo "No successful main v4 experience preview yet; deploying without /review-v4/."
-            exit 0
-          fi
+          if [ -z "$run_id" ]; then exit 0; fi
           artifact_name="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts?per_page=100" --jq '.artifacts[] | select(.expired == false and (.name | startswith("experience-ab-v3-v4-"))) | .name' | head -n 1 || true)"
-          if [ -z "$artifact_name" ]; then
-            echo "Latest v4 experience run has no live A/B artifact; deploying without /review-v4/."
-            exit 0
-          fi
+          if [ -z "$artifact_name" ]; then exit 0; fi
           rm -rf experience-ab-artifact
           mkdir -p experience-ab-artifact
           gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name "$artifact_name" --dir experience-ab-artifact
           node scripts/build_experience_compare_page.mjs experience-ab-artifact dist/review-v4
+      - name: Include latest V5 fast review when available
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_id="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/v5-fast-loop.yml/runs?branch=main&status=success&per_page=10" --jq '.workflow_runs[0].id // empty' 2>/dev/null || true)"
+          if [ -z "$run_id" ]; then
+            echo "No successful main V5 fast-loop run yet; deploying without /review-v5/."
+            exit 0
+          fi
+          artifact_name="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts?per_page=100" --jq '.artifacts[] | select(.expired == false and (.name | startswith("v5-fast-review-"))) | .name' | head -n 1 || true)"
+          if [ -z "$artifact_name" ]; then exit 0; fi
+          rm -rf v5-fast-artifact
+          mkdir -p v5-fast-artifact
+          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name "$artifact_name" --dir v5-fast-artifact
+          node scripts/build_v5_fast_review_page.mjs v5-fast-artifact dist/review-v5
       - name: Assert public preview contains no internal run data
         shell: bash
         run: |

@@ -35,9 +35,30 @@ Status: **retired — rejected after direct A/B review**
 
 The candidate attempted to move from “learning news” toward a faceless mini-documentary with evidence-led visuals and adaptive Japanese support. In the rendered result it remained too static, too template-like, too dark, and visually underpowered. It did not feel like a compelling normal YouTube documentary, and v3.0 was judged the less-bad option.
 
-The v4 renderer and review artifact remain available only as a comparison/history reference. Do not promote it and do not reuse it as the base for another incremental styling pass.
+The v4 renderer and review artifact remain available only as a comparison/history reference. Its expensive full-length A/B workflow is manual-only. Do not promote it and do not reuse it as the base for another incremental styling pass.
 
-The next redesign should change the production model itself rather than tune the same scene-template system. In particular, it should move toward shot-list-first editorial construction: source screenshots, footage, charts, maps, crops, callouts, kinetic type, and bespoke per-beat composition, with templates limited mainly to branding/captions rather than determining the whole scene.
+## Active candidate
+
+`news-first-v5.0-candidate`
+
+Status: **candidate — shot-first redesign, not production default**
+
+V5 changes the visual unit from reusable scene templates to editorial shots. A story scene may contain several short shots, each with independently chosen media, framing, crop/camera movement, evidence treatment and caption mode.
+
+The candidate intentionally keeps the same long-form editorial content and duration policy for eventual comparison, but the design loop does **not** begin by rendering the full episode.
+
+Fast-loop policy:
+
+- derive/reuse the long-form editorial cut and measured narration timing;
+- generate a shot plan;
+- fetch separate media for opening shots;
+- run static-slide regression guardrails;
+- render only the first ~36 seconds;
+- review rough cut + contact sheet at `/review-v5/`;
+- iterate the shot sequence first;
+- only expand to middle/end windows and a full 5–6.5 minute render after the opening visual grammar is explicitly worth continuing.
+
+See `docs/V5_SHOT_FIRST_FAST_LOOP.md`.
 
 ## Immutability rule
 
@@ -52,6 +73,8 @@ The old version remains renderable so a new candidate can be compared against it
 A newly created version starts as `candidate`. It does not become the stable default merely because it is newer.
 
 Promotion requires explicit user acceptance after review. Only then update `STABLE_EXPERIENCE_VERSION` in `src/experience/versions.ts` and this document.
+
+For V5 specifically, accepting an opening rough cut means only “continue the experiment”. It is **not** stable promotion. Stable promotion requires representative-window review and a full-length review first.
 
 ## Manifest pinning
 
@@ -76,9 +99,10 @@ When trying an improvement:
 
 1. Add a new `experienceVersion`; never reuse an existing ID.
 2. Keep the previous stable version intact.
-3. Render stable and candidate against the same or comparable source material.
-4. Compare the actual review outputs, not just code or screenshots.
-5. If accepted, promote it to stable default.
-6. If rejected, leave stable unchanged and retire the candidate with the review reason recorded.
+3. Start with the smallest representative render that can falsify the hypothesis.
+4. Review actual rendered output, not just code or screenshots.
+5. Expand rendering scope only when the smaller test is worth continuing.
+6. If accepted after full review, promote it to stable default.
+7. If rejected, leave stable unchanged and retire the candidate with the review reason recorded.
 
-This allows visual and learning-design evolution without assuming that every change is an improvement.
+This keeps the feedback cycle short and avoids spending a full render on a visual grammar that already fails in the opening seconds.
