@@ -39,6 +39,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: v5-fast-loop-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   V5_PREVIEW_SECONDS: ${{ github.event.inputs.preview_seconds || '36' }}
   V5_MAX_SHOT_ASSETS: "12"
@@ -55,11 +59,11 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-      - name: Install dependencies
+      - name: Install planning and TTS dependencies
         run: |
           npm ci --ignore-scripts
           sudo apt-get update -qq
-          sudo apt-get install -y -qq espeak-ng fonts-noto-cjk ffmpeg
+          sudo apt-get install -y -qq espeak-ng
           python3 -m pip install --disable-pip-version-check -r requirements-tts.txt
       - name: Build V5 candidate manifest
         run: node scripts/build_v5_candidate_manifest.mjs episodes/2026-09-15-ai-power-project/manifest.json public/generated/v5-candidate
@@ -118,6 +122,8 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/check_v5_fast_loop.mjs public/generated/v5-shot-plan.json public/generated/v5-shot-images/manifest.json | tee public/generated/fast-loop-report.json
+      - name: Install render-only dependencies
+        run: sudo apt-get install -y -qq fonts-noto-cjk ffmpeg
       - name: Generate shared audio bed
         run: python3 scripts/generate_bgm.py public/generated/v5-render-props.json public/generated/bgm.wav
       - name: Render opening rough cut only
