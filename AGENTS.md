@@ -2,23 +2,26 @@
 
 ## 現在の制作標準
 
-今後の新規productionは **news-first**。最初に `docs/NEWS_FIRST_FORMAT.md`、`docs/PRODUCTION_VERSIONS.md`、`docs/V3_ENGLISH_NEWS_EXPLAINER.md` を読む。新規production manifestには `formatProfile: "news-first"` と、現在のstable版である `experienceVersion: "news-first-v3.0"` を必ず明示する。
+今後の新規productionは **news-first**。最初に `docs/PRODUCTION_VERSIONS.md`、`docs/NEWS_FIRST_FORMAT.md`、`docs/V5_SHOT_FIRST_FAST_LOOP.md`、`docs/V3_ENGLISH_NEWS_EXPLAINER.md` を読む。通常の新規production manifestには `formatProfile: "news-first"` と、現在のstable baselineである `experienceVersion: "news-first-v3.0"` を必ず明示する。
 
 `experienceVersion` は「最新版」ではなく、レビュー済み制作体験へのpinである。既存versionの見た目・字幕・学習UX・音・尺を後から書き換えない。改善案は必ず新しいversion IDを作り、candidateとしてreviewし、ユーザーが明示承認した場合だけstable defaultを変更する。単に新しいという理由で昇格させない。
 
-`news-first-v4.0-candidate` は現在A/B review用に登録されているが、**通常の日次productionでは使用しない**。v4実験・比較を明示的に依頼された場合だけ `docs/V4_DOCUMENTARY_CANDIDATE.md` を読み、専用comparison workflowを使う。ユーザーがreview後に昇格を明示するまでstableは `news-first-v3.0` のまま。
+`news-first-v4.0-candidate` は**不採用・retired**。通常productionでも新規実験の土台でも使わない。historical reproductionのためコードとmanual workflowだけ残す。
+
+`news-first-v5.0-candidate` は現在のshot-first実験版。**通常の日次productionには使用しない**。v5改善を依頼された場合は `docs/V5_SHOT_FIRST_FAST_LOOP.md` に従い、いきなり5〜6.5分をフルレンダリングせず、まず opening rough cut を最小単位で検証する。openingの継続承認はstable昇格を意味しない。
 
 旧v2.1 episodeおよびversion field導入前のmanifestは再現性のため互換維持し、書き換えない。旧manifestが存在することを理由に新規制作を旧 `phrase / retrieval` 構造へ戻さない。
 
 視聴体験の優先順位は次の通り。
 
 1. `docs/PRODUCTION_VERSIONS.md`
-2. `docs/NEWS_FIRST_FORMAT.md`
-3. `docs/V3_ENGLISH_NEWS_EXPLAINER.md`（`news-first-v3.0` のvisual baseline）
-4. `docs/VIDEO_PRODUCTION_PLAYBOOK.md`
-5. `docs/RETENTION_AND_LEARNING.md`
-6. `docs/EDITORIAL_SYSTEM.md`
-7. `docs/V2_1_CHANGES.md`（legacy設計・互換性の参照）
+2. `docs/V5_SHOT_FIRST_FAST_LOOP.md`（candidate experiment）
+3. `docs/NEWS_FIRST_FORMAT.md`
+4. `docs/V3_ENGLISH_NEWS_EXPLAINER.md`（stable comparison baseline）
+5. `docs/VIDEO_PRODUCTION_PLAYBOOK.md`
+6. `docs/RETENTION_AND_LEARNING.md`
+7. `docs/EDITORIAL_SYSTEM.md`
+8. `docs/V2_1_CHANGES.md`（legacy設計・互換性の参照）
 
 エンジニアリング依頼ではdocs/schema/code/workflowを一緒に変更できる。通常の定期コンテンツ生成ではepisodes/とruns/だけを更新し、React/CSS/schema/workflowを変更しない。
 
@@ -45,6 +48,24 @@
 11. `runs/YYYY-MM-DD/<runId>/READY.json` を最後のGit変更として新規作成する。READYは書き換えない。
 12. READY pushで540p review previewを生成する。通常の日次処理はreview待ちで停止する。
 
+## V5 experimental PDCA
+
+V5の改善では、毎回フル動画を焼いてから判断しない。
+
+1. 仮説を1〜2個に絞る。
+2. same-content candidateを作る。
+3. measured TTS timingを再利用する。
+4. sceneを複数shotへ分解したshot planを作る。
+5. opening shot用の実素材を取得する。
+6. `check_v5_fast_loop.mjs` でstatic-slide regressionを落とす。
+7. **opening約36秒だけ**をrenderする。
+8. rough cut + contact sheetを `/review-v5/` で見る。
+9. 見た目がダメならshot sequence / evidence / mediaを直して繰り返す。
+10. openingが継続価値ありと明示判断された後だけ、中盤・終盤の代表区間へ拡張する。
+11. 代表区間が通った後だけフル5〜6.5分を作る。
+
+色・角丸・余白だけを変えるPDCAを優先しない。まず編集構造を直す。
+
 ## News-first structure
 
 - hookは最初。挨拶・タイトル読み上げ・`Today we will...`禁止。
@@ -70,22 +91,23 @@ story初出時は字幕内annotation程度に留める。学習カードへ切�
 
 English Replayは各表現について `listen once -> notice the chunk -> shadow once` を基本にする。同じ英文3連続、長いカウントダウン、選択式クイズを標準にしない。
 
-## Captions / visuals
+## Visual / shot rules
 
-`experienceVersion: "news-first-v3.0"` はproduction `EpisodeVideo` 内でaccepted dark v3 visual baselineへルーティングされる。同じversion IDの裏側を後から別デザインへ差し替えない。
+v3のscene rendererはstable comparison用に凍結する。新しいcandidateでv3/v4のような「1 scene = 1 reusable screen」を繰り返さない。
 
-- dark cinematic canvasを基本とする。
-- factual B-roll / editorial imageは可能な限りfull-bleedで使う。
-- 通常字幕はcurrent chunk中心の**常設compact lower-third**。字幕内容が変わっても背景box全体をmount/unmountしない。
-- current Englishを主、日本語を小さな補助として同時表示。
-- previous/current/next全文を常時並べない。
-- 1瞬間1主役。図/画像/B-roll/字幕/annotationを同じ強度で競合させない。
-- B-rollは実際に素材が認識できるコントラストを残す。白幕でほぼ消さない。
-- 3〜8秒程度を目安に、発話内容に同期したvisual changeを作る。ランダムな装飾変更は禁止。
-- metricはcount-up/bar、chain/compare/timelineは現在説明箇所を段階revealする。
-- scene境界で反復的なfade-to-blackや黒フラッシュを入れない。
+V5ではshotが視覚単位。
+
+- 1 scene内に複数shotを置ける。
+- shotごとに素材・crop・focus・camera motion・source treatment・caption modeを変えられる。
+- B-roll/画像は背景装飾ではなく、意味を運ぶ素材として使う。
+- evidence / metric / mechanism / contrastなど、情報の役割が変わるときにshotも変える。
+- 実素材があるのに大きなUIカードで覆い隠さない。
+- source/evidenceは短時間でも画面の主役にできる。
+- English captionが主。日本語はsemantic anchorとして選択的に出す。
+- 1瞬間1主役。映像・図・字幕・annotationを同じ強度で競合させない。
+- shot durationの機械的高速化は目的ではないが、openingで長い固定画面を放置しない。
 - factual footageとeditorial/AI imageを事実画像として混同させない。
-- accepted visual referenceは `docs/V3_ENGLISH_NEWS_EXPLAINER.md` と `TechExplainerV3`。
+- scene境界の反復fade-to-black/black flashは禁止。
 
 ## Audio
 
@@ -103,6 +125,7 @@ English Replayは各表現について `listen once -> notice the chunk -> shado
 - `experienceVersion` はmanifest hashに含まれる。versionを変えた場合は別revision/new runとしてreviewからやり直す。
 - manifestを修正した場合は旧READY/APPROVEDを再利用せず、新revision/new runでreviewからやり直す。
 - 現在のproduction workflowでは **APPROVED push = 1080p final render + loudness normalization + english-youtubeに設定済みYouTube credentialで公開**。二重uploadを避けるため、不確実な結果を新規uploadで再試行しない。
+- V5 fast-loop reviewは公開承認ではない。opening rough cutの継続承認も `APPROVED.json` を意味しない。
 
 ## Evidence / safety / reproducibility
 
