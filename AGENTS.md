@@ -2,18 +2,21 @@
 
 ## 現在の制作標準
 
-今後の新規productionは **news-first**。最初に `docs/NEWS_FIRST_FORMAT.md` と `docs/V3_ENGLISH_NEWS_EXPLAINER.md` を読み、`formatProfile: "news-first"` を必ず付ける。
+今後の新規productionは **news-first**。最初に `docs/NEWS_FIRST_FORMAT.md`、`docs/PRODUCTION_VERSIONS.md`、`docs/V3_ENGLISH_NEWS_EXPLAINER.md` を読む。新規production manifestには `formatProfile: "news-first"` と、現在のstable版である `experienceVersion: "news-first-v3.0"` を必ず明示する。
 
-旧v2.1 episodeは再現性のため互換維持する。旧manifestが存在することを理由に新規制作を旧 `phrase / retrieval` 構造へ戻さない。
+`experienceVersion` は「最新版」ではなく、レビュー済み制作体験へのpinである。既存versionの見た目・字幕・学習UX・音・尺を後から書き換えない。改善案は必ず新しいversion IDを作り、candidateとしてreviewし、ユーザーが明示承認した場合だけstable defaultを変更する。単に新しいという理由で昇格させない。
+
+旧v2.1 episodeおよびversion field導入前のmanifestは再現性のため互換維持し、書き換えない。旧manifestが存在することを理由に新規制作を旧 `phrase / retrieval` 構造へ戻さない。
 
 視聴体験の優先順位は次の通り。
 
-1. `docs/NEWS_FIRST_FORMAT.md`
-2. `docs/V3_ENGLISH_NEWS_EXPLAINER.md`（現在のvisual baseline）
-3. `docs/VIDEO_PRODUCTION_PLAYBOOK.md`
-4. `docs/RETENTION_AND_LEARNING.md`
-5. `docs/EDITORIAL_SYSTEM.md`
-6. `docs/V2_1_CHANGES.md`（legacy設計・互換性の参照）
+1. `docs/PRODUCTION_VERSIONS.md`
+2. `docs/NEWS_FIRST_FORMAT.md`
+3. `docs/V3_ENGLISH_NEWS_EXPLAINER.md`（`news-first-v3.0` のvisual baseline）
+4. `docs/VIDEO_PRODUCTION_PLAYBOOK.md`
+5. `docs/RETENTION_AND_LEARNING.md`
+6. `docs/EDITORIAL_SYSTEM.md`
+7. `docs/V2_1_CHANGES.md`（legacy設計・互換性の参照）
 
 エンジニアリング依頼ではdocs/schema/code/workflowを一緒に変更できる。通常の定期コンテンツ生成ではepisodes/とruns/だけを更新し、React/CSS/schema/workflowを変更しない。
 
@@ -67,7 +70,7 @@ English Replayは各表現について `listen once -> notice the chunk -> shado
 
 ## Captions / visuals
 
-`formatProfile: "news-first"` は現在、production `EpisodeVideo` 内でdark v3 visual baselineへ自動ルーティングされる。通常の制作で別のlight/white-card rendererを作らない。
+`experienceVersion: "news-first-v3.0"` はproduction `EpisodeVideo` 内でaccepted dark v3 visual baselineへルーティングされる。同じversion IDの裏側を後から別デザインへ差し替えない。
 
 - dark cinematic canvasを基本とする。
 - factual B-roll / editorial imageは可能な限りfull-bleedで使う。
@@ -80,7 +83,7 @@ English Replayは各表現について `listen once -> notice the chunk -> shado
 - metricはcount-up/bar、chain/compare/timelineは現在説明箇所を段階revealする。
 - scene境界で反復的なfade-to-blackや黒フラッシュを入れない。
 - factual footageとeditorial/AI imageを事実画像として混同させない。
-- accepted visual referenceは `docs/V3_ENGLISH_NEWS_EXPLAINER.md` と `TechExplainerV3`。具体コードは今後改善可能だが、方向転換には明示的な承認が必要。
+- accepted visual referenceは `docs/V3_ENGLISH_NEWS_EXPLAINER.md` と `TechExplainerV3`。
 
 ## Audio
 
@@ -95,6 +98,7 @@ English Replayは各表現について `listen once -> notice the chunk -> shado
 - 通常の日次エージェントは `APPROVED.json` を作らない。
 - ユーザーがreviewを確認し、明示的に公開承認した場合だけ同じrun directoryへ `APPROVED.json` を作る。
 - `runId / episodeId / revision / manifestHash` をREADYと一致させる。
+- `experienceVersion` はmanifest hashに含まれる。versionを変えた場合は別revision/new runとしてreviewからやり直す。
 - manifestを修正した場合は旧READY/APPROVEDを再利用せず、新revision/new runでreviewからやり直す。
 - 現在のproduction workflowでは **APPROVED push = 1080p final render + loudness normalization + english-youtubeに設定済みYouTube credentialで公開**。二重uploadを避けるため、不確実な結果を新規uploadで再試行しない。
 
@@ -106,9 +110,9 @@ English Replayは各表現について `listen once -> notice the chunk -> shado
 - `newsPeg.eventClaimId` は実在するevidenced claimを参照する。
 - productionは3 sources、2 independent groups、1 primary source以上を維持する。
 - 動画・音声・secret・記事全文をGitへ入れない。
-- 字幕・音声・preview・finalは同一revision/hashから作る。
+- 字幕・音声・preview・finalは同一revision/hash/experienceVersionから作る。
 - fixtureは公開不可。
 
 ## 実装変更時
 
-既存production episodeの再現性とCI互換を確認する。news-first導入のためにlegacy manifestを破壊しない。typecheck/test/fixture validation/全production editorial review/buildが通ることを確認してからmainへ反映する。
+既存production episodeの再現性とCI互換を確認する。既存 `experienceVersion` の出力を変える可能性がある変更は、そのversionを直接改変せず新versionとして実装する。news-first導入のためにlegacy manifestを破壊しない。typecheck/test/fixture validation/全production editorial review/buildが通ることを確認してからmainへ反映する。
