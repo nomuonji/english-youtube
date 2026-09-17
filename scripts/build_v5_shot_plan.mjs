@@ -92,18 +92,16 @@ const cutPointsFor=rs=>{
   return points;
 };
 
+// MeasuredTiming stores cue frames as absolute episode frames. Shot planning is
+// easier and safer in scene-local coordinates, so normalize exactly once here.
 const rawShots=[];
-const sortedResolved=[...resolved.scenes].sort((a,b)=>a.startFrame-b.startFrame);
-let overlapClips=0;
-for(let sceneIndex=0;sceneIndex<sortedResolved.length;sceneIndex++){
-  const rs=sortedResolved[sceneIndex];
+for(const rs of resolved.scenes){
   const scene=byScene.get(rs.sceneId);if(!scene)continue;
-  const nextStart=sortedResolved[sceneIndex+1]?.startFrame;
-  const naturalEnd=rs.startFrame+rs.durationFrames;
-  const visualEnd=nextStart==null?naturalEnd:Math.min(naturalEnd,nextStart);
-  const effectiveDuration=Math.max(1,visualEnd-rs.startFrame);
-  if(effectiveDuration<rs.durationFrames)overlapClips++;
-  const visualRs={...rs,durationFrames:effectiveDuration,cues:rs.cues.filter(c=>c.startFrame<effectiveDuration).map(c=>({...c,endFrame:Math.min(c.endFrame,effectiveDuration)}))};
+  const localCues=rs.cues
+    .map(c=>({...c,startFrame:Math.max(0,c.startFrame-rs.startFrame),endFrame:Math.max(1,c.endFrame-rs.startFrame)}))
+    .filter(c=>c.startFrame<rs.durationFrames)
+    .map(c=>({...c,endFrame:Math.min(c.endFrame,rs.durationFrames)}));
+  const visualRs={...rs,cues:localCues};
   const points=cutPointsFor(visualRs);
   const segments=[];
   for(let i=0;i<points.length-1;i++){
@@ -112,7 +110,7 @@ for(let sceneIndex=0;sceneIndex<sortedResolved.length;sceneIndex++){
   }
   for(let i=0;i<segments.length;i++){
     const seg=segments[i];
-    const cues=visualRs.cues.filter(c=>c.endFrame>seg.start&&c.startFrame<seg.end);
+    const cues=localCues.filter(c=>c.endFrame>seg.start&&c.startFrame<seg.end);
     const utteranceIds=uniq(cues.map(c=>c.utteranceId));
     const fallbackIds=scene.utteranceIds.slice(Math.min(i,Math.max(0,scene.utteranceIds.length-1)),Math.min(i+1,scene.utteranceIds.length));
     const ids=utteranceIds.length?utteranceIds:fallbackIds;
@@ -151,9 +149,8 @@ for(let sceneIndex=0;sceneIndex<sortedResolved.length;sceneIndex++){
   }
 }
 
-// Scene timing can contain narration pauses. The video layer must still cover
-// every frame: tiny gaps extend the previous shot; larger gaps become explicit
-// full-bleed bridge shots instead of falling back to a blank canvas.
+// Compiler scenes are contiguous, but keep a final defensive stitch so a future
+// timing implementation cannot silently create black gaps in a review render.
 rawShots.sort((a,b)=>a.startFrame-b.startFrame||a.id.localeCompare(b.id));
 const shots=[];
 let bridgeCount=0;
@@ -168,10 +165,7 @@ for(const shot of rawShots){
   const previous=shots.at(-1);
   const previousEnd=previous.startFrame+previous.durationFrames;
   let gap=shot.startFrame-previousEnd;
-  if(gap>0&&gap<24){
-    previous.durationFrames+=gap;
-    gap=0;
-  }
+  if(gap>0&&gap<24){previous.durationFrames+=gap;gap=0;}
   let cursor=previous.startFrame+previous.durationFrames;
   while(gap>0){
     const duration=Math.min(135,gap);
@@ -195,4 +189,4 @@ fs.mkdirSync(path.dirname(planArg),{recursive:true});
 fs.writeFileSync(planArg,JSON.stringify(plan,null,2)+"\n");
 fs.writeFileSync(outPropsArg,JSON.stringify({...props,shotPlan:plan,shotAssets:[]},null,2)+"\n");
 const first36=shots.filter(s=>s.startFrame<36*resolved.fps);
-console.log(JSON.stringify({ok:true,shots:shots.length,overlapClips,bridgeCount,first36Shots:first36.length,first36Kinds:first36.map(s=>s.kind),first36Durations:first36.map(s=>(s.durationFrames/resolved.fps).toFixed(1)),plan:planArg,props:outPropsArg}));
+console.log(JSON.stringify({ok:true,shots:shots.length,bridgeCount,first36Shots:first36.length,first36Kinds:first36.map(s=>s.kind),first36Durations:first36.map(s=>(s.durationFrames/resolved.fps).toFixed(1)),plan:planArg,props:outPropsArg}));
