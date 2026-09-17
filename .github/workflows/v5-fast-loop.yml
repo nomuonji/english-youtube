@@ -115,8 +115,24 @@ jobs:
         run: npm run compile:tts -- public/generated/v5-candidate/candidate-v5.json public/generated/tts-timing.json public/generated/v5-base-render-props.json
       - name: Build shot-first edit plan
         run: node scripts/build_v5_shot_plan.mjs public/generated/v5-base-render-props.json public/generated/v5-shot-plan.json public/generated/v5-render-props.no-assets.json
+      - name: Restore reviewed V5 media cache
+        id: v5-media-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/v5-commons
+          key: v5-commons-v1-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            v5-commons-v1-${{ runner.os }}-
       - name: Fetch per-shot editorial images
+        env:
+          V5_COMMONS_CACHE_DIR: .cache/v5-commons
         run: node scripts/fetch_v5_shot_images.mjs public/generated/v5-shot-plan.json public/generated/v5-shot-images
+      - name: Save expanded V5 media cache
+        if: steps.v5-media-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/v5-commons
+          key: v5-commons-v1-${{ runner.os }}-${{ github.sha }}
       - name: Attach shot assets
         run: node scripts/attach_v5_shot_assets.mjs public/generated/v5-render-props.no-assets.json public/generated/v5-shot-images/manifest.json public/generated/v5-render-props.json
       - name: Fail fast on static-slide regressions
