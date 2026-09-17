@@ -32,6 +32,9 @@ for(const title of assetTitles)titleCounts.set(title,(titleCounts.get(title)??0)
 let consecutiveDuplicateAssets=0;
 for(let i=1;i<windowAssets.length;i++)if(windowAssets[i-1]?.title&&windowAssets[i-1].title===windowAssets[i]?.title)consecutiveDuplicateAssets++;
 const mostRepeatedAsset=Math.max(0,...titleCounts.values());
+const structureWindowFrames=Math.min(windowFrames,18*fps);
+const structureKinds=new Set(["mechanism","contrast","metric"]);
+const structureShots=clipped.filter(s=>s.start<structureWindowFrames&&structureKinds.has(s.kind));
 const denominator=Math.max(1,windowFrames);
 const report={
   ok:true,
@@ -51,6 +54,8 @@ const report={
   uniqueAssetRatio:windowAssets.length?uniqueAssetTitles.size/windowAssets.length:0,
   consecutiveDuplicateAssets,
   mostRepeatedAsset,
+  openingStructureShotCount:structureShots.length,
+  openingStructureKinds:[...new Set(structureShots.map(s=>s.kind))],
   kinds:[...new Set(clipped.map(s=>s.kind))],
 };
 const failures=[];
@@ -66,6 +71,7 @@ if(report.distinctSearchQueries<5)failures.push(`only ${report.distinctSearchQue
 if(report.visualAssetCount>=6&&report.uniqueAssetRatio<0.75)failures.push(`only ${(report.uniqueAssetRatio*100).toFixed(0)}% of opening media assets are unique`);
 if(report.consecutiveDuplicateAssets>0)failures.push(`${report.consecutiveDuplicateAssets} consecutive duplicate media asset pair(s)`);
 if(report.mostRepeatedAsset>2)failures.push(`one media asset is repeated ${report.mostRepeatedAsset} times in the opening`);
+if(report.openingStructureShotCount<2)failures.push(`opening needs at least 2 structural motion beats before 18s, found ${report.openingStructureShotCount}`);
 report.ok=failures.length===0;
 console.log(JSON.stringify({...report,failures},null,2));
 if(failures.length)process.exit(2);

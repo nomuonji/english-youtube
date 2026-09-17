@@ -79,7 +79,7 @@ const metricFor=(scene,text)=>{
   return undefined;
 };
 const kindFor=(scene,index,total)=>{
-  if(scene.role==="hook")return index===0?"cold-open":index===1?"question":"broll";
+  if(scene.role==="hook")return index===0?"cold-open":index===1?"question":index===2?"mechanism":index===3?"contrast":"broll";
   if(scene.role==="phrase")return "phrase";
   if(scene.role==="recap")return "recap";
   const t=scene.visual.type;
