@@ -2,6 +2,7 @@ export type Category = "technology" | "work_money" | "science_society";
 export type SceneRole = "hook" | "story" | "phrase" | "retrieval" | "recap";
 export type StoryBeat = "setup" | "mechanism" | "complication" | "answer";
 export type FormatProfile = "news-first";
+export type ExperienceVersion = "news-first-v3.0";
 
 export type Source = {id:string; title:string; publisher:string; url:string; publishedDate:string|null; retrievedAt:string; independenceGroup:string; isPrimary:boolean};
 export type Claim = {id:string; text:string; certainty:"confirmed"|"reported"|"estimate"|"forecast"|"disputed"|"inference"; asOf:string; evidence:Array<{sourceId:string; locator:string; supportNote:string}>};
@@ -18,7 +19,7 @@ export type RecapVisual = {type:"recap"; learningPointIds:[string,string,string]
 export type Visual = CardVisual|MetricVisual|ChainVisual|CompareVisual|TimelineVisual|PhraseVisual|RetrievalVisual|RecapVisual;
 export type Scene = {id:string; role:SceneRole; beat:StoryBeat|null; utteranceIds:string[]; visual:Visual; glossLearningPointId:string|null};
 export type EpisodeManifest = {
-  schemaVersion:"2.1.0"; formatProfile?:FormatProfile; kind:"fixture"|"production"; episodeId:string; revision:number; generatedAt:string; asOf:string; category:Category;
+  schemaVersion:"2.1.0"; formatProfile?:FormatProfile; experienceVersion?:ExperienceVersion; kind:"fixture"|"production"; episodeId:string; revision:number; generatedAt:string; asOf:string; category:Category;
   newsPeg:{eventClaimId:string; eventDate:string|null; whyNow:string}; centralQuestion:string; answer:string;
   sources:Source[]; claims:Claim[]; utterances:Utterance[]; learningPoints:[LearningPoint,LearningPoint,LearningPoint]; scenes:Scene[];
   packaging:{candidates:Array<{titleJa:string;thumbnailJa:string}>; selectedIndex:0|1|2};
