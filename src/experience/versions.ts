@@ -8,14 +8,14 @@ export const EXPERIENCE_VERSIONS={
     formatProfile:"news-first",
     renderer:"NewsFirstSceneRenderer",
     durationSeconds:[300,390] as const,
-    description:"Accepted long-form production baseline derived from the approved v3 visual pilot.",
+    description:"Long-form comparison baseline. Better than the rejected v4 candidate, but not considered a satisfactory final format.",
   },
   "news-first-v4.0-candidate":{
-    status:"candidate",
+    status:"retired",
     formatProfile:"news-first",
     renderer:"DocumentarySceneRenderer",
     durationSeconds:[300,390] as const,
-    description:"Documentary-first candidate with evidence-led visuals, adaptive Japanese support, and a compact end replay.",
+    description:"Rejected after direct A/B review: the documentary-first candidate remained too static, template-like, and visually weak. Preserved only for comparison/history.",
   },
 } as const satisfies Record<ExperienceVersion,{
   status:"stable"|"candidate"|"retired";
