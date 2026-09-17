@@ -42,7 +42,7 @@ const EvidenceChrome:React.FC<{scene:Scene;manifest:EpisodeManifest;progress:num
   </>;
 };
 
-const AdaptiveCaption:React.FC<{manifest:EpisodeManifest;scene:Scene;resolved:ResolvedScene;cue?:Cue;point?:LearningPoint}>=({manifest,scene,resolved,cue,point})=>{
+const AdaptiveCaption:React.FC<{manifest:EpisodeManifest;scene:Scene;resolved:ResolvedScene;cue?:Cue;point?:LearningPoint}>=({scene,resolved,cue,point})=>{
   if(!cue)return null;
   const index=cueIndex(cue,resolved);
   const showJa=scene.role==="hook"||scene.role==="phrase"||scene.role==="recap"||Boolean(point)||(index===0&&(scene.beat==="complication"||scene.beat==="answer"));
@@ -100,13 +100,15 @@ const TimelineVisual:React.FC<{scene:Scene;resolved:ResolvedScene;globalFrame:nu
 
 const ReplayVisual:React.FC<{manifest:EpisodeManifest;scene:Scene}>=({manifest,scene})=>{
   if(scene.visual.type!=="phrase")return null;
-  const point=manifest.learningPoints.find(p=>p.id===scene.visual.learningPointId);const source=point?manifest.utterances.find(u=>u.id===point.sourceUtteranceId):undefined;
+  const v=scene.visual;
+  const point=manifest.learningPoints.find(p=>p.id===v.learningPointId);const source=point?manifest.utterances.find(u=>u.id===point.sourceUtteranceId):undefined;
   return <div style={{position:"absolute",left:110,right:110,top:175,bottom:235,display:"flex",alignItems:"center"}}><div style={{maxWidth:1450}}><div style={{fontFamily:enFont,fontSize:18,fontWeight:900,letterSpacing:".18em",color:C.cyan}}>YOU JUST HEARD</div><div style={{fontFamily:enFont,fontSize:78,fontWeight:950,lineHeight:1.02,letterSpacing:"-.045em",color:C.ink,marginTop:18}}>{point?.phrase}</div><div style={{fontFamily:jpFont,fontSize:24,fontWeight:700,color:"rgba(247,249,251,.65)",marginTop:13}}>{point?.meaningJa}</div>{source?<div style={{fontFamily:enFont,fontSize:28,lineHeight:1.35,fontWeight:650,color:"rgba(247,249,251,.78)",marginTop:30,borderLeft:`3px solid ${C.cyan}`,paddingLeft:20,maxWidth:1280}}>{source.text}</div>:null}</div></div>;
 };
 
 const RecapVisual:React.FC<{manifest:EpisodeManifest;scene:Scene}>=({manifest,scene})=>{
   if(scene.visual.type!=="recap")return null;
-  const points=scene.visual.learningPointIds.map(id=>manifest.learningPoints.find(p=>p.id===id)).filter((p):p is LearningPoint=>Boolean(p));
+  const v=scene.visual;
+  const points=v.learningPointIds.map(id=>manifest.learningPoints.find(p=>p.id===id)).filter((p):p is LearningPoint=>Boolean(p));
   return <div style={{position:"absolute",left:100,right:100,top:155,bottom:235,display:"grid",gridTemplateColumns:"1.35fr .65fr",gap:52,alignItems:"center"}}><div><div style={{fontFamily:enFont,fontSize:18,fontWeight:900,letterSpacing:".17em",color:C.cyan}}>THE ANSWER</div><div style={{fontFamily:enFont,fontSize:56,fontWeight:940,lineHeight:1.08,letterSpacing:"-.032em",color:C.ink,marginTop:18}}>{manifest.answer}</div></div><div style={{display:"grid",gap:14}}>{points.map(point=><div key={point.id} style={{borderTop:`1px solid ${C.line}`,paddingTop:13}}><div style={{fontFamily:enFont,fontSize:23,fontWeight:900,color:C.cyan}}>{point.phrase}</div><div style={{fontFamily:jpFont,fontSize:16,fontWeight:650,color:"rgba(247,249,251,.58)",marginTop:3}}>{point.meaningJa}</div></div>)}</div></div>;
 };
 
