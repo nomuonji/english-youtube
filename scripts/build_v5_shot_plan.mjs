@@ -26,19 +26,46 @@ const sourceFor=claimIds=>{
   }
   return undefined;
 };
-const queryFor=(text,scene,index,kind)=>{
-  if(scene.role==="hook")return index===0?"semiconductor chip":index===1?"data center server room":index%2===0?"electricity substation":"high voltage power lines";
-  if(scene.id.includes("setup-news"))return index===0?"data center server room":index%3===1?"electricity substation":"solar farm electricity";
-  if(scene.id.includes("setup-growth"))return index%2===0?"data center server room":"high voltage power lines";
-  const t=String(text).toLowerCase();
-  if(/chip|gpu|semiconductor/.test(t))return "semiconductor chip";
-  if(/substation/.test(t))return "electricity substation";
-  if(/transmission|grid|power line/.test(t))return "high voltage power lines";
-  if(/generation|power plant|solar|renewable/.test(t))return "solar farm electricity";
-  if(/data cent|server|cloud|computing/.test(t))return "data center server room";
-  if(/ipo|share|invest|capital|financ/.test(t))return kind==="evidence"?"data center server room":"electricity substation";
-  if(/construction|permit|build/.test(t))return "electricity substation";
-  return index%2===0?"high voltage power lines":"data center server room";
+
+// Search intent is editorial, not decorative. Prefer a different concrete
+// subject for each beat so a 30-second opening cannot collapse into the same
+// server-room/substation still repeated under different captions.
+const queryFor=(text,scene,index,kind,source)=>{
+  if(scene.role==="hook"){
+    return [
+      "semiconductor wafer close up",
+      "data center server racks aisle",
+      "electrical substation aerial",
+      "high voltage transmission tower landscape",
+    ][index%4];
+  }
+  if(scene.id.includes("setup-news")){
+    return [
+      "stock exchange trading floor",
+      "electrical substation control equipment",
+      "solar photovoltaic farm aerial",
+      "high voltage electricity transmission towers",
+      "data center server racks aisle",
+    ][index%5];
+  }
+  if(scene.id.includes("setup-growth")){
+    return [
+      "data center server racks aisle",
+      "high voltage transmission tower landscape",
+      "electricity grid control room",
+      "power plant turbine generator hall",
+    ][index%4];
+  }
+  const t=`${source?.title??""} ${text}`.toLowerCase();
+  if(kind==="evidence"&&/ipo|share|invest|capital|financ|market/.test(t))return "stock exchange trading floor";
+  if(/chip|gpu|semiconductor/.test(t))return "semiconductor wafer close up";
+  if(/ipo|share|invest|capital|financ|market/.test(t))return "financial market trading floor";
+  if(/substation/.test(t))return "electrical substation control equipment";
+  if(/transmission|grid|power line/.test(t))return index%2===0?"high voltage electricity transmission towers":"electricity grid control room";
+  if(/generation|power plant|solar|renewable/.test(t))return index%2===0?"solar photovoltaic farm aerial":"power plant turbine generator hall";
+  if(/data cent|server|cloud|computing/.test(t))return index%2===0?"data center server racks aisle":"data center cooling infrastructure";
+  if(/construction|permit|build/.test(t))return "electric power infrastructure construction";
+  return index%2===0?"high voltage transmission tower landscape":"data center server racks aisle";
 };
 const cameraFor=id=>{
   const h=hash(id);const dir=h%2===0?1:-1;const vertical=(h%5)-2;
@@ -140,7 +167,7 @@ for(const rs of resolved.scenes){
       sourceLabel,
       sourceTitle,
       metric,
-      searchQuery:queryFor(`${headline} ${text}`,scene,i,kind),
+      searchQuery:queryFor(`${headline} ${text}`,scene,i,kind,source),
       captionMode:kind==="cold-open"?"none":bilingual?"en-ja":"en",
       japaneseAnchor:bilingual?ja:undefined,
       focus,
@@ -189,4 +216,4 @@ fs.mkdirSync(path.dirname(planArg),{recursive:true});
 fs.writeFileSync(planArg,JSON.stringify(plan,null,2)+"\n");
 fs.writeFileSync(outPropsArg,JSON.stringify({...props,shotPlan:plan,shotAssets:[]},null,2)+"\n");
 const first36=shots.filter(s=>s.startFrame<36*resolved.fps);
-console.log(JSON.stringify({ok:true,shots:shots.length,bridgeCount,first36Shots:first36.length,first36Kinds:first36.map(s=>s.kind),first36Durations:first36.map(s=>(s.durationFrames/resolved.fps).toFixed(1)),plan:planArg,props:outPropsArg}));
+console.log(JSON.stringify({ok:true,shots:shots.length,bridgeCount,first36Shots:first36.length,first36Kinds:first36.map(s=>s.kind),first36Durations:first36.map(s=>(s.durationFrames/resolved.fps).toFixed(1)),first36Queries:first36.map(s=>s.searchQuery),plan:planArg,props:outPropsArg}));
