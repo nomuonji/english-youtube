@@ -7,7 +7,7 @@
   "properties": {
     "schemaVersion": {"const": "2.1.0"},
     "formatProfile": {"enum": ["news-first"]},
-    "experienceVersion": {"enum": ["news-first-v3.0"]},
+    "experienceVersion": {"enum": ["news-first-v3.0", "news-first-v4.0-candidate"]},
     "kind": {"enum": ["fixture", "production"]},
     "episodeId": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9]+(?:-[a-z0-9]+)*$", "maxLength": 100},
     "revision": {"type": "integer", "minimum": 1},

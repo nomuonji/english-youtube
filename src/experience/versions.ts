@@ -10,6 +10,13 @@ export const EXPERIENCE_VERSIONS={
     durationSeconds:[300,390] as const,
     description:"Accepted long-form production baseline derived from the approved v3 visual pilot.",
   },
+  "news-first-v4.0-candidate":{
+    status:"candidate",
+    formatProfile:"news-first",
+    renderer:"DocumentarySceneRenderer",
+    durationSeconds:[300,390] as const,
+    description:"Documentary-first candidate with evidence-led visuals, adaptive Japanese support, and a compact end replay.",
+  },
 } as const satisfies Record<ExperienceVersion,{
   status:"stable"|"candidate"|"retired";
   formatProfile:"news-first";
