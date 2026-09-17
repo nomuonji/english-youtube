@@ -39,6 +39,7 @@ const SourceBug:React.FC<{label?:string}>=({label})=>label?<div style={{position
 const Main:React.FC<{manifest:EpisodeManifest;scene?:Scene;shot:ShotPlanShot;hasMedia:boolean}>=({manifest,scene,shot,hasMedia})=>{
   const frame=useCurrentFrame();
   const enter=clamp(interpolate(frame,[0,14],[0,1],{extrapolateLeft:"clamp",extrapolateRight:"clamp"}));
+  const p=clamp(frame/Math.max(1,shot.durationFrames-1));
   const baseShadow="0 6px 34px rgba(0,0,0,.88)";
   const chapter=chapterFor(scene);
 
@@ -68,23 +69,42 @@ const Main:React.FC<{manifest:EpisodeManifest;scene?:Scene;shot:ShotPlanShot;has
     </div>
   </>;
 
-  if(shot.kind==="evidence")return <>
-    <AbsoluteFill style={{background:"linear-gradient(90deg,rgba(2,7,11,.95) 0%,rgba(2,7,11,.66) 52%,rgba(2,7,11,.12) 100%)"}}/>
-    <div style={{position:"absolute",left:90,top:154,width:1180,zIndex:20}}>
-      <div style={{fontFamily:enFont,fontSize:17,fontWeight:950,letterSpacing:".16em",color:C.cyan}}>SOURCE EVIDENCE</div>
-      <div style={{fontFamily:enFont,fontSize:shot.sourceTitle?48:58,fontWeight:930,lineHeight:1.08,letterSpacing:"-.03em",color:C.ink,marginTop:20,textShadow:baseShadow}}>{shot.sourceTitle??shot.headline}</div>
-      {shot.sourceTitle?<div style={{fontFamily:enFont,fontSize:27,fontWeight:720,lineHeight:1.25,color:"rgba(247,250,252,.76)",marginTop:22,maxWidth:1040,textShadow:"0 3px 18px rgba(0,0,0,.9)"}}>{shot.headline}</div>:null}
-      <div style={{width:160,height:5,background:C.cyan,marginTop:28}}/>
-    </div>
-  </>;
+  if(shot.kind==="evidence"){
+    const money=shot.sourceTitle?.match(/\$([\d.]+)\s*(million|billion)/i);
+    const amount=money?`$${money[1]}${money[2].toLowerCase().startsWith("b")?"B":"M"}`:undefined;
+    return <>
+      <AbsoluteFill style={{background:"linear-gradient(90deg,rgba(2,7,11,.92) 0%,rgba(2,7,11,.52) 38%,rgba(2,7,11,.08) 78%)"}}/>
+      <div style={{position:"absolute",left:84,top:112,width:760,zIndex:20,opacity:enter,transform:`translateX(${(1-enter)*-18}px)`}}>
+        <div style={{display:"inline-flex",alignItems:"center",gap:14,padding:"10px 14px",border:"1px solid rgba(91,225,255,.34)",background:"rgba(2,7,11,.74)",backdropFilter:"blur(8px)"}}>
+          <span style={{width:8,height:8,borderRadius:999,background:C.cyan,boxShadow:"0 0 20px rgba(91,225,255,.7)"}}/>
+          <span style={{fontFamily:enFont,fontSize:14,fontWeight:950,letterSpacing:".14em",color:C.ink}}>{(shot.sourceLabel??"SOURCE EVIDENCE").toUpperCase()}</span>
+        </div>
+        {amount?<div style={{fontFamily:enFont,fontSize:96,fontWeight:980,lineHeight:.9,letterSpacing:"-.06em",color:C.cyan,marginTop:26,textShadow:"0 0 45px rgba(91,225,255,.14)"}}>{amount}</div>:null}
+        <div style={{fontFamily:enFont,fontSize:amount?31:38,fontWeight:900,lineHeight:1.08,letterSpacing:"-.025em",color:C.ink,marginTop:amount?18:26,textShadow:baseShadow,maxWidth:720}}>{shot.sourceTitle??shot.headline}</div>
+        {shot.sourceTitle?<div style={{fontFamily:enFont,fontSize:23,fontWeight:720,lineHeight:1.28,color:"rgba(247,250,252,.72)",marginTop:16,maxWidth:690,textShadow:"0 3px 18px rgba(0,0,0,.9)"}}>{shot.headline}</div>:null}
+      </div>
+      <div style={{position:"absolute",left:84,top:92,width:interpolate(p,[0,1],[0,310]),height:3,zIndex:21,background:C.cyan,boxShadow:"0 0 22px rgba(91,225,255,.36)"}}/>
+    </>;
+  }
 
   if(shot.kind==="mechanism"){
-    const nodes=scene?.visual.type==="chain"?scene.visual.nodes.map(n=>n.label).slice(0,4):["COMPUTE","COOLING","GRID","POWER"];
+    const nodes=scene?.visual.type==="chain"?scene.visual.nodes.map(n=>n.label).slice(0,4):["AI COMPUTE","GRID ACCESS","POWER"];
     return <>
-      <AbsoluteFill style={{background:"linear-gradient(180deg,rgba(2,7,11,.45),rgba(2,7,11,.92))"}}/>
-      <div style={{position:"absolute",left:86,right:86,top:178,zIndex:20}}>
+      <AbsoluteFill style={{background:"linear-gradient(180deg,rgba(2,7,11,.18) 0%,rgba(2,7,11,.42) 54%,rgba(2,7,11,.82) 100%)"}}/>
+      <div style={{position:"absolute",left:90,right:90,top:154,zIndex:20}}>
         <div style={{fontFamily:enFont,fontSize:17,fontWeight:950,letterSpacing:".16em",color:C.cyan}}>{chapter}</div>
-        <div style={{display:"flex",alignItems:"center",gap:18,marginTop:50}}>{nodes.map((node,i)=><React.Fragment key={`${node}-${i}`}><div style={{fontFamily:enFont,fontSize:32,fontWeight:940,lineHeight:1.05,color:C.ink,textShadow:baseShadow,maxWidth:310}}>{node}</div>{i<nodes.length-1?<div style={{fontFamily:enFont,fontSize:46,fontWeight:500,color:C.cyan}}>→</div>:null}</React.Fragment>)}</div>
+        <div style={{position:"relative",display:"grid",gridTemplateColumns:`repeat(${nodes.length},1fr)`,gap:26,alignItems:"center",marginTop:68}}>
+          <div style={{position:"absolute",left:"3%",right:"3%",top:31,height:3,background:"rgba(247,250,252,.22)"}}/>
+          <div style={{position:"absolute",left:"3%",top:31,width:`${Math.max(0,(nodes.length>1?p:1))*94}%`,height:3,background:C.cyan,boxShadow:"0 0 24px rgba(91,225,255,.42)"}}/>
+          {nodes.map((node,i)=>{
+            const threshold=i/Math.max(1,nodes.length-1);
+            const visible=clamp((p-threshold+.18)*4);
+            return <div key={`${node}-${i}`} style={{position:"relative",opacity:visible,transform:`translateY(${(1-visible)*14}px)`}}>
+              <div style={{width:18,height:18,borderRadius:999,background:i===nodes.length-1?C.warm:C.cyan,border:"4px solid rgba(2,7,11,.72)",boxShadow:`0 0 24px ${i===nodes.length-1?"rgba(255,193,90,.42)":"rgba(91,225,255,.42)"}`}}/>
+              <div style={{fontFamily:enFont,fontSize:30,fontWeight:940,lineHeight:1.02,color:C.ink,textShadow:baseShadow,marginTop:24,maxWidth:300}}>{node}</div>
+            </div>;
+          })}
+        </div>
       </div>
     </>;
   }
@@ -92,11 +112,26 @@ const Main:React.FC<{manifest:EpisodeManifest;scene?:Scene;shot:ShotPlanShot;has
   if(shot.kind==="contrast"){
     const v=scene?.visual;
     const left=v?.type==="compare"?v.leftTitle:"COMPUTE";const right=v?.type==="compare"?v.rightTitle:"POWER";
+    const shift=clamp(interpolate(p,[0,.72],[0,1],{extrapolateRight:"clamp"}));
     return <>
-      <AbsoluteFill style={{background:"linear-gradient(90deg,rgba(6,35,48,.88) 0%,rgba(2,7,11,.55) 48%,rgba(57,37,11,.78) 100%)"}}/>
-      <div style={{position:"absolute",inset:"150px 90px 230px",zIndex:20,display:"grid",gridTemplateColumns:"1fr 1fr",gap:80,alignItems:"center"}}>
-        <div><div style={{fontFamily:enFont,fontSize:18,fontWeight:950,letterSpacing:".14em",color:C.cyan}}>OLD STORY</div><div style={{fontFamily:enFont,fontSize:74,fontWeight:960,color:C.ink,marginTop:18,textShadow:baseShadow}}>{left}</div></div>
-        <div><div style={{fontFamily:enFont,fontSize:18,fontWeight:950,letterSpacing:".14em",color:C.warm}}>NEW CONSTRAINT</div><div style={{fontFamily:enFont,fontSize:74,fontWeight:960,color:C.ink,marginTop:18,textShadow:baseShadow}}>{right}</div></div>
+      <AbsoluteFill style={{background:"linear-gradient(90deg,rgba(2,7,11,.82) 0%,rgba(2,7,11,.40) 50%,rgba(2,7,11,.78) 100%)"}}/>
+      <div style={{position:"absolute",left:100,right:100,top:174,zIndex:20}}>
+        <div style={{fontFamily:enFont,fontSize:17,fontWeight:950,letterSpacing:".16em",color:C.cyan}}>{chapter}</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 320px 1fr",alignItems:"center",gap:34,marginTop:66}}>
+          <div style={{opacity:1-shift*.35}}>
+            <div style={{fontFamily:enFont,fontSize:16,fontWeight:950,letterSpacing:".14em",color:"rgba(247,250,252,.62)"}}>OLD BOTTLENECK</div>
+            <div style={{fontFamily:enFont,fontSize:68,fontWeight:970,color:C.ink,marginTop:12,textShadow:baseShadow}}>{left}</div>
+          </div>
+          <div style={{position:"relative",height:88}}>
+            <div style={{position:"absolute",left:0,right:0,top:41,height:3,background:"rgba(247,250,252,.18)"}}/>
+            <div style={{position:"absolute",left:0,top:41,width:`${shift*100}%`,height:3,background:C.cyan,boxShadow:"0 0 24px rgba(91,225,255,.42)"}}/>
+            <div style={{position:"absolute",left:`calc(${shift*100}% - 9px)`,top:34,width:18,height:18,borderRadius:999,background:C.cyan,boxShadow:"0 0 28px rgba(91,225,255,.56)"}}/>
+          </div>
+          <div style={{opacity:.55+shift*.45,transform:`scale(${.96+shift*.04})`,transformOrigin:"left center"}}>
+            <div style={{fontFamily:enFont,fontSize:16,fontWeight:950,letterSpacing:".14em",color:C.warm}}>NEW CONSTRAINT</div>
+            <div style={{fontFamily:enFont,fontSize:68,fontWeight:970,color:C.ink,marginTop:12,textShadow:baseShadow}}>{right}</div>
+          </div>
+        </div>
       </div>
     </>;
   }
@@ -125,7 +160,7 @@ const Shot:React.FC<{manifest:EpisodeManifest;resolved:ResolvedEpisode;shot:Shot
   return <AbsoluteFill style={{background:C.bg}}>
     <Media shot={shot} asset={asset}/>
     <Main manifest={manifest} scene={scene} shot={shot} hasMedia={Boolean(asset)}/>
-    <SourceBug label={shot.sourceLabel}/>
+    <SourceBug label={shot.kind==="evidence"?undefined:shot.sourceLabel}/>
     <Caption cue={cue} shot={shot}/>
   </AbsoluteFill>;
 };
