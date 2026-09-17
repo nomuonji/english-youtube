@@ -6,13 +6,13 @@ Production behavior is versioned independently from `schemaVersion`.
 - `formatProfile` = editorial family such as `news-first`.
 - `experienceVersion` = immutable combination of visual language, caption behavior, learning UX, audio treatment, and duration policy used to render a production episode.
 
-## Stable default
+## Stable comparison baseline
 
 `news-first-v3.0`
 
-Status: **stable**
+Status: **stable baseline, but not considered a satisfactory final format**
 
-This is the accepted long-form baseline derived from the approved AI-power v3 visual pilot.
+This is the long-form baseline retained because direct review judged it better than the v4 candidate. It should be treated as a rollback/comparison reference rather than a quality target.
 
 Contract:
 
@@ -27,37 +27,23 @@ Contract:
 - 5–6.5 minute production target (300–390 seconds), approximately 650–850 spoken words;
 - voice-first BGM/SFX mix.
 
-## Active candidate
+## Retired candidate
 
 `news-first-v4.0-candidate`
 
-Status: **candidate — not the production default**
+Status: **retired — rejected after direct A/B review**
 
-Goal: move from “well-produced learning news” toward an English-language faceless mini-documentary while keeping comprehension support and an end-of-story English payoff.
+The candidate attempted to move from “learning news” toward a faceless mini-documentary with evidence-led visuals and adaptive Japanese support. In the rendered result it remained too static, too template-like, too dark, and visually underpowered. It did not feel like a compelling normal YouTube documentary, and v3.0 was judged the less-bad option.
 
-Candidate contract:
+The v4 renderer and review artifact remain available only as a comparison/history reference. Do not promote it and do not reuse it as the base for another incremental styling pass.
 
-- the same 5–6.5 minute long-form target as v3.0;
-- story/evidence first rather than visual-template first;
-- factual B-roll, editorial images, charts and source labels behave as evidence, not decoration;
-- normal caption state is English-first;
-- Japanese appears selectively at difficult moments, learning-point anchors, the hook, and important turns instead of being permanently duplicated under every line;
-- visual changes follow meaning changes rather than a fixed fast-cut timer;
-- final learning block is framed as `YOU JUST HEARD`, using phrases already encountered in the story;
-- v3.0 remains fully renderable and stays stable unless the user explicitly promotes v4 after review.
-
-The A/B workflow renders v3.0 and v4.0 from the same derived long-form manifest, shared narration timing, shared media assets, BGM and SFX so format differences can be judged without topic or source changes.
-
-See `docs/V4_DOCUMENTARY_CANDIDATE.md`.
+The next redesign should change the production model itself rather than tune the same scene-template system. In particular, it should move toward shot-list-first editorial construction: source screenshots, footage, charts, maps, crops, callouts, kinetic type, and bespoke per-beat composition, with templates limited mainly to branding/captions rather than determining the whole scene.
 
 ## Immutability rule
 
 Once an `experienceVersion` has produced a reviewed or published episode, its behavior is frozen.
 
-Do **not** silently improve the renderer, timings, caption style, learning UX, audio mix, or duration policy behind an existing version ID. A change that can materially affect viewer experience must create a new version, for example:
-
-- `news-first-v3.1` for a small candidate iteration;
-- `news-first-v4.0-candidate` for a substantial redesign.
+Do **not** silently improve the renderer, timings, caption style, learning UX, audio mix, or duration policy behind an existing version ID. A change that can materially affect viewer experience must create a new version.
 
 The old version remains renderable so a new candidate can be compared against it or rolled back.
 
@@ -93,6 +79,6 @@ When trying an improvement:
 3. Render stable and candidate against the same or comparable source material.
 4. Compare the actual review outputs, not just code or screenshots.
 5. If accepted, promote it to stable default.
-6. If rejected, leave stable unchanged and retire or keep the candidate for reference.
+6. If rejected, leave stable unchanged and retire the candidate with the review reason recorded.
 
 This allows visual and learning-design evolution without assuming that every change is an improvement.
