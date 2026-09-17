@@ -21,7 +21,7 @@ const Media:React.FC<{shot:ShotPlanShot;asset?:ShotAsset}>=({shot,asset})=>{
   const scale=interpolate(p,[0,1],[shot.camera.scaleFrom,shot.camera.scaleTo]);
   const x=interpolate(p,[0,1],[shot.camera.xFrom,shot.camera.xTo]);
   const y=interpolate(p,[0,1],[shot.camera.yFrom,shot.camera.yTo]);
-  const style:React.CSSProperties={width:"100%",height:"100%",objectFit:"cover",transform:`translate(${x}%,${y}%) scale(${scale})`,filter:"saturate(.93) contrast(1.06) brightness(.82)"};
+  const style:React.CSSProperties={width:"100%",height:"100%",objectFit:"cover",transform:`translate(${x}%,${y}%) scale(${scale})`,filter:"saturate(.93) contrast(1.06) brightness(.84)"};
   return <AbsoluteFill style={{overflow:"hidden",background:"radial-gradient(circle at 60% 30%,#16384A 0%,#07131B 48%,#02070B 100%)"}}>
     {asset?.kind==="video"?<Html5Video src={staticFile(asset.path)} muted loop style={style}/>:asset?<Img src={staticFile(asset.path)} style={style}/>:null}
   </AbsoluteFill>;
@@ -44,7 +44,7 @@ const Main:React.FC<{manifest:EpisodeManifest;scene?:Scene;shot:ShotPlanShot;has
   const chapter=chapterFor(scene);
 
   if(shot.kind==="cold-open")return <>
-    <AbsoluteFill style={{background:"linear-gradient(90deg,rgba(2,7,11,.94) 0%,rgba(2,7,11,.58) 48%,rgba(2,7,11,.22) 100%)"}}/>
+    <AbsoluteFill style={{background:"linear-gradient(90deg,rgba(2,7,11,.94) 0%,rgba(2,7,11,.54) 48%,rgba(2,7,11,.16) 100%)"}}/>
     <div style={{position:"absolute",left:82,top:170,width:1220,zIndex:20,opacity:enter,transform:`translateY(${(1-enter)*28}px)`}}>
       <div style={{fontFamily:enFont,fontSize:20,fontWeight:950,letterSpacing:".16em",color:C.red}}>THE BOTTLENECK MOVED</div>
       <div style={{fontFamily:enFont,fontSize:92,fontWeight:970,lineHeight:.98,letterSpacing:"-.05em",color:C.ink,marginTop:20,textShadow:baseShadow}}>{shot.headline}</div>
@@ -52,7 +52,7 @@ const Main:React.FC<{manifest:EpisodeManifest;scene?:Scene;shot:ShotPlanShot;has
   </>;
 
   if(shot.kind==="question")return <>
-    <AbsoluteFill style={{background:"linear-gradient(90deg,rgba(2,7,11,.97) 0%,rgba(2,7,11,.78) 56%,rgba(2,7,11,.18) 100%)"}}/>
+    <AbsoluteFill style={{background:"linear-gradient(90deg,rgba(2,7,11,.97) 0%,rgba(2,7,11,.74) 56%,rgba(2,7,11,.14) 100%)"}}/>
     <div style={{position:"absolute",left:88,top:160,width:1200,zIndex:20}}>
       <div style={{fontFamily:enFont,fontSize:18,fontWeight:950,letterSpacing:".17em",color:C.cyan}}>ONE QUESTION</div>
       <div style={{fontFamily:enFont,fontSize:70,fontWeight:950,lineHeight:1.05,letterSpacing:"-.04em",color:C.ink,marginTop:20,textShadow:baseShadow}}>{manifest.centralQuestion}</div>
@@ -61,7 +61,7 @@ const Main:React.FC<{manifest:EpisodeManifest;scene?:Scene;shot:ShotPlanShot;has
   </>;
 
   if(shot.kind==="metric"&&shot.metric)return <>
-    <AbsoluteFill style={{background:hasMedia?"linear-gradient(90deg,rgba(2,7,11,.95) 0%,rgba(2,7,11,.74) 46%,rgba(2,7,11,.28) 100%)":"linear-gradient(120deg,#04131C,#071F2C 58%,#02070B)"}}/>
+    <AbsoluteFill style={{background:hasMedia?"linear-gradient(90deg,rgba(2,7,11,.95) 0%,rgba(2,7,11,.70) 46%,rgba(2,7,11,.22) 100%)":"linear-gradient(120deg,#04131C,#071F2C 58%,#02070B)"}}/>
     <div style={{position:"absolute",left:90,top:178,zIndex:20}}>
       <div style={{fontFamily:enFont,fontSize:18,fontWeight:950,letterSpacing:".17em",color:C.cyan}}>{chapter}</div>
       <div style={{fontFamily:enFont,fontSize:178,fontWeight:980,lineHeight:.84,letterSpacing:"-.07em",color:C.cyan,textShadow:"0 0 60px rgba(91,225,255,.18)",marginTop:32}}>{shot.metric.value}<span style={{fontSize:58,letterSpacing:"-.03em",marginLeft:16,color:C.ink}}>{shot.metric.unit}</span></div>
@@ -70,10 +70,11 @@ const Main:React.FC<{manifest:EpisodeManifest;scene?:Scene;shot:ShotPlanShot;has
   </>;
 
   if(shot.kind==="evidence")return <>
-    <AbsoluteFill style={{background:"linear-gradient(90deg,rgba(2,7,11,.96) 0%,rgba(2,7,11,.70) 52%,rgba(2,7,11,.18) 100%)"}}/>
-    <div style={{position:"absolute",left:90,top:170,width:1120,zIndex:20}}>
-      <div style={{fontFamily:enFont,fontSize:17,fontWeight:950,letterSpacing:".16em",color:C.cyan}}>EVIDENCE</div>
-      <div style={{fontFamily:enFont,fontSize:58,fontWeight:930,lineHeight:1.08,letterSpacing:"-.035em",color:C.ink,marginTop:20,textShadow:baseShadow}}>{shot.headline}</div>
+    <AbsoluteFill style={{background:"linear-gradient(90deg,rgba(2,7,11,.95) 0%,rgba(2,7,11,.66) 52%,rgba(2,7,11,.12) 100%)"}}/>
+    <div style={{position:"absolute",left:90,top:154,width:1180,zIndex:20}}>
+      <div style={{fontFamily:enFont,fontSize:17,fontWeight:950,letterSpacing:".16em",color:C.cyan}}>SOURCE EVIDENCE</div>
+      <div style={{fontFamily:enFont,fontSize:shot.sourceTitle?48:58,fontWeight:930,lineHeight:1.08,letterSpacing:"-.03em",color:C.ink,marginTop:20,textShadow:baseShadow}}>{shot.sourceTitle??shot.headline}</div>
+      {shot.sourceTitle?<div style={{fontFamily:enFont,fontSize:27,fontWeight:720,lineHeight:1.25,color:"rgba(247,250,252,.76)",marginTop:22,maxWidth:1040,textShadow:"0 3px 18px rgba(0,0,0,.9)"}}>{shot.headline}</div>:null}
       <div style={{width:160,height:5,background:C.cyan,marginTop:28}}/>
     </div>
   </>;
@@ -111,8 +112,12 @@ const Main:React.FC<{manifest:EpisodeManifest;scene?:Scene;shot:ShotPlanShot;has
     <div style={{position:"absolute",left:110,right:110,top:180,zIndex:20}}><div style={{fontFamily:enFont,fontSize:18,fontWeight:950,letterSpacing:".18em",color:C.cyan}}>THE ANSWER</div><div style={{fontFamily:enFont,fontSize:62,fontWeight:950,lineHeight:1.07,letterSpacing:"-.035em",color:C.ink,marginTop:22}}>{manifest.answer}</div></div>
   </>;
 
+  // Caption-less B-roll is an intentional visual bridge. Do not put another
+  // template label on top of it: the footage itself should carry the beat.
+  if(shot.kind==="broll"&&shot.captionMode==="none")return null;
+
   return <>
-    <AbsoluteFill style={{background:"linear-gradient(180deg,rgba(2,7,11,.05) 0%,rgba(2,7,11,.18) 58%,rgba(2,7,11,.64) 100%)"}}/>
+    <AbsoluteFill style={{background:"linear-gradient(180deg,rgba(2,7,11,.04) 0%,rgba(2,7,11,.14) 58%,rgba(2,7,11,.58) 100%)"}}/>
     <div style={{position:"absolute",left:76,top:58,zIndex:20,fontFamily:enFont,fontSize:16,fontWeight:950,letterSpacing:".16em",color:"rgba(247,250,252,.78)"}}>{chapter}</div>
   </>;
 };
