@@ -14,21 +14,86 @@ const previewSeconds=Number(process.env.V5_PREVIEW_SECONDS??"36");
 const maxAssets=Number(process.env.V5_MAX_SHOT_ASSETS??"12");
 const shots=(plan.shots??[]).filter(s=>s.startFrame<previewSeconds*fps&&!["phrase","recap"].includes(s.kind)).slice(0,maxAssets);
 const API="https://commons.wikimedia.org/w/api.php";
-const UA="english-youtube-v5-shot-preview/1.2 (GitHub Actions; educational video builder)";
+const UA="english-youtube-v5-shot-preview/1.3 (GitHub Actions; educational video builder)";
 const cleanHtml=s=>String(s??"").replace(/<[^>]*>/g," ").replace(/&[^;]+;/g," ").replace(/\s+/g," ").trim();
 const allowedLicense=s=>/public domain|cc0|cc by(?:-|\s)|cc-by/i.test(s??"");
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
-// Reviewed anchors are a safe first choice, not a license to repeat one still
-// for multiple beats. Once a title has appeared in the opening, searches must
-// find a distinct image for later shots.
+// Reviewed Commons titles. Each intent has alternatives so opening shots stay
+// visually distinct without paying the cost/risk of a fresh semantic search on
+// every iteration. Metadata/license checks still run every time and fail closed.
 const CURATED={
-  "semiconductor wafer close up":"File:Semiconductor Wafer of Microelectronics.jpg",
-  "data center server racks aisle":"File:PDC server room.jpg",
-  "electrical substation aerial":"File:Electrical Substation Ayer MA Aerial.JPG",
-  "high voltage transmission tower landscape":"File:High-voltage overhead power lines.jpg",
-  "high voltage electricity transmission towers":"File:High-voltage overhead power lines.jpg",
-  "solar photovoltaic farm aerial":"File:Solar Panel Farm.jpg",
+  "semiconductor wafer close up":[
+    "File:Semiconductor Wafer of Microelectronics.jpg",
+    "File:Micro-chips wafer.jpg",
+    "File:Micro-chips wafer (83846).jpg",
+  ],
+  "data center server racks aisle":[
+    "File:PDC server room.jpg",
+    "File:Datacenter Server Racks (22370909788).jpg",
+    "File:Server Room (22397102849).jpg",
+    "File:A view of the server room at The National Archives.jpg",
+    "File:SpinVFX Server Room.jpg",
+  ],
+  "server room racks aisle":[
+    "File:Datacenter Server Racks (22370909788).jpg",
+    "File:Server Room (22397102849).jpg",
+    "File:139 Server Room 01.jpg",
+  ],
+  "electrical substation aerial":[
+    "File:Electrical Substation Ayer MA Aerial.JPG",
+    "File:Muurame electrical substation transformer.jpg",
+    "File:Transformer at substation.jpg",
+  ],
+  "electrical substation control equipment":[
+    "File:Muurame electrical substation transformer.jpg",
+    "File:Transformer at substation.jpg",
+    "File:Electrical Substation Ayer MA Aerial.JPG",
+  ],
+  "electrical switchyard high voltage":[
+    "File:Transformer at substation.jpg",
+    "File:Muurame electrical substation transformer.jpg",
+  ],
+  "high voltage transmission tower landscape":[
+    "File:High-voltage overhead power lines.jpg",
+    "File:High voltage transmission towers and lines.jpg",
+    "File:Transmission towers of a high-voltage overhead powerlines File 01.jpg",
+    "File:Transmission towers of a high-voltage overhead powerlines File 02.jpg",
+  ],
+  "high voltage electricity transmission towers":[
+    "File:High voltage transmission towers and lines.jpg",
+    "File:Transmission towers of a high-voltage overhead powerlines File 01.jpg",
+    "File:Transmission towers of a high-voltage overhead powerlines File 02.jpg",
+    "File:High-voltage overhead power lines.jpg",
+  ],
+  "high voltage power lines landscape":[
+    "File:Transmission towers of a high-voltage overhead powerlines File 01.jpg",
+    "File:Transmission towers of a high-voltage overhead powerlines File 02.jpg",
+    "File:High voltage transmission towers and lines.jpg",
+  ],
+  "solar photovoltaic farm aerial":[
+    "File:Solar Panel Farm.jpg",
+    "File:Photovoltaic Panels at the Travers Solar Farm.jpg",
+    "File:Photovoltaic Panels at a Solar Farm Near Vulcan, Alberta.jpg",
+  ],
+  "photovoltaic panels power station":[
+    "File:Photovoltaic Panels at the Travers Solar Farm.jpg",
+    "File:Solar Panel Farm.jpg",
+  ],
+  "stock exchange trading floor":[
+    "File:Stock-exchange-trading-floor.jpg",
+    "File:NY stock exchange traders floor LC-U9-10548-6.jpg",
+    "File:Stockexchange.jpg",
+  ],
+  "stock market trading floor":[
+    "File:NY stock exchange traders floor LC-U9-10548-6.jpg",
+    "File:Stock-exchange-trading-floor.jpg",
+    "File:Stockexchange.jpg",
+  ],
+  "financial market trading floor":[
+    "File:Stock-exchange-trading-floor.jpg",
+    "File:NY stock exchange traders floor LC-U9-10548-6.jpg",
+  ],
 };
 
 async function request(url,{binary=false,attempts=5}={}){
@@ -44,7 +109,7 @@ async function request(url,{binary=false,attempts=5}={}){
 }
 
 async function searchTitles(query){
-  const u=new URL(API);u.search=new URLSearchParams({action:"query",format:"json",generator:"search",gsrnamespace:"6",gsrlimit:"16",gsrsearch:`${query} filetype:bitmap`}).toString();
+  const u=new URL(API);u.search=new URLSearchParams({action:"query",format:"json",generator:"search",gsrnamespace:"6",gsrlimit:"12",gsrsearch:`${query} filetype:bitmap`}).toString();
   const data=await request(u);
   return Object.values(data.query?.pages??{}).map(p=>p.title).filter(Boolean);
 }
@@ -65,16 +130,18 @@ const usable=info=>{
   return ratio>=1.18&&ratio<=2.7;
 };
 async function pick(query,usedTitles){
-  const curatedTitle=CURATED[query];
-  if(curatedTitle&&!usedTitles.has(curatedTitle)){
-    const info=await imageInfo(curatedTitle);
-    if(usable(info))return {title:curatedTitle,info,curated:true};
+  for(const curatedTitle of CURATED[query]??[]){
+    if(usedTitles.has(curatedTitle))continue;
+    try{
+      const info=await imageInfo(curatedTitle);
+      if(usable(info))return {title:curatedTitle,info,curated:true};
+    }catch{}
   }
   const titles=await searchTitles(query);
   for(const title of titles){
     if(usedTitles.has(title)||badTitle(title))continue;
     try{const info=await imageInfo(title);if(usable(info))return {title,info,curated:false};}catch{}
-    await sleep(100);
+    await sleep(90);
   }
   return null;
 }
@@ -121,9 +188,9 @@ for(const shot of shots){
     const sourceFile=await sourceFileFor(selected);
     await fs.copyFile(sourceFile,path.join(outDir,file));
     generated.push({shotId:shot.id,file,path:`generated/v5-shot-images/${file}`,kind:"image",provider:"wikimedia-commons",sourcePage:`https://commons.wikimedia.org/wiki/${encodeURIComponent(selected.title.replaceAll(" ","_"))}`,license:selected.info.license,artist:selected.info.artist,credit:selected.info.credit,query:usedQuery,title:selected.title,curated:selected.curated});
-    await sleep(120);
+    await sleep(80);
   }catch(err){console.warn(`[v5-shot-image] ${shot.id} skipped: ${err instanceof Error?err.message:String(err)}`);}
 }
 await fs.rm(sourceDir,{recursive:true,force:true});
-await fs.writeFile(path.join(outDir,"manifest.json"),JSON.stringify({version:"1.2.0",episodeId:plan.episodeId,previewSeconds,generated},null,2)+"\n");
+await fs.writeFile(path.join(outDir,"manifest.json"),JSON.stringify({version:"1.3.0",episodeId:plan.episodeId,previewSeconds,generated},null,2)+"\n");
 console.log(JSON.stringify({ok:true,requested:shots.length,generated:generated.length,uniqueTitles:new Set(generated.map(x=>x.title)).size,previewSeconds,assets:generated.map(x=>({shotId:x.shotId,query:x.query,title:x.title,curated:x.curated,license:x.license}))}));
