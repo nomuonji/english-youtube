@@ -6,6 +6,8 @@
 
 `experienceVersion` は「最新版」ではなく、レビュー済み制作体験へのpinである。既存versionの見た目・字幕・学習UX・音・尺を後から書き換えない。改善案は必ず新しいversion IDを作り、candidateとしてreviewし、ユーザーが明示承認した場合だけstable defaultを変更する。単に新しいという理由で昇格させない。
 
+`news-first-v4.0-candidate` は現在A/B review用に登録されているが、**通常の日次productionでは使用しない**。v4実験・比較を明示的に依頼された場合だけ `docs/V4_DOCUMENTARY_CANDIDATE.md` を読み、専用comparison workflowを使う。ユーザーがreview後に昇格を明示するまでstableは `news-first-v3.0` のまま。
+
 旧v2.1 episodeおよびversion field導入前のmanifestは再現性のため互換維持し、書き換えない。旧manifestが存在することを理由に新規制作を旧 `phrase / retrieval` 構造へ戻さない。
 
 視聴体験の優先順位は次の通り。
