@@ -10,8 +10,7 @@ const clamp=(v:number,min=0,max=1)=>Math.max(min,Math.min(max,v));
 
 const cueAt=(globalFrame:number,resolved:ResolvedEpisode,shot:ShotPlanShot):Cue|undefined=>{
   const rs=resolved.scenes.find(s=>s.sceneId===shot.sceneId);if(!rs)return undefined;
-  const local=globalFrame-rs.startFrame;
-  return rs.cues.find(c=>c.startFrame<=local&&local<c.endFrame)??[...rs.cues].sort((a,b)=>a.startFrame-b.startFrame).filter(c=>c.startFrame<=local).at(-1);
+  return rs.cues.find(c=>c.startFrame<=globalFrame&&globalFrame<c.endFrame)??[...rs.cues].sort((a,b)=>a.startFrame-b.startFrame).filter(c=>c.startFrame<=globalFrame).at(-1);
 };
 const chapterFor=(scene?:Scene)=>scene?.role==="hook"?"THE QUESTION":scene?.role==="story"?scene.beat==="setup"?"WHAT CHANGED":scene.beat==="mechanism"?"HOW IT WORKS":scene.beat==="complication"?"THE CATCH":"WHAT IT MEANS":scene?.role==="phrase"?"YOU JUST HEARD":"TAKEAWAY";
 
@@ -112,8 +111,6 @@ const Main:React.FC<{manifest:EpisodeManifest;scene?:Scene;shot:ShotPlanShot;has
     <div style={{position:"absolute",left:110,right:110,top:180,zIndex:20}}><div style={{fontFamily:enFont,fontSize:18,fontWeight:950,letterSpacing:".18em",color:C.cyan}}>THE ANSWER</div><div style={{fontFamily:enFont,fontSize:62,fontWeight:950,lineHeight:1.07,letterSpacing:"-.035em",color:C.ink,marginTop:22}}>{manifest.answer}</div></div>
   </>;
 
-  // Caption-less B-roll is an intentional visual bridge. Do not put another
-  // template label on top of it: the footage itself should carry the beat.
   if(shot.kind==="broll"&&shot.captionMode==="none")return null;
 
   return <>
