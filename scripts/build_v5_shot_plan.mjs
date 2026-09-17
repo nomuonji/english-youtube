@@ -27,16 +27,16 @@ const sourceLabelFor=claimIds=>{
   return undefined;
 };
 const queryFor=(text,scene,index,kind)=>{
-  if(scene.role==="hook")return index===0?"semiconductor chip":index===1?"data center server room":"high voltage power lines";
-  if(scene.id.includes("setup-news"))return index%2===0?"solar farm electricity":"electricity substation";
-  if(scene.id.includes("setup-growth"))return index%2===0?"high voltage power lines":"data center server room";
+  if(scene.role==="hook")return index===0?"semiconductor chip":index===1?"data center server room":index%2===0?"electricity substation":"high voltage power lines";
+  if(scene.id.includes("setup-news"))return index===0?"data center server room":index%3===1?"electricity substation":"solar farm electricity";
+  if(scene.id.includes("setup-growth"))return index%2===0?"data center server room":"high voltage power lines";
   const t=String(text).toLowerCase();
   if(/chip|gpu|semiconductor/.test(t))return "semiconductor chip";
   if(/substation/.test(t))return "electricity substation";
   if(/transmission|grid|power line/.test(t))return "high voltage power lines";
   if(/generation|power plant|solar|renewable/.test(t))return "solar farm electricity";
   if(/data cent|server|cloud|computing/.test(t))return "data center server room";
-  if(/ipo|share|invest|capital|financ/.test(t))return kind==="evidence"?"solar farm electricity":"data center server room";
+  if(/ipo|share|invest|capital|financ/.test(t))return kind==="evidence"?"data center server room":"electricity substation";
   if(/construction|permit|build/.test(t))return "electricity substation";
   return index%2===0?"high voltage power lines":"data center server room";
 };
@@ -64,13 +64,10 @@ const kindFor=(scene,index,total)=>{
   return total===1?"broll":index%2===0?"broll":"evidence";
 };
 
-// Prefer real semantic cue boundaries, but never allow a long cue gap to turn
-// into another 12–16 second static screen. Insert editorial cuts inside long
-// gaps so the opening can be falsified quickly as actual video grammar.
 const cutPointsFor=rs=>{
-  const MIN=72;      // 2.4s: avoid nervous micro-cuts
-  const TARGET=138;  // 4.6s: useful rough-cut rhythm
-  const MAX=165;     // 5.5s: hard planning ceiling before the checker
+  const MIN=72;
+  const TARGET=138;
+  const MAX=165;
   const candidates=uniq([0,...rs.cues.map(c=>c.startFrame),rs.durationFrames]).sort((a,b)=>a-b);
   const points=[0];
   for(const candidate of candidates.slice(1)){
@@ -87,7 +84,6 @@ const cutPointsFor=rs=>{
     }
     if(candidate-points.at(-1)>=MIN&&rs.durationFrames-candidate>=36)points.push(candidate);
   }
-  // If a tiny tail was produced, merge it backward unless doing so breaks MAX.
   if(points.length>=3){
     const tail=points.at(-1)-points.at(-2);
     const merged=points.at(-1)-points.at(-3);
@@ -97,9 +93,18 @@ const cutPointsFor=rs=>{
 };
 
 const shots=[];
-for(const rs of resolved.scenes){
+const sortedResolved=[...resolved.scenes].sort((a,b)=>a.startFrame-b.startFrame);
+let overlapClips=0;
+for(let sceneIndex=0;sceneIndex<sortedResolved.length;sceneIndex++){
+  const rs=sortedResolved[sceneIndex];
   const scene=byScene.get(rs.sceneId);if(!scene)continue;
-  const points=cutPointsFor(rs);
+  const nextStart=sortedResolved[sceneIndex+1]?.startFrame;
+  const naturalEnd=rs.startFrame+rs.durationFrames;
+  const visualEnd=nextStart==null?naturalEnd:Math.min(naturalEnd,nextStart);
+  const effectiveDuration=Math.max(1,visualEnd-rs.startFrame);
+  if(effectiveDuration<rs.durationFrames)overlapClips++;
+  const visualRs={...rs,durationFrames:effectiveDuration,cues:rs.cues.filter(c=>c.startFrame<effectiveDuration).map(c=>({...c,endFrame:Math.min(c.endFrame,effectiveDuration)}))};
+  const points=cutPointsFor(visualRs);
   const segments=[];
   for(let i=0;i<points.length-1;i++){
     const start=points[i],end=points[i+1];if(end-start<20)continue;
@@ -107,7 +112,7 @@ for(const rs of resolved.scenes){
   }
   for(let i=0;i<segments.length;i++){
     const seg=segments[i];
-    const cues=rs.cues.filter(c=>c.endFrame>seg.start&&c.startFrame<seg.end);
+    const cues=visualRs.cues.filter(c=>c.endFrame>seg.start&&c.startFrame<seg.end);
     const utteranceIds=uniq(cues.map(c=>c.utteranceId));
     const fallbackIds=scene.utteranceIds.slice(Math.min(i,Math.max(0,scene.utteranceIds.length-1)),Math.min(i+1,scene.utteranceIds.length));
     const ids=utteranceIds.length?utteranceIds:fallbackIds;
@@ -156,4 +161,4 @@ fs.mkdirSync(path.dirname(planArg),{recursive:true});
 fs.writeFileSync(planArg,JSON.stringify(plan,null,2)+"\n");
 fs.writeFileSync(outPropsArg,JSON.stringify({...props,shotPlan:plan,shotAssets:[]},null,2)+"\n");
 const first36=shots.filter(s=>s.startFrame<36*resolved.fps);
-console.log(JSON.stringify({ok:true,shots:shots.length,first36Shots:first36.length,first36Kinds:first36.map(s=>s.kind),first36Durations:first36.map(s=>(s.durationFrames/resolved.fps).toFixed(1)),plan:planArg,props:outPropsArg}));
+console.log(JSON.stringify({ok:true,shots:shots.length,overlapClips,first36Shots:first36.length,first36Kinds:first36.map(s=>s.kind),first36Durations:first36.map(s=>(s.durationFrames/resolved.fps).toFixed(1)),plan:planArg,props:outPropsArg}));
