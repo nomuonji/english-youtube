@@ -13,6 +13,7 @@ on:
       - "scripts/fetch_v5_*.mjs"
       - "scripts/attach_v5_*.mjs"
       - "scripts/check_v5_*.mjs"
+      - "scripts/generate_bgm.py"
       - ".github/workflows/v5-fast-loop.yml"
       - "episodes/2026-09-15-ai-power-project/manifest.json"
   push:
@@ -28,6 +29,7 @@ on:
       - "scripts/fetch_v5_*.mjs"
       - "scripts/attach_v5_*.mjs"
       - "scripts/check_v5_*.mjs"
+      - "scripts/generate_bgm.py"
       - ".github/workflows/v5-fast-loop.yml"
   workflow_dispatch:
     inputs:
@@ -124,7 +126,9 @@ jobs:
           node scripts/check_v5_fast_loop.mjs public/generated/v5-shot-plan.json public/generated/v5-shot-images/manifest.json | tee public/generated/fast-loop-report.json
       - name: Install render-only dependencies
         run: sudo apt-get install -y -qq fonts-noto-cjk ffmpeg
-      - name: Generate shared audio bed
+      - name: Generate preview audio bed
+        env:
+          BGM_DURATION_SECONDS: ${{ env.V5_PREVIEW_SECONDS }}
         run: python3 scripts/generate_bgm.py public/generated/v5-render-props.json public/generated/bgm.wav
       - name: Render opening rough cut only
         shell: bash
@@ -159,6 +163,7 @@ jobs:
           cp out/v5-contact-sheet.jpg v5-fast-artifact/
           cp public/generated/fast-loop-report.json v5-fast-artifact/
           cp public/generated/v5-shot-plan.json v5-fast-artifact/
+          cp public/generated/v5-shot-images/manifest.json v5-fast-artifact/v5-shot-assets.json
       - name: Build review page smoke test
         run: |
           node scripts/build_v5_fast_review_page.mjs v5-fast-artifact out/review-v5
