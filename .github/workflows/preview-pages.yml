@@ -1,7 +1,7 @@
 name: Preview Pages
 
 # Deploys the Remotion Player, production READY review at /review/,
-# and the current PR #2 v3 experiment at /review-v3/ without merging v3.
+# the historical v3 visual pilot at /review-v3/, and the current v3-v4 A/B at /review-v4/.
 on:
   push:
     branches: [main]
@@ -10,14 +10,19 @@ on:
       - "src/scenes/**"
       - "src/composition/**"
       - "src/fixtures/**"
+      - "src/experience/**"
       - "fixtures/**"
       - "config/**"
       - "scripts/build_review_page.mjs"
+      - "scripts/build_experience_compare_page.mjs"
       - "package.json"
       - "package-lock.json"
       - "vite.config.ts"
       - "index.html"
       - ".github/workflows/preview-pages.yml"
+  workflow_run:
+    workflows: ["V4 experience preview"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -33,6 +38,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -71,7 +77,7 @@ jobs:
           mkdir -p review-artifact
           gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name "$artifact_name" --dir review-artifact
           node scripts/build_review_page.mjs review-artifact dist/review
-      - name: Include current PR v3 review when available
+      - name: Include historical v3 pilot review when available
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -85,18 +91,38 @@ jobs:
           fi
           run_id="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/v3-preview.yml/runs?event=pull_request&status=success&head_sha=${head_sha}&per_page=10" --jq '.workflow_runs[0].id // empty')"
           if [ -z "$run_id" ]; then
-            echo "No successful v3 preview for current PR head ${head_sha}; deploying without /review-v3/."
+            echo "No successful v3 pilot preview for ${head_sha}; deploying without /review-v3/."
             exit 0
           fi
           artifact_name="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts?per_page=100" --jq '.artifacts[] | select(.expired == false and (.name | startswith("ai-power-v3-english-preview-"))) | .name' | head -n 1 || true)"
           if [ -z "$artifact_name" ]; then
-            echo "Current v3 run has no live preview artifact; deploying without /review-v3/."
+            echo "V3 pilot run has no live preview artifact; deploying without /review-v3/."
             exit 0
           fi
           rm -rf v3-review-artifact
           mkdir -p v3-review-artifact
           gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name "$artifact_name" --dir v3-review-artifact
           node scripts/build_review_page.mjs v3-review-artifact dist/review-v3
+      - name: Include latest v3-v4 experience comparison when available
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_id="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/v4-experience-preview.yml/runs?branch=main&status=success&per_page=10" --jq '.workflow_runs[0].id // empty' 2>/dev/null || true)"
+          if [ -z "$run_id" ]; then
+            echo "No successful main v4 experience preview yet; deploying without /review-v4/."
+            exit 0
+          fi
+          artifact_name="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts?per_page=100" --jq '.artifacts[] | select(.expired == false and (.name | startswith("experience-ab-v3-v4-"))) | .name' | head -n 1 || true)"
+          if [ -z "$artifact_name" ]; then
+            echo "Latest v4 experience run has no live A/B artifact; deploying without /review-v4/."
+            exit 0
+          fi
+          rm -rf experience-ab-artifact
+          mkdir -p experience-ab-artifact
+          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name "$artifact_name" --dir experience-ab-artifact
+          node scripts/build_experience_compare_page.mjs experience-ab-artifact dist/review-v4
       - name: Assert public preview contains no internal run data
         shell: bash
         run: |
