@@ -55,10 +55,16 @@
         },
         "required": ["kind", "formatProfile"]
       },
-      "then": {"required": ["experienceVersion"]}
+      "then": {
+        "properties": {"experienceVersion": {}},
+        "required": ["experienceVersion"]
+      }
     },
     {
-      "if": {"required": ["experienceVersion"]},
+      "if": {
+        "properties": {"experienceVersion": {}},
+        "required": ["experienceVersion"]
+      },
       "then": {
         "properties": {"formatProfile": {"const": "news-first"}},
         "required": ["formatProfile"]
