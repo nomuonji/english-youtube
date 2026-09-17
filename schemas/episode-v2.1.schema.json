@@ -7,6 +7,7 @@
   "properties": {
     "schemaVersion": {"const": "2.1.0"},
     "formatProfile": {"enum": ["news-first"]},
+    "experienceVersion": {"enum": ["news-first-v3.0"]},
     "kind": {"enum": ["fixture", "production"]},
     "episodeId": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9]+(?:-[a-z0-9]+)*$", "maxLength": 100},
     "revision": {"type": "integer", "minimum": 1},
@@ -45,6 +46,31 @@
     }
   },
   "required": ["schemaVersion", "kind", "episodeId", "revision", "generatedAt", "asOf", "category", "newsPeg", "centralQuestion", "answer", "sources", "claims", "utterances", "learningPoints", "scenes", "packaging"],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {"const": "production"},
+          "formatProfile": {"const": "news-first"}
+        },
+        "required": ["kind", "formatProfile"]
+      },
+      "then": {
+        "properties": {"experienceVersion": {}},
+        "required": ["experienceVersion"]
+      }
+    },
+    {
+      "if": {
+        "properties": {"experienceVersion": {}},
+        "required": ["experienceVersion"]
+      },
+      "then": {
+        "properties": {"formatProfile": {"const": "news-first"}},
+        "required": ["formatProfile"]
+      }
+    }
+  ],
   "$defs": {
     "newsPeg": {
       "type": "object",
