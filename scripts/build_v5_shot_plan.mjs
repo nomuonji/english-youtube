@@ -19,10 +19,10 @@ const compact=(text,max=92)=>{
   const cut=clean.slice(0,max+1);const i=cut.lastIndexOf(" ");
   return `${cut.slice(0,i>45?i:max).replace(/[,:;]$/,'')}…`;
 };
-const sourceLabelFor=claimIds=>{
+const sourceFor=claimIds=>{
   for(const id of claimIds){
     const claim=claimById.get(id);const ev=claim?.evidence?.[0];const source=ev?sourceById.get(ev.sourceId):undefined;
-    if(source)return source.publishedDate?`${source.publisher} · ${source.publishedDate}`:source.publisher;
+    if(source)return source;
   }
   return undefined;
 };
@@ -92,7 +92,7 @@ const cutPointsFor=rs=>{
   return points;
 };
 
-const shots=[];
+const rawShots=[];
 const sortedResolved=[...resolved.scenes].sort((a,b)=>a.startFrame-b.startFrame);
 let overlapClips=0;
 for(let sceneIndex=0;sceneIndex<sortedResolved.length;sceneIndex++){
@@ -123,11 +123,13 @@ for(let sceneIndex=0;sceneIndex<sortedResolved.length;sceneIndex++){
     const metric=metricFor(scene,text);
     const id=`shot-${scene.id}-${String(i+1).padStart(2,"0")}`;
     const headline=kind==="question"?manifest.centralQuestion:kind==="recap"?manifest.answer:metric?metric.label:compact(text,kind==="cold-open"?78:94);
-    const sourceLabel=sourceLabelFor(claimIds);
-    const bilingual=kind==="cold-open"||kind==="question"||kind==="phrase"||(kind==="metric"&&i===0)||(kind==="evidence"&&i===0&&scene.beat==="complication");
+    const source=sourceFor(claimIds);
+    const sourceLabel=source?(source.publishedDate?`${source.publisher} · ${source.publishedDate}`:source.publisher):undefined;
+    const sourceTitle=source?.title;
+    const bilingual=kind==="question"||kind==="phrase"||(kind==="metric"&&i===0)||(kind==="evidence"&&i===0&&scene.beat==="complication");
     const ja=utterances[0]?.translationJa;
     const focus=["left","center","right"][(hash(id)>>2)%3];
-    shots.push({
+    rawShots.push({
       id,
       sceneId:scene.id,
       startFrame:rs.startFrame+seg.start,
@@ -138,14 +140,46 @@ for(let sceneIndex=0;sceneIndex<sortedResolved.length;sceneIndex++){
       headline,
       subhead:kind==="question"?"Follow the money, then follow the power.":undefined,
       sourceLabel,
+      sourceTitle,
       metric,
       searchQuery:queryFor(`${headline} ${text}`,scene,i,kind),
-      captionMode:bilingual?"en-ja":"en",
+      captionMode:kind==="cold-open"?"none":bilingual?"en-ja":"en",
       japaneseAnchor:bilingual?ja:undefined,
       focus,
       camera:cameraFor(id),
     });
   }
+}
+
+// Scene timing can contain narration pauses. The video layer must still cover
+// every frame: tiny gaps extend the previous shot; larger gaps become explicit
+// full-bleed bridge shots instead of falling back to a blank canvas.
+rawShots.sort((a,b)=>a.startFrame-b.startFrame||a.id.localeCompare(b.id));
+const shots=[];
+let bridgeCount=0;
+for(const shot of rawShots){
+  if(!shots.length){
+    if(shot.startFrame>0){
+      const bridgeId=`bridge-${String(++bridgeCount).padStart(3,"0")}`;
+      shots.push({...shot,id:bridgeId,startFrame:0,durationFrames:shot.startFrame,kind:"broll",utteranceIds:[],claimIds:[],headline:"",subhead:undefined,sourceLabel:undefined,sourceTitle:undefined,metric:undefined,captionMode:"none",japaneseAnchor:undefined,camera:cameraFor(bridgeId)});
+    }
+    shots.push(shot);continue;
+  }
+  const previous=shots.at(-1);
+  const previousEnd=previous.startFrame+previous.durationFrames;
+  let gap=shot.startFrame-previousEnd;
+  if(gap>0&&gap<24){
+    previous.durationFrames+=gap;
+    gap=0;
+  }
+  let cursor=previous.startFrame+previous.durationFrames;
+  while(gap>0){
+    const duration=Math.min(135,gap);
+    const bridgeId=`bridge-${String(++bridgeCount).padStart(3,"0")}`;
+    shots.push({...shot,id:bridgeId,startFrame:cursor,durationFrames:duration,kind:"broll",utteranceIds:[],claimIds:[],headline:"",subhead:undefined,sourceLabel:undefined,sourceTitle:undefined,metric:undefined,captionMode:"none",japaneseAnchor:undefined,camera:cameraFor(bridgeId)});
+    cursor+=duration;gap-=duration;
+  }
+  shots.push(shot);
 }
 
 const plan={
@@ -161,4 +195,4 @@ fs.mkdirSync(path.dirname(planArg),{recursive:true});
 fs.writeFileSync(planArg,JSON.stringify(plan,null,2)+"\n");
 fs.writeFileSync(outPropsArg,JSON.stringify({...props,shotPlan:plan,shotAssets:[]},null,2)+"\n");
 const first36=shots.filter(s=>s.startFrame<36*resolved.fps);
-console.log(JSON.stringify({ok:true,shots:shots.length,overlapClips,first36Shots:first36.length,first36Kinds:first36.map(s=>s.kind),first36Durations:first36.map(s=>(s.durationFrames/resolved.fps).toFixed(1)),plan:planArg,props:outPropsArg}));
+console.log(JSON.stringify({ok:true,shots:shots.length,overlapClips,bridgeCount,first36Shots:first36.length,first36Kinds:first36.map(s=>s.kind),first36Durations:first36.map(s=>(s.durationFrames/resolved.fps).toFixed(1)),plan:planArg,props:outPropsArg}));
