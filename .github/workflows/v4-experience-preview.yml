@@ -1,0 +1,153 @@
+name: V4 experience preview
+
+on:
+  pull_request:
+    paths:
+      - "src/scenes/DocumentarySceneRenderer.tsx"
+      - "src/composition/EpisodeVideo.tsx"
+      - "src/experience/**"
+      - "src/contracts/**"
+      - "schemas/**"
+      - "scripts/build_experience_ab_manifests.mjs"
+      - "scripts/build_experience_compare_page.mjs"
+      - ".github/workflows/v4-experience-preview.yml"
+      - "episodes/2026-09-15-ai-power-project/manifest.json"
+  push:
+    branches: [main]
+    paths:
+      - "src/scenes/DocumentarySceneRenderer.tsx"
+      - "src/composition/EpisodeVideo.tsx"
+      - "src/experience/**"
+      - "src/contracts/**"
+      - "schemas/**"
+      - "scripts/build_experience_ab_manifests.mjs"
+      - "scripts/build_experience_compare_page.mjs"
+      - ".github/workflows/v4-experience-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+      - name: Install TTS and render runtime
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq espeak-ng fonts-noto-cjk ffmpeg
+          python3 -m pip install --disable-pip-version-check -r requirements-tts.txt
+      - name: Build matched A/B manifests
+        run: node scripts/build_experience_ab_manifests.mjs episodes/2026-09-15-ai-power-project/manifest.json public/generated/experience-ab
+      - name: Validate both experience manifests
+        run: |
+          npm run validate -- public/generated/experience-ab/stable-v3.json
+          npm run validate -- public/generated/experience-ab/candidate-v4.json
+          npm run review:retention -- public/generated/experience-ab/stable-v3.json
+          npm run review:cognitive -- public/generated/experience-ab/stable-v3.json
+      - name: Cache Kokoro model
+        id: kokoro-model-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/kokoro
+          key: kokoro-model-v1.1-int8-${{ runner.os }}
+      - name: Download Kokoro int8 model
+        if: steps.kokoro-model-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .cache/kokoro
+          curl -fL --retry 3 --retry-delay 2 -o .cache/kokoro/kokoro-v1.0.int8.onnx https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/kokoro-v1.0.int8.onnx
+          curl -fL --retry 3 --retry-delay 2 -o .cache/kokoro/voices-v1.0.bin https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/voices-v1.0.bin
+      - name: Synthesize one shared narration/timing bundle
+        env:
+          KOKORO_VOICE: af_sarah
+          KOKORO_SPEED: "0.95"
+          KOKORO_MODEL_PATH: .cache/kokoro/kokoro-v1.0.int8.onnx
+          KOKORO_VOICES_PATH: .cache/kokoro/voices-v1.0.bin
+          KOKORO_CHUNK_CACHE_DIR: .cache/kokoro-chunks
+        run: |
+          mkdir -p public/generated
+          python3 scripts/synthesize_kokoro.py public/generated/experience-ab/stable-v3.json public/generated generated
+      - name: Build shared editorial image briefs
+        run: node scripts/build_image_briefs.mjs public/generated/experience-ab/stable-v3.json public/generated/image-briefs.json
+      - name: Fill editorial images from Wikimedia Commons
+        run: node scripts/fetch_commons_images.mjs public/generated/image-briefs.json public/generated/images
+      - name: Compile stable v3 props and reviewed B-roll
+        env:
+          ALLOW_BROLL_FETCH: "true"
+        run: npm run compile:tts -- public/generated/experience-ab/stable-v3.json public/generated/tts-timing.json public/generated/stable-v3-render-props.json
+      - name: Compile v4 candidate props from identical timing/assets
+        env:
+          ALLOW_BROLL_FETCH: "false"
+        run: npm run compile:tts -- public/generated/experience-ab/candidate-v4.json public/generated/tts-timing.json public/generated/candidate-v4-render-props.json
+      - name: Enforce matched long-form timing
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const a=JSON.parse(fs.readFileSync('public/generated/stable-v3-render-props.json','utf8'));
+          const b=JSON.parse(fs.readFileSync('public/generated/candidate-v4-render-props.json','utf8'));
+          const sa=a.resolved.durationFrames/a.resolved.fps;
+          const sb=b.resolved.durationFrames/b.resolved.fps;
+          console.log(JSON.stringify({stableSeconds:sa,candidateSeconds:sb,stable:a.manifest.experienceVersion,candidate:b.manifest.experienceVersion}));
+          if(Math.abs(sa-sb)>0.001)throw new Error('A/B duration mismatch');
+          if(sa<300||sa>390)throw new Error(`Long-form A/B duration ${sa.toFixed(1)}s is outside 300-390s`);
+          NODE
+      - name: Generate one shared BGM/SFX bed
+        run: python3 scripts/generate_bgm.py public/generated/stable-v3-render-props.json public/generated/bgm.wav
+      - name: Render stable v3 540p
+        run: |
+          mkdir -p out
+          npx remotion render src/composition/index.ts EpisodeVideo out/stable-v3.mp4 --props=public/generated/stable-v3-render-props.json --scale=0.5 --codec=h264 --crf=23
+      - name: Render v4 candidate 540p
+        run: npx remotion render src/composition/index.ts EpisodeVideo out/candidate-v4.mp4 --props=public/generated/candidate-v4-render-props.json --scale=0.5 --codec=h264 --crf=23
+      - name: Normalize both previews
+        run: |
+          bash scripts/normalize_video_audio.sh out/stable-v3.mp4
+          bash scripts/normalize_video_audio.sh out/candidate-v4.mp4
+      - name: Generate matched contact sheets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in stable-v3 candidate-v4; do
+            video="out/${name}.mp4"
+            duration="$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$video")"
+            interval="$(python3 - <<'PY' "$duration"
+          import sys
+          duration=max(float(sys.argv[1]),1.0)
+          print(max(duration/9.0,0.25))
+          PY
+          )"
+            ffmpeg -hide_banner -loglevel error -y -i "$video" -vf "fps=1/${interval},scale=320:-1,tile=3x3:padding=6:margin=6" -frames:v 1 -q:v 2 "out/${name}-contact-sheet.jpg"
+          done
+      - name: Stage comparison artifact
+        run: |
+          mkdir -p experience-ab-artifact
+          cp out/stable-v3.mp4 experience-ab-artifact/stable-v3.mp4
+          cp out/candidate-v4.mp4 experience-ab-artifact/candidate-v4.mp4
+          cp out/stable-v3-contact-sheet.jpg experience-ab-artifact/stable-v3-contact-sheet.jpg
+          cp out/candidate-v4-contact-sheet.jpg experience-ab-artifact/candidate-v4-contact-sheet.jpg
+          cp public/generated/stable-v3-render-props.json experience-ab-artifact/stable-v3-render-props.json
+          cp public/generated/candidate-v4-render-props.json experience-ab-artifact/candidate-v4-render-props.json
+      - name: Build comparison page smoke test
+        run: |
+          node scripts/build_experience_compare_page.mjs experience-ab-artifact out/review-v4
+          test -s out/review-v4/index.html
+          test -s out/review-v4/stable-v3.mp4
+          test -s out/review-v4/candidate-v4.mp4
+      - name: Upload A/B review artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: experience-ab-v3-v4-${{ github.sha }}
+          path: experience-ab-artifact/
+          retention-days: 30
