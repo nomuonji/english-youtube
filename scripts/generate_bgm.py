@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import json, math, random, struct, sys, wave
+import json, math, os, random, struct, sys, wave
 from pathlib import Path
 
 props_path=Path(sys.argv[1] if len(sys.argv)>1 else "public/generated/render-props.json")
@@ -8,7 +8,12 @@ props=json.loads(props_path.read_text(encoding="utf-8"))
 resolved=props.get("resolved",props)
 fps=float(resolved.get("fps",30))
 frames=int(resolved.get("durationFrames",fps*390))
-duration=max(1.0,frames/fps+1.0)
+full_duration=max(1.0,frames/fps+1.0)
+override=os.environ.get("BGM_DURATION_SECONDS")
+if override:
+    duration=max(1.0,min(full_duration,float(override)+1.0))
+else:
+    duration=full_duration
 sr=16000
 n=int(duration*sr)
 out_path.parent.mkdir(parents=True,exist_ok=True)
@@ -42,4 +47,4 @@ with wave.open(str(out_path),"wb") as w:
         if len(block)>=65536:
             w.writeframesraw(block); block.clear()
     if block:w.writeframesraw(block)
-print(json.dumps({"ok":True,"output":str(out_path),"durationSeconds":round(duration,3),"sampleRate":sr,"bpm":bpm}))
+print(json.dumps({"ok":True,"output":str(out_path),"durationSeconds":round(duration,3),"fullDurationSeconds":round(full_duration,3),"sampleRate":sr,"bpm":bpm}))
