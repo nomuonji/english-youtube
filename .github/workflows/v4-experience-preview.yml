@@ -69,6 +69,15 @@ jobs:
           mkdir -p .cache/kokoro
           curl -fL --retry 3 --retry-delay 2 -o .cache/kokoro/kokoro-v1.0.int8.onnx https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/kokoro-v1.0.int8.onnx
           curl -fL --retry 3 --retry-delay 2 -o .cache/kokoro/voices-v1.0.bin https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/voices-v1.0.bin
+      - name: Restore Kokoro chunk cache
+        id: tts-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/kokoro-chunks
+          key: kokoro-chunks-v2-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            kokoro-chunks-v2-${{ runner.os }}-
+            kokoro-chunks-v1-${{ runner.os }}-
       - name: Synthesize one shared narration/timing bundle
         env:
           KOKORO_VOICE: af_sarah
@@ -79,6 +88,12 @@ jobs:
         run: |
           mkdir -p public/generated
           python3 scripts/synthesize_kokoro.py public/generated/experience-ab/stable-v3.json public/generated generated
+      - name: Save expanded Kokoro chunk cache
+        if: steps.tts-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/kokoro-chunks
+          key: kokoro-chunks-v2-${{ runner.os }}-${{ github.sha }}
       - name: Build shared editorial image briefs
         run: node scripts/build_image_briefs.mjs public/generated/experience-ab/stable-v3.json public/generated/image-briefs.json
       - name: Fill editorial images from Wikimedia Commons
