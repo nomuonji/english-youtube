@@ -32,6 +32,7 @@ export type ShotPlanShot = {
   headline:string;
   subhead?:string;
   sourceLabel?:string;
+  sourceTitle?:string;
   metric?:{value:string;unit:string;label:string};
   searchQuery:string;
   captionMode:ShotCaptionMode;
