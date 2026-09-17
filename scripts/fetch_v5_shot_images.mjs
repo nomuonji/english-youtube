@@ -14,20 +14,21 @@ const previewSeconds=Number(process.env.V5_PREVIEW_SECONDS??"36");
 const maxAssets=Number(process.env.V5_MAX_SHOT_ASSETS??"12");
 const shots=(plan.shots??[]).filter(s=>s.startFrame<previewSeconds*fps&&!["phrase","recap"].includes(s.kind)).slice(0,maxAssets);
 const API="https://commons.wikimedia.org/w/api.php";
-const UA="english-youtube-v5-shot-preview/1.1 (GitHub Actions; educational video builder)";
+const UA="english-youtube-v5-shot-preview/1.2 (GitHub Actions; educational video builder)";
 const cleanHtml=s=>String(s??"").replace(/<[^>]*>/g," ").replace(/&[^;]+;/g," ").replace(/\s+/g," ").trim();
 const allowedLicense=s=>/public domain|cc0|cc by(?:-|\s)|cc-by/i.test(s??"");
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
-// Reuse titles already editorially reviewed for the AI/power topic before
-// falling back to loose search. This avoids both semantic misses and dozens of
-// Commons API requests during a 36-second design loop.
+// Reviewed anchors are a safe first choice, not a license to repeat one still
+// for multiple beats. Once a title has appeared in the opening, searches must
+// find a distinct image for later shots.
 const CURATED={
-  "semiconductor chip":"File:Semiconductor Wafer of Microelectronics.jpg",
-  "data center server room":"File:PDC server room.jpg",
-  "high voltage power lines":"File:High-voltage overhead power lines.jpg",
-  "solar farm electricity":"File:Solar Panel Farm.jpg",
-  "electricity substation":"File:Electrical Substation Ayer MA Aerial.JPG",
+  "semiconductor wafer close up":"File:Semiconductor Wafer of Microelectronics.jpg",
+  "data center server racks aisle":"File:PDC server room.jpg",
+  "electrical substation aerial":"File:Electrical Substation Ayer MA Aerial.JPG",
+  "high voltage transmission tower landscape":"File:High-voltage overhead power lines.jpg",
+  "high voltage electricity transmission towers":"File:High-voltage overhead power lines.jpg",
+  "solar photovoltaic farm aerial":"File:Solar Panel Farm.jpg",
 };
 
 async function request(url,{binary=false,attempts=5}={}){
@@ -43,7 +44,7 @@ async function request(url,{binary=false,attempts=5}={}){
 }
 
 async function searchTitles(query){
-  const u=new URL(API);u.search=new URLSearchParams({action:"query",format:"json",generator:"search",gsrnamespace:"6",gsrlimit:"12",gsrsearch:`${query} filetype:bitmap`}).toString();
+  const u=new URL(API);u.search=new URLSearchParams({action:"query",format:"json",generator:"search",gsrnamespace:"6",gsrlimit:"16",gsrsearch:`${query} filetype:bitmap`}).toString();
   const data=await request(u);
   return Object.values(data.query?.pages??{}).map(p=>p.title).filter(Boolean);
 }
@@ -63,17 +64,17 @@ const usable=info=>{
   const ratio=Number(info.width)/Math.max(1,Number(info.height));
   return ratio>=1.18&&ratio<=2.7;
 };
-async function pick(query){
+async function pick(query,usedTitles){
   const curatedTitle=CURATED[query];
-  if(curatedTitle){
+  if(curatedTitle&&!usedTitles.has(curatedTitle)){
     const info=await imageInfo(curatedTitle);
     if(usable(info))return {title:curatedTitle,info,curated:true};
   }
   const titles=await searchTitles(query);
   for(const title of titles){
-    if(badTitle(title))continue;
+    if(usedTitles.has(title)||badTitle(title))continue;
     try{const info=await imageInfo(title);if(usable(info))return {title,info,curated:false};}catch{}
-    await sleep(120);
+    await sleep(100);
   }
   return null;
 }
@@ -87,33 +88,42 @@ const sourceFileFor=async selected=>{
   await fs.writeFile(file,buf);return file;
 };
 const fallbackQueries=shot=>{
-  const q=shot.searchQuery||"high voltage power lines";
-  if(CURATED[q])return [q];
-  if(/semiconductor|chip|gpu/i.test(q))return ["semiconductor chip",q];
-  if(/data center|server/i.test(q))return ["data center server room",q];
-  if(/substation/i.test(q))return ["electricity substation",q];
-  if(/transmission|power line|grid/i.test(q))return ["high voltage power lines",q];
-  if(/solar|generation|power plant/i.test(q))return ["solar farm electricity",q];
-  return [q,"data center server room","high voltage power lines"];
+  const q=shot.searchQuery||"high voltage transmission tower landscape";
+  const out=[q];
+  if(/semiconductor|wafer|chip|gpu/i.test(q))out.push("microchip wafer manufacturing","computer processor hardware close up");
+  else if(/data center|server/i.test(q))out.push("server room racks aisle","supercomputer data center interior","computer servers cooling aisle");
+  else if(/substation|switchyard|transformer/i.test(q))out.push("electrical switchyard high voltage","power transformer substation","electric grid transformer station");
+  else if(/transmission|power line|tower|pylon|grid/i.test(q))out.push("electricity pylons landscape","high voltage power lines landscape","electric power grid control room");
+  else if(/solar|photovoltaic/i.test(q))out.push("photovoltaic panels power station","solar panels field aerial","renewable energy solar farm");
+  else if(/stock|financial|trading|market|exchange/i.test(q))out.push("stock market trading floor","stock exchange building interior","financial district trading screens");
+  else if(/power plant|generator|turbine/i.test(q))out.push("electric power station turbine hall","power generator turbine","electricity generating station interior");
+  else if(/construction/i.test(q))out.push("power line construction","electrical infrastructure construction");
+  out.push("high voltage transmission tower landscape","data center server racks aisle");
+  return [...new Set(out)];
 };
 
+const usedTitles=new Set();
 const generated=[];
 for(const shot of shots){
   try{
     let selected=null,usedQuery="";
     for(const query of fallbackQueries(shot)){
-      selected=await pick(query);
+      selected=await pick(query,usedTitles);
       if(selected){usedQuery=query;break;}
     }
-    if(!selected)continue;
+    if(!selected){
+      console.warn(`[v5-shot-image] ${shot.id} skipped: no distinct licensed media found`);
+      continue;
+    }
+    usedTitles.add(selected.title);
     const ext=selected.info.mime==="image/png"?"png":"jpg";
     const file=`${shot.id}.${ext}`;
     const sourceFile=await sourceFileFor(selected);
     await fs.copyFile(sourceFile,path.join(outDir,file));
     generated.push({shotId:shot.id,file,path:`generated/v5-shot-images/${file}`,kind:"image",provider:"wikimedia-commons",sourcePage:`https://commons.wikimedia.org/wiki/${encodeURIComponent(selected.title.replaceAll(" ","_"))}`,license:selected.info.license,artist:selected.info.artist,credit:selected.info.credit,query:usedQuery,title:selected.title,curated:selected.curated});
-    await sleep(140);
+    await sleep(120);
   }catch(err){console.warn(`[v5-shot-image] ${shot.id} skipped: ${err instanceof Error?err.message:String(err)}`);}
 }
 await fs.rm(sourceDir,{recursive:true,force:true});
-await fs.writeFile(path.join(outDir,"manifest.json"),JSON.stringify({version:"1.1.0",episodeId:plan.episodeId,previewSeconds,generated},null,2)+"\n");
-console.log(JSON.stringify({ok:true,requested:shots.length,generated:generated.length,previewSeconds,assets:generated.map(x=>({shotId:x.shotId,query:x.query,title:x.title,curated:x.curated,license:x.license}))}));
+await fs.writeFile(path.join(outDir,"manifest.json"),JSON.stringify({version:"1.2.0",episodeId:plan.episodeId,previewSeconds,generated},null,2)+"\n");
+console.log(JSON.stringify({ok:true,requested:shots.length,generated:generated.length,uniqueTitles:new Set(generated.map(x=>x.title)).size,previewSeconds,assets:generated.map(x=>({shotId:x.shotId,query:x.query,title:x.title,curated:x.curated,license:x.license}))}));
