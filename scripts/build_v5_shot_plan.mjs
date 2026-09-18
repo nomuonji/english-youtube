@@ -163,7 +163,7 @@ for(const rs of resolved.scenes){
       utteranceIds:ids,
       claimIds,
       headline,
-      subhead:kind==="question"?"Follow the money, then follow the power.":undefined,
+      subhead:kind==="question"?compact(text,110):undefined,
       sourceLabel,
       sourceTitle,
       metric,

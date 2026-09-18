@@ -20,7 +20,7 @@ const Media:React.FC<{shot:ShotPlanShot;asset?:ShotAsset}>=({shot,asset})=>{
   const scale=interpolate(p,[0,1],[shot.camera.scaleFrom,shot.camera.scaleTo]);
   const x=interpolate(p,[0,1],[shot.camera.xFrom,shot.camera.xTo]);
   const y=interpolate(p,[0,1],[shot.camera.yFrom,shot.camera.yTo]);
-  const style:React.CSSProperties={width:"100%",height:"100%",objectFit:"cover",transform:`translate(${x}%,${y}%) scale(${scale})`,filter:"saturate(.93) contrast(1.06) brightness(.84)"};
+  const style:React.CSSProperties={width:"100%",height:"100%",objectFit:"cover",transform:`translate(${x}%,${y}%) scale(${scale})`,filter:"saturate(.96) contrast(1.05) brightness(.92)"};
   return <AbsoluteFill style={{overflow:"hidden",background:"radial-gradient(circle at 60% 30%,#16384A 0%,#07131B 48%,#02070B 100%)"}}>
     {asset?.kind==="video"?<Html5Video src={staticFile(asset.path)} muted loop style={style}/>:asset?<Img src={staticFile(asset.path)} style={style}/>:null}
   </AbsoluteFill>;
@@ -43,15 +43,15 @@ const Main:React.FC<{manifest:EpisodeManifest;scene?:Scene;shot:ShotPlanShot;has
   const chapter=chapterFor(scene);
 
   if(shot.kind==="cold-open")return <>
-    <AbsoluteFill style={{background:"linear-gradient(90deg,rgba(2,7,11,.94) 0%,rgba(2,7,11,.54) 48%,rgba(2,7,11,.16) 100%)"}}/>
+    <AbsoluteFill style={{background:"linear-gradient(90deg,rgba(2,7,11,.78) 0%,rgba(2,7,11,.42) 48%,rgba(2,7,11,.08) 100%)"}}/>
     <div style={{position:"absolute",left:82,top:170,width:1220,zIndex:20,opacity:enter,transform:`translateY(${(1-enter)*28}px)`}}>
-      <div style={{fontFamily:enFont,fontSize:20,fontWeight:950,letterSpacing:".16em",color:C.red}}>THE BOTTLENECK MOVED</div>
+      <div style={{fontFamily:enFont,fontSize:20,fontWeight:950,letterSpacing:".16em",color:C.red}}>{((scene&&scene.visual.type==="card"&&scene.visual.headline)||manifest.centralQuestion).toUpperCase().slice(0,64)}</div>
       <div style={{fontFamily:enFont,fontSize:92,fontWeight:970,lineHeight:.98,letterSpacing:"-.05em",color:C.ink,marginTop:20,textShadow:baseShadow}}>{shot.headline}</div>
     </div>
   </>;
 
   if(shot.kind==="question")return <>
-    <AbsoluteFill style={{background:"linear-gradient(90deg,rgba(2,7,11,.97) 0%,rgba(2,7,11,.74) 56%,rgba(2,7,11,.14) 100%)"}}/>
+    <AbsoluteFill style={{background:"linear-gradient(90deg,rgba(2,7,11,.80) 0%,rgba(2,7,11,.55) 56%,rgba(2,7,11,.08) 100%)"}}/>
     <div style={{position:"absolute",left:88,top:160,width:1200,zIndex:20}}>
       <div style={{fontFamily:enFont,fontSize:18,fontWeight:950,letterSpacing:".17em",color:C.cyan}}>ONE QUESTION</div>
       <div style={{fontFamily:enFont,fontSize:70,fontWeight:950,lineHeight:1.05,letterSpacing:"-.04em",color:C.ink,marginTop:20,textShadow:baseShadow}}>{manifest.centralQuestion}</div>
@@ -60,7 +60,7 @@ const Main:React.FC<{manifest:EpisodeManifest;scene?:Scene;shot:ShotPlanShot;has
   </>;
 
   if(shot.kind==="metric"&&shot.metric)return <>
-    <AbsoluteFill style={{background:hasMedia?"linear-gradient(90deg,rgba(2,7,11,.95) 0%,rgba(2,7,11,.70) 46%,rgba(2,7,11,.22) 100%)":"linear-gradient(120deg,#04131C,#071F2C 58%,#02070B)"}}/>
+    <AbsoluteFill style={{background:hasMedia?"linear-gradient(90deg,rgba(2,7,11,.80) 0%,rgba(2,7,11,.52) 46%,rgba(2,7,11,.10) 100%)":"linear-gradient(120deg,#04131C,#071F2C 58%,#02070B)"}}/>
     <div style={{position:"absolute",left:90,top:178,zIndex:20}}>
       <div style={{fontFamily:enFont,fontSize:18,fontWeight:950,letterSpacing:".17em",color:C.cyan}}>{chapter}</div>
       <div style={{fontFamily:enFont,fontSize:178,fontWeight:980,lineHeight:.84,letterSpacing:"-.07em",color:C.cyan,textShadow:"0 0 60px rgba(91,225,255,.18)",marginTop:32}}>{shot.metric.value}<span style={{fontSize:58,letterSpacing:"-.03em",marginLeft:16,color:C.ink}}>{shot.metric.unit}</span></div>
@@ -69,7 +69,7 @@ const Main:React.FC<{manifest:EpisodeManifest;scene?:Scene;shot:ShotPlanShot;has
   </>;
 
   if(shot.kind==="evidence")return <>
-    <AbsoluteFill style={{background:"linear-gradient(90deg,rgba(2,7,11,.95) 0%,rgba(2,7,11,.66) 52%,rgba(2,7,11,.12) 100%)"}}/>
+    <AbsoluteFill style={{background:"linear-gradient(90deg,rgba(2,7,11,.80) 0%,rgba(2,7,11,.50) 52%,rgba(2,7,11,.08) 100%)"}}/>
     <div style={{position:"absolute",left:90,top:154,width:1180,zIndex:20}}>
       <div style={{fontFamily:enFont,fontSize:17,fontWeight:950,letterSpacing:".16em",color:C.cyan}}>SOURCE EVIDENCE</div>
       <div style={{fontFamily:enFont,fontSize:shot.sourceTitle?48:58,fontWeight:930,lineHeight:1.08,letterSpacing:"-.03em",color:C.ink,marginTop:20,textShadow:baseShadow}}>{shot.sourceTitle??shot.headline}</div>
