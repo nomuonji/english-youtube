@@ -1,0 +1,22 @@
+{
+  "id": "ai-power-opening",
+  "title": "AI NEEDS POWER",
+  "question": "WHY THE SAME PROJECT?",
+  "eyebrow": "WORLD IN CLEAR ENGLISH",
+  "topic": "THE AI POWER QUESTION",
+  "flowDirection": "right-to-left",
+  "sourceNote": "Illustrative diagram · Episode 2026-09-15 AI power",
+  "stages": [
+    {"id": "compute", "label": "COMPUTE", "icon": "server", "at": {"utteranceId": "u-h1", "chunkIndex": 0}, "startAtZero": true},
+    {"id": "grid", "label": "GRID", "icon": "grid", "at": {"utteranceId": "u-h1", "chunkIndex": 1}},
+    {"id": "energy", "label": "ENERGY", "icon": "power", "at": {"utteranceId": "u-h2", "chunkIndex": 0}}
+  ],
+  "questionAt": {"utteranceId": "u-h2", "chunkIndex": 1},
+  "captions": [
+    {"utteranceId": "u-h1", "chunkIndex": 0},
+    {"utteranceId": "u-h1", "chunkIndex": 1},
+    {"utteranceId": "u-h2", "chunkIndex": 0},
+    {"utteranceId": "u-h2", "chunkIndex": 1}
+  ],
+  "tailFrames": 21
+}
