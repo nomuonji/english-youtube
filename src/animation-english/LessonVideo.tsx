@@ -16,7 +16,7 @@ const ease = (frame: number, from: number, duration = 22) => {
   return 1 - Math.pow(1 - t, 3);
 };
 
-const StreetWorld: React.FC<{scene: TimedScene; frame: number}> = ({scene, frame}) => {
+export const StreetWorld: React.FC<{scene: TimedScene; frame: number}> = ({scene, frame}) => {
   const blocked = scene.action === "blocked";
   const reroute = scene.action === "reroute";
   const cartX = scene.action === "drive" ? interpolate(frame, [0, scene.durationFrames], [240, 760], {extrapolateRight: "clamp"}) : reroute ? interpolate(frame, [0, scene.durationFrames], [740, 1460], {extrapolateRight: "clamp"}) : 760;
@@ -44,7 +44,7 @@ const StreetWorld: React.FC<{scene: TimedScene; frame: number}> = ({scene, frame
   </g>;
 };
 
-const OfficeWorld: React.FC<{frame: number}> = ({frame}) => <g>
+export const OfficeWorld: React.FC<{frame: number}> = ({frame}) => <g>
   <rect width={W} height={H} fill="#11263B"/>
   <path d="M0 0 H1920 V590 H0Z" fill="#172F48"/>
   <rect x="130" y="165" width="1650" height="460" fill="#1C3F58" stroke="#75A5AD" strokeWidth="8"/>
