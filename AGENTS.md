@@ -1,8 +1,14 @@
 # 担当エージェントへの指示
 
-## 現在の制作標準
+## 新しい編集方針（2026-09-23）
 
-今後の新規productionは **news-first**。最初に `docs/PRODUCTION_VERSIONS.md`、`docs/NEWS_FIRST_FORMAT.md`、`docs/V5_SHOT_FIRST_FAST_LOOP.md`、`docs/V3_ENGLISH_NEWS_EXPLAINER.md` を読む。通常の新規production manifestには `formatProfile: "news-first"` と、現在のstable baselineである `experienceVersion: "news-first-v3.0"` を必ず明示する。
+ユーザーの新しい方向は、**アニメーションを土台にした英語学習**。新規フォーマット開発は `docs/ANIMATION_FIRST_ENGLISH.md` と `fixtures/animation-english/` を優先する。英語表現を実際の場面で聞き、動きで理解し、別の場面で使い、声に出し、思い出す構成にする。ニュースは必須テーマではない。
+
+以下の news-first 指示は既存ニュース動画とその再現・公開ワークフローに適用する。新しい英語学習教材を旧ニュース用 manifest / READY / APPROVED に流し込まない。新フォーマットの公開経路は、レビューと明示的な公開承認を維持した上で別途接続する。
+
+## 既存ニュース制作の標準
+
+既存ニュース制作経路で新規productionを作る場合は **news-first**。最初に `docs/PRODUCTION_VERSIONS.md`、`docs/NEWS_FIRST_FORMAT.md`、`docs/V5_SHOT_FIRST_FAST_LOOP.md`、`docs/V3_ENGLISH_NEWS_EXPLAINER.md` を読む。通常のニュースproduction manifestには `formatProfile: "news-first"` と、現在のstable baselineである `experienceVersion: "news-first-v3.0"` を必ず明示する。
 
 `experienceVersion` は「最新版」ではなく、レビュー済み制作体験へのpinである。既存versionの見た目・字幕・学習UX・音・尺を後から書き換えない。改善案は必ず新しいversion IDを作り、candidateとしてreviewし、ユーザーが明示承認した場合だけstable defaultを変更する。単に新しいという理由で昇格させない。
 

@@ -13,18 +13,20 @@ on:
       - "src/fixtures/**"
       - "src/experience/**"
       - "src/shotplan/**"
+      - "src/animation-english/**"
       - "fixtures/**"
       - "config/**"
       - "scripts/build_review_page.mjs"
       - "scripts/build_experience_compare_page.mjs"
       - "scripts/build_v5_fast_review_page.mjs"
+      - "scripts/build_animation_english_review_page.mjs"
       - "package.json"
       - "package-lock.json"
       - "vite.config.ts"
       - "index.html"
       - ".github/workflows/preview-pages.yml"
   workflow_run:
-    workflows: ["V4 experience preview", "V5 fast loop"]
+    workflows: ["V4 experience preview", "V5 fast loop", "Animated English pilot preview"]
     types: [completed]
   workflow_dispatch:
 
@@ -137,6 +139,22 @@ jobs:
           mkdir -p v5-fast-artifact
           gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name "$artifact_name" --dir v5-fast-artifact
           node scripts/build_v5_fast_review_page.mjs v5-fast-artifact dist/review-v5
+      - name: Include latest Animated English candidate when available
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_id="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/animation-english-preview.yml/runs?branch=main&status=success&per_page=10" --jq '.workflow_runs[0].id // empty' 2>/dev/null || true)"
+          if [ -z "$run_id" ]; then
+            echo "No successful Animated English candidate on main yet."
+            exit 0
+          fi
+          artifact_name="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts?per_page=100" --jq '.artifacts[] | select(.expired == false and (.name | startswith("animation-english-snag-preview-"))) | .name' | head -n 1 || true)"
+          if [ -z "$artifact_name" ]; then exit 0; fi
+          mkdir -p animation-english-review-artifact
+          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name "$artifact_name" --dir animation-english-review-artifact
+          node scripts/build_animation_english_review_page.mjs animation-english-review-artifact dist/review-animation-english
       - name: Assert public preview contains no internal run data
         shell: bash
         run: |

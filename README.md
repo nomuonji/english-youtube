@@ -1,14 +1,20 @@
 # english-youtube — World in Clear English
 
-海外のテクノロジー・仕事・経済ニュースを英語で理解しながら、実際に使われるbusiness/news Englishも身につける自動動画制作基盤。
+アニメーションの中で英語表現を聞き、意味を理解し、別の場面で使えるようにする動画制作基盤。
 
-**視聴者への約束：面白いニュース解説を見終えたとき、世界の出来事を一つ理解し、再利用できる英語表現も3つ持ち帰れる。**
+**新しい視聴者への約束：短い物語を見終えたとき、使える英語表現を一つ自分の言葉にできる。**
 
-## 現在のproduction標準
+## 新しい方向：Animated English
 
-2026-09-16から、新規productionは `formatProfile: "news-first"` を標準とする。
+英語学習を動画の主役にする。登場人物の目的と問題をアニメーションで見せ、表現を自然な文脈で聞かせる。その後、意味を短く示し、別の場面で使い、声に出し、最後に自力で思い出す。最初の候補は `run into a snag` を学ぶ約39秒の試作。仕様と長尺・縦型への展開方針は [Animation-first English](docs/ANIMATION_FIRST_ENGLISH.md) を参照。
 
-旧v2.1 episodeは再現性のため互換維持するが、新しい動画は次の流れで作る。
+新しい教材は独立した候補として実装中。以下は既存ニュース動画の制作・公開基盤の記録であり、過去の動画を再現できる状態を保つ。
+
+## 既存ニュース動画のproduction標準
+
+2026-09-16時点のニュース制作では `formatProfile: "news-first"` を標準としていた。
+
+旧v2.1 episodeは再現性のため互換維持する。ニュース形式の動画は次の流れで作られていた。
 
 ```text
 COLD HOOK
@@ -97,6 +103,8 @@ news-firstでは特に次を機械検査する。
 - story shareが低すぎない
 
 ## 読む順番
+
+新しい教材形式は [Animation-first English](docs/ANIMATION_FIRST_ENGLISH.md) から。既存ニュース制作の参照資料は次の順番。
 
 1. [News-first format](docs/NEWS_FIRST_FORMAT.md)
 2. [動画制作プレイブック](docs/VIDEO_PRODUCTION_PLAYBOOK.md)
