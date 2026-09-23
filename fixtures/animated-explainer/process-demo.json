@@ -1,0 +1,26 @@
+{
+  "config": {
+    "version": "1.0.0",
+    "id": "process-demo",
+    "fps": 30,
+    "durationFrames": 240,
+    "title": "FROM IDEA TO PRODUCT",
+    "question": "WHERE IS THE BOTTLENECK?",
+    "questionFrame": 180,
+    "eyebrow": "WORLD IN CLEAR ENGLISH",
+    "topic": "PROCESS EXPLAINER / FORMAT TEST",
+    "flowDirection": "left-to-right",
+    "sourceNote": "Format fixture · No factual claim",
+    "stages": [
+      {"id": "input", "label": "INPUT", "icon": "factory", "revealFrame": 0},
+      {"id": "process", "label": "PROCESS", "icon": "process", "revealFrame": 60},
+      {"id": "output", "label": "OUTPUT", "icon": "package", "revealFrame": 120}
+    ],
+    "cues": [
+      {"startFrame": 0, "endFrame": 60, "text": "An input enters the system."},
+      {"startFrame": 60, "endFrame": 120, "text": "The work happens here."},
+      {"startFrame": 120, "endFrame": 180, "text": "An output is ready."},
+      {"startFrame": 180, "endFrame": 240, "text": "Where does the process slow down?"}
+    ]
+  }
+}

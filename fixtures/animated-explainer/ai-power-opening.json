@@ -1,0 +1,26 @@
+{
+  "config": {
+    "version": "1.0.0",
+    "id": "ai-power-opening",
+    "fps": 30,
+    "durationFrames": 375,
+    "title": "AI NEEDS POWER",
+    "question": "WHY THE SAME PROJECT?",
+    "questionFrame": 282,
+    "eyebrow": "WORLD IN CLEAR ENGLISH",
+    "topic": "THE AI POWER QUESTION",
+    "flowDirection": "right-to-left",
+    "sourceNote": "Illustrative diagram · Episode 2026-09-15 AI power",
+    "stages": [
+      {"id": "compute", "label": "COMPUTE", "icon": "server", "revealFrame": 0},
+      {"id": "grid", "label": "GRID", "icon": "grid", "revealFrame": 92},
+      {"id": "energy", "label": "ENERGY", "icon": "power", "revealFrame": 143}
+    ],
+    "cues": [
+      {"startFrame": 12, "endFrame": 90, "text": "AI's next bottleneck may not be chips."},
+      {"startFrame": 92, "endFrame": 136, "text": "It may be electricity."},
+      {"startFrame": 143, "endFrame": 280, "text": "One company is funding both AI data centers and power generation."},
+      {"startFrame": 282, "endFrame": 354, "text": "Why are these becoming the same project?"}
+    ]
+  }
+}
