@@ -1,0 +1,72 @@
+name: Animated English pilot preview
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "fixtures/animation-english/**"
+      - "src/animation-english/**"
+      - "scripts/build_animation_english_props.ts"
+      - "scripts/synthesize_v3_edge.py"
+      - "scripts/generate_bgm.py"
+      - "requirements-v3.txt"
+      - ".github/workflows/animation-english-preview.yml"
+  pull_request:
+    paths:
+      - "fixtures/animation-english/**"
+      - "src/animation-english/**"
+      - "scripts/build_animation_english_props.ts"
+      - "scripts/synthesize_v3_edge.py"
+      - "scripts/generate_bgm.py"
+      - "requirements-v3.txt"
+      - ".github/workflows/animation-english-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install dependencies
+        run: |
+          npm ci --ignore-scripts
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-noto-cjk
+          python3 -m pip install --disable-pip-version-check -r requirements-v3.txt
+      - name: Check TypeScript
+        run: npm run typecheck
+      - name: Synthesize lesson narration
+        run: |
+          mkdir -p public/generated/animation-english/audio work/animation-english out
+          python3 scripts/synthesize_v3_edge.py fixtures/animation-english/run-into-a-snag.json public/generated/animation-english/audio public/generated/animation-english/timing.json
+      - name: Build measured lesson and music
+        run: |
+          npx tsx scripts/build_animation_english_props.ts fixtures/animation-english/run-into-a-snag.json public/generated/animation-english/timing.json generated/animation-english/audio work/animation-english/pilot-props.json
+          python3 scripts/generate_bgm.py work/animation-english/pilot-props.json public/generated/animation-english/bgm.wav
+          npx tsx scripts/build_animation_english_props.ts fixtures/animation-english/run-into-a-snag.json public/generated/animation-english/timing.json generated/animation-english/audio work/animation-english/pilot-props.json generated/animation-english/bgm.wav
+      - name: Render 540p review video
+        run: npx remotion render src/animation-english/index.tsx AnimationEnglishLesson out/animation-english-snag-540p.mp4 --props=work/animation-english/pilot-props.json --scale=0.5 --codec=h264 --crf=21
+      - name: Normalize narration mix
+        run: bash scripts/normalize_video_audio.sh out/animation-english-snag-540p.mp4
+      - name: Contact sheet
+        run: ffmpeg -hide_banner -loglevel error -y -i out/animation-english-snag-540p.mp4 -vf "fps=1/5,scale=320:180,tile=4x2:padding=5:margin=5" -frames:v 1 out/animation-english-contact-sheet.jpg
+      - name: Upload candidate review artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: animation-english-snag-preview-${{ github.sha }}
+          path: |
+            out/animation-english-snag-540p.mp4
+            out/animation-english-contact-sheet.jpg
+            public/generated/animation-english/timing.json
+            work/animation-english/pilot-props.json
+          retention-days: 14

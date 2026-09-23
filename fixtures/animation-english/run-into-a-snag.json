@@ -1,0 +1,91 @@
+{
+  "version": "animation-english/1.0",
+  "id": "run-into-a-snag-pilot",
+  "status": "candidate",
+  "title": "WHEN PLANS GO WRONG",
+  "level": "B2",
+  "voice": "en-US-JennyNeural",
+  "rate": "+0%",
+  "pitch": "+0Hz",
+  "target": {
+    "phrase": "run into a snag",
+    "emphasis": "snag",
+    "meaningEn": "meet a small, unexpected problem",
+    "meaningJa": "思わぬ小さな問題にぶつかる",
+    "transferSituation": "An app fails just before release."
+  },
+  "scenes": [
+    {
+      "id": "story-setup",
+      "mode": "story",
+      "world": "street",
+      "action": "drive",
+      "narrationEn": "The delivery was on time. Then the road closed.",
+      "captionEn": "The delivery was on time. Then the road closed.",
+      "holdFrames": 8
+    },
+    {
+      "id": "story-snag",
+      "mode": "story",
+      "world": "street",
+      "action": "blocked",
+      "narrationEn": "We ran into a snag.",
+      "captionEn": "We ran into a snag.",
+      "holdFrames": 14
+    },
+    {
+      "id": "notice",
+      "mode": "notice",
+      "world": "street",
+      "action": "blocked",
+      "narrationEn": "A snag is a small, unexpected problem that slows your plan down.",
+      "captionEn": "A snag is a small, unexpected problem that slows your plan down.",
+      "holdFrames": 10
+    },
+    {
+      "id": "story-solve",
+      "mode": "story",
+      "world": "street",
+      "action": "reroute",
+      "narrationEn": "They found another route and got back on track.",
+      "captionEn": "They found another route and got back on track.",
+      "holdFrames": 8
+    },
+    {
+      "id": "transfer",
+      "mode": "transfer",
+      "world": "office",
+      "action": "launch-blocked",
+      "narrationEn": "At work, you can say: We ran into a snag with the launch.",
+      "captionEn": "We ran into a snag with the launch.",
+      "holdFrames": 12
+    },
+    {
+      "id": "speak",
+      "mode": "speak",
+      "world": "street",
+      "action": "blocked",
+      "narrationEn": "Your turn. We ran into a snag.",
+      "captionEn": "We ran into a snag.",
+      "holdFrames": 58
+    },
+    {
+      "id": "recall",
+      "mode": "recall",
+      "world": "office",
+      "action": "launch-blocked",
+      "narrationEn": "The app fails right before release. What would you say?",
+      "captionEn": "What would you say?",
+      "holdFrames": 70
+    },
+    {
+      "id": "answer",
+      "mode": "answer",
+      "world": "office",
+      "action": "launch-blocked",
+      "narrationEn": "We ran into a snag.",
+      "captionEn": "We ran into a snag.",
+      "holdFrames": 28
+    }
+  ]
+}
