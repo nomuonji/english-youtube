@@ -9,6 +9,7 @@ on:
       - "scripts/build_animation_english_props.ts"
       - "scripts/synthesize_v3_edge.py"
       - "scripts/generate_bgm.py"
+      - "scripts/generate_sfx.py"
       - "requirements-v3.txt"
       - ".github/workflows/animation-english-preview.yml"
   pull_request:
@@ -18,6 +19,7 @@ on:
       - "scripts/build_animation_english_props.ts"
       - "scripts/synthesize_v3_edge.py"
       - "scripts/generate_bgm.py"
+      - "scripts/generate_sfx.py"
       - "requirements-v3.txt"
       - ".github/workflows/animation-english-preview.yml"
   workflow_dispatch:
@@ -53,20 +55,29 @@ jobs:
         run: |
           npx tsx scripts/build_animation_english_props.ts fixtures/animation-english/run-into-a-snag.json public/generated/animation-english/timing.json generated/animation-english/audio work/animation-english/pilot-props.json
           python3 scripts/generate_bgm.py work/animation-english/pilot-props.json public/generated/animation-english/bgm.wav
+          python3 scripts/generate_sfx.py
           npx tsx scripts/build_animation_english_props.ts fixtures/animation-english/run-into-a-snag.json public/generated/animation-english/timing.json generated/animation-english/audio work/animation-english/pilot-props.json generated/animation-english/bgm.wav
       - name: Render 540p review video
         run: npx remotion render src/animation-english/index.tsx AnimationEnglishLesson out/animation-english-snag-540p.mp4 --props=work/animation-english/pilot-props.json --scale=0.5 --codec=h264 --crf=21
       - name: Normalize narration mix
         run: bash scripts/normalize_video_audio.sh out/animation-english-snag-540p.mp4
+      - name: Render kinetic comparison
+        run: npx remotion render src/animation-english/index.tsx AnimationEnglishKinetic out/animation-english-kinetic-540p.mp4 --props=work/animation-english/pilot-props.json --scale=0.5 --codec=h264 --crf=21
+      - name: Normalize kinetic mix
+        run: bash scripts/normalize_video_audio.sh out/animation-english-kinetic-540p.mp4
       - name: Contact sheet
         run: ffmpeg -hide_banner -loglevel error -y -i out/animation-english-snag-540p.mp4 -vf "fps=1/5,scale=320:180,tile=4x2:padding=5:margin=5" -frames:v 1 out/animation-english-contact-sheet.jpg
+      - name: Kinetic contact sheet
+        run: ffmpeg -hide_banner -loglevel error -y -i out/animation-english-kinetic-540p.mp4 -vf "fps=1/5,scale=320:180,tile=4x2:padding=5:margin=5" -frames:v 1 out/animation-english-kinetic-contact-sheet.jpg
       - name: Upload candidate review artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: animation-english-snag-preview-${{ github.sha }}
           path: |
             out/animation-english-snag-540p.mp4
+            out/animation-english-kinetic-540p.mp4
             out/animation-english-contact-sheet.jpg
+            out/animation-english-kinetic-contact-sheet.jpg
             public/generated/animation-english/timing.json
             work/animation-english/pilot-props.json
           retention-days: 14
