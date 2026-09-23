@@ -58,7 +58,7 @@ npx remotion render src/animation-english/index.tsx AnimationEnglishKinetic out/
 
 This is a visual treatment over the shared teaching sequence. A future long-form episode can use the same beat vocabulary across several expression arcs. Judge the comparison by whether the situation and phrase become easier to remember without compromising the speaking and recall windows. No candidate is promoted to a production default by this experiment.
 
-The higher-motion opening candidate, with separately composed horizontal and vertical renders, is described in `docs/ARCADE_ENGLISH_REVEAL.md`. It uses the same measured lesson data and is review-only.
+The full-lesson motion-rich candidate, with separately composed horizontal and vertical renders, is described in `docs/JUICY_ANIMATION_ENGLISH.md`. It uses the same measured lesson data and is review-only.
 
 This candidate is independent of the `news-first-v3.0` stable pin and the in-progress V5 experiments. Do not add a `READY.json` or `APPROVED.json` for this lesson type until the new review and publishing path is explicitly implemented and checked. Publishing still requires a reviewed final artifact and explicit user approval.
 
